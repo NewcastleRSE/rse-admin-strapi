@@ -2,7 +2,7 @@
   "name": "rseadmin-api",
   "private": true,
   "version": "0.1.0",
-  "description": "A Strapi application",
+  "description": "Backend for RSE Admin Tool",
   "scripts": {
     "develop": "strapi develop",
     "start": "strapi start",
@@ -19,7 +19,7 @@
     "mysql": "2.18.1"
   },
   "author": {
-    "name": "A Strapi developer"
+    "name": "Mark Turner"
   },
   "strapi": {
     "uuid": "ca6b733a-92c2-453b-9dbb-89dbf373fb2d"
