@@ -19,17 +19,22 @@ const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
+const projectTransform = function(hsProject) {
+    let project = hsProject.properties
+
+    project.id = hsProject.id
+    project.createdAt = hsProject.createdAt
+    project.updatedAt = hsProject.updatedAt
+    project.archived = hsProject.archived
+
+    project.dealstage = Object.keys(stages)[Object.values(stages).indexOf(project.dealstage)]
+
+    return project
+}
+
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
-    async find(...args) {
-        let response = { okay: true }
-    
-        if (response.okay === false) {
-          return { response, error: true }
-        }
-    
-        return response
-      },
-    async findOld(...args) {  
+
+    async find(...args) {  
 
     console.log(args)
 
@@ -122,7 +127,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 },
 
   async findOne(...args) {
-    const { id } = args;
 
     const filter = [
       {
@@ -130,7 +134,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           {
             propertyName: "hs_object_id",
             operator: "EQ",
-            value: id,
+            value: args[0],
           },
         ],
       },
@@ -146,12 +150,21 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       after,
     };
 
-    let results = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+    let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
 
-    return results.body.resuts.map((entity) => {
-      const project = entity;
-      return project;
-    });
+    let data = {}
+
+    if(response.results.length === 1) {
+
+        data = projectTransform(response.results[0])
+    }
+    else {
+        console.error("ID should be unique")
+    }
+
+    console.log(data)
+
+    return data
   },
 
   async update(...args) {
