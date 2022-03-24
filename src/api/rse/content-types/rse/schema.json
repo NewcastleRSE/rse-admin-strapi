@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rses",
+  "info": {
+    "singularName": "rse",
+    "pluralName": "rses",
+    "displayName": "RSE",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Firstname": {
+      "type": "string",
+      "required": true
+    },
+    "Lastname": {
+      "type": "string",
+      "required": true
+    },
+    "Email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "StartDate": {
+      "type": "date",
+      "required": true,
+      "default": "2019-04-01"
+    },
+    "EndDate": {
+      "type": "date",
+      "default": "2025-03-31",
+      "required": false
+    },
+    "PersonnelNumber": {
+      "type": "biginteger",
+      "required": true,
+      "unique": true
+    },
+    "Team": {
+      "type": "enumeration",
+      "enum": [
+        "WebMobile",
+        "Middleware",
+        "DataScience"
+      ],
+      "required": true
+    },
+    "assignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::assignment.assignment",
+      "mappedBy": "rse"
+    }
+  }
+}
