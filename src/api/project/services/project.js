@@ -5,6 +5,7 @@
  */
 
 const { createCoreService } = require('@strapi/strapi').factories;
+const camelcaseKeys = require('camelcase-keys');
 const Hubspot = require('@hubspot/api-client');
 const hubspotClient = new Hubspot.Client({ apiKey: process.env.HUBSPOT_KEY });
 const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -28,7 +29,7 @@ const projectTransform = function(hsProject) {
     project.archived = hsProject.archived
     project.dealstage = Object.keys(stages)[Object.values(stages).indexOf(project.dealstage)]
 
-    return project
+    return camelcaseKeys(project)
 }
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
@@ -155,7 +156,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     return data
   },
-  
+
   async update(...args) {
     // add error handling
     const id = args.id;
