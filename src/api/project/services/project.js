@@ -26,7 +26,6 @@ const projectTransform = function(hsProject) {
     project.createdAt = hsProject.createdAt
     project.updatedAt = hsProject.updatedAt
     project.archived = hsProject.archived
-
     project.dealstage = Object.keys(stages)[Object.values(stages).indexOf(project.dealstage)]
 
     return project
@@ -34,13 +33,11 @@ const projectTransform = function(hsProject) {
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
-    async find(...args) {  
-
-    console.log(args)
+  async find(...args) {  
 
     let params = args[0]
-    let data,
-        pagination;
+
+    const { results, pagination } = await super.find(...args);
 
     // Only 3 filters allowed at once
     const allocatedFilter = {
@@ -55,20 +52,12 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     };
     const awaitingAllocationFilter = {
       filters: [
-        {
-          propertyName: "dealstage",
-          operator: "EQ",
-          value: stages.awaitingAllocation,
-        },
+        { propertyName: "dealstage", operator: "EQ",  value: stages.awaitingAllocation },
       ],
     };
     const submittedToFunderFilter = {
       filters: [
-        {
-          propertyName: "dealstage",
-          operator: "EQ",
-          value: stages.submittedToFunder,
-        },
+        { propertyName: "dealstage", operator: "EQ", value: stages.submittedToFunder },
       ],
     };
 
@@ -120,11 +109,14 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       after,
     };
 
-    const response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
- 
-    console.log({ data: response.results })
-    return { data: response.results }
-},
+    const hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+
+    hsProjects.results.forEach((project) => {
+        results.push(projectTransform(project))
+    })
+
+    return { results, pagination };
+  },
 
   async findOne(...args) {
 
@@ -155,18 +147,15 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     let data = {}
 
     if(response.results.length === 1) {
-
         data = projectTransform(response.results[0])
     }
     else {
         console.error("ID should be unique")
     }
 
-    console.log(data)
-
     return data
   },
-
+  
   async update(...args) {
     // add error handling
     const id = args.id;
