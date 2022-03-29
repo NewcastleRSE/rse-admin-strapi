@@ -27,7 +27,7 @@ COPY favicon.ico ./
 RUN yarn install
 
 # Build app in production mode
-RUN NODE_ENV=production yarn build
+RUN NODE_ENV=production PUBLIC_URL=https://rseadmin.azurewebsites.net/ yarn build
 
 EXPOSE 8080 2222
 
