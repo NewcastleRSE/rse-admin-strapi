@@ -116,6 +116,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         results.push(projectTransform(project))
     })
 
+    pagination.pageSize = 100
+    pagination.pageCount = 1
+    pagination.total = results.length
+
     return { results, pagination };
   },
 
