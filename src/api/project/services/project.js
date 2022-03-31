@@ -20,18 +20,6 @@ const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
-const projectTransform = function(hsProject) {
-    let project = hsProject.properties
-
-    project.id = hsProject.id
-    project.createdAt = hsProject.createdAt
-    project.updatedAt = hsProject.updatedAt
-    project.archived = hsProject.archived
-    project.dealstage = Object.keys(stages)[Object.values(stages).indexOf(project.dealstage)]
-
-    return camelcaseKeys(project)
-}
-
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) {  
@@ -113,7 +101,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     const hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
 
     hsProjects.results.forEach((project) => {
-        results.push(projectTransform(project))
+        results.push(project)
     })
 
     pagination.pageSize = 100
@@ -152,7 +140,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     let data = {}
 
     if(response.results.length === 1) {
-        data = projectTransform(response.results[0])
+        data = response.results[0]
     }
     else {
         console.error("ID should be unique")
