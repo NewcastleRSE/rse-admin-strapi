@@ -1,6 +1,6 @@
 {
   "paths": {
-    "/assignments": {
+    "/capacities": {
       "get": {
         "responses": {
           "200": {
@@ -20,6 +20,17 @@
                           "attributes": {
                             "type": "object",
                             "properties": {
+                              "capacity": {
+                                "type": "integer"
+                              },
+                              "start": {
+                                "type": "string",
+                                "format": "date"
+                              },
+                              "end": {
+                                "type": "string",
+                                "format": "date"
+                              },
                               "rse": {
                                 "type": "object",
                                 "properties": {
@@ -615,34 +626,6 @@
                                   }
                                 }
                               },
-                              "start": {
-                                "type": "string",
-                                "format": "date"
-                              },
-                              "end": {
-                                "type": "string",
-                                "format": "date"
-                              },
-                              "fte": {
-                                "type": "integer"
-                              },
-                              "project": {
-                                "type": "object",
-                                "properties": {
-                                  "data": {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "attributes": {
-                                        "type": "object",
-                                        "properties": {}
-                                      }
-                                    }
-                                  }
-                                }
-                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -865,7 +848,7 @@
           }
         },
         "tags": [
-          "Assignment"
+          "Capacity"
         ],
         "parameters": [
           {
@@ -949,7 +932,7 @@
             }
           }
         ],
-        "operationId": "get/assignments"
+        "operationId": "get/capacities"
       },
       "post": {
         "responses": {
@@ -968,6 +951,17 @@
                         "attributes": {
                           "type": "object",
                           "properties": {
+                            "capacity": {
+                              "type": "integer"
+                            },
+                            "start": {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            "end": {
+                              "type": "string",
+                              "format": "date"
+                            },
                             "rse": {
                               "type": "object",
                               "properties": {
@@ -1563,34 +1557,6 @@
                                 }
                               }
                             },
-                            "start": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "end": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "fte": {
-                              "type": "integer"
-                            },
-                            "project": {
-                              "type": "object",
-                              "properties": {
-                                "data": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string"
-                                    },
-                                    "attributes": {
-                                      "type": "object",
-                                      "properties": {}
-                                    }
-                                  }
-                                }
-                              }
-                            },
                             "createdAt": {
                               "type": "string",
                               "format": "date-time"
@@ -1792,10 +1758,10 @@
           }
         },
         "tags": [
-          "Assignment"
+          "Capacity"
         ],
         "parameters": [],
-        "operationId": "post/assignments",
+        "operationId": "post/capacities",
         "requestBody": {
           "required": true,
           "content": {
@@ -1805,16 +1771,12 @@
                   "data": {
                     "type": "object",
                     "properties": {
+                      "capacity": {
+                        "type": "integer"
+                      },
                       "start": {
                         "type": "string",
                         "format": "date"
-                      },
-                      "end": {
-                        "type": "string",
-                        "format": "date"
-                      },
-                      "fte": {
-                        "type": "integer"
                       }
                     }
                   }
@@ -1825,7 +1787,7 @@
         }
       }
     },
-    "/assignments/{id}": {
+    "/capacities/{id}": {
       "get": {
         "responses": {
           "200": {
@@ -1843,6 +1805,17 @@
                         "attributes": {
                           "type": "object",
                           "properties": {
+                            "capacity": {
+                              "type": "integer"
+                            },
+                            "start": {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            "end": {
+                              "type": "string",
+                              "format": "date"
+                            },
                             "rse": {
                               "type": "object",
                               "properties": {
@@ -2438,34 +2411,6 @@
                                 }
                               }
                             },
-                            "start": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "end": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "fte": {
-                              "type": "integer"
-                            },
-                            "project": {
-                              "type": "object",
-                              "properties": {
-                                "data": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string"
-                                    },
-                                    "attributes": {
-                                      "type": "object",
-                                      "properties": {}
-                                    }
-                                  }
-                                }
-                              }
-                            },
                             "createdAt": {
                               "type": "string",
                               "format": "date-time"
@@ -2667,7 +2612,7 @@
           }
         },
         "tags": [
-          "Assignment"
+          "Capacity"
         ],
         "parameters": [
           {
@@ -2681,7 +2626,7 @@
             }
           }
         ],
-        "operationId": "get/assignments/{id}"
+        "operationId": "get/capacities/{id}"
       },
       "put": {
         "responses": {
@@ -2700,6 +2645,17 @@
                         "attributes": {
                           "type": "object",
                           "properties": {
+                            "capacity": {
+                              "type": "integer"
+                            },
+                            "start": {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            "end": {
+                              "type": "string",
+                              "format": "date"
+                            },
                             "rse": {
                               "type": "object",
                               "properties": {
@@ -3295,34 +3251,6 @@
                                 }
                               }
                             },
-                            "start": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "end": {
-                              "type": "string",
-                              "format": "date"
-                            },
-                            "fte": {
-                              "type": "integer"
-                            },
-                            "project": {
-                              "type": "object",
-                              "properties": {
-                                "data": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string"
-                                    },
-                                    "attributes": {
-                                      "type": "object",
-                                      "properties": {}
-                                    }
-                                  }
-                                }
-                              }
-                            },
                             "createdAt": {
                               "type": "string",
                               "format": "date-time"
@@ -3524,7 +3452,7 @@
           }
         },
         "tags": [
-          "Assignment"
+          "Capacity"
         ],
         "parameters": [
           {
@@ -3538,7 +3466,7 @@
             }
           }
         ],
-        "operationId": "put/assignments/{id}",
+        "operationId": "put/capacities/{id}",
         "requestBody": {
           "required": true,
           "content": {
@@ -3548,16 +3476,8 @@
                   "data": {
                     "type": "object",
                     "properties": {
-                      "rse": {
-                        "oneOf": [
-                          {
-                            "type": "integer"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ],
-                        "example": "string or id"
+                      "capacity": {
+                        "type": "integer"
                       },
                       "start": {
                         "type": "string",
@@ -3567,10 +3487,7 @@
                         "type": "string",
                         "format": "date"
                       },
-                      "fte": {
-                        "type": "integer"
-                      },
-                      "project": {
+                      "rse": {
                         "oneOf": [
                           {
                             "type": "integer"
@@ -3779,7 +3696,7 @@
           }
         },
         "tags": [
-          "Assignment"
+          "Capacity"
         ],
         "parameters": [
           {
@@ -3793,7 +3710,7 @@
             }
           }
         ],
-        "operationId": "delete/assignments/{id}"
+        "operationId": "delete/capacities/{id}"
       }
     }
   }

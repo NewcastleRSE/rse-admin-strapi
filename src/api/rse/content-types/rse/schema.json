@@ -12,35 +12,35 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "Firstname": {
+    "firstname": {
       "type": "string",
       "required": true
     },
-    "Lastname": {
+    "lastname": {
       "type": "string",
       "required": true
     },
-    "Email": {
+    "email": {
       "type": "email",
       "required": true,
       "unique": true
     },
-    "StartDate": {
+    "contractStart": {
       "type": "date",
       "required": true,
       "default": "2019-04-01"
     },
-    "EndDate": {
+    "contractEnd": {
       "type": "date",
       "default": "2025-03-31",
       "required": false
     },
-    "PersonnelNumber": {
+    "personnelNumber": {
       "type": "biginteger",
       "required": true,
       "unique": true
     },
-    "Team": {
+    "team": {
       "type": "enumeration",
       "enum": [
         "WebMobile",
@@ -53,6 +53,12 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::assignment.assignment",
+      "mappedBy": "rse"
+    },
+    "capacities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::capacity.capacity",
       "mappedBy": "rse"
     }
   }

@@ -4,7 +4,8 @@
   "info": {
     "singularName": "assignment",
     "pluralName": "assignments",
-    "displayName": "Assignment"
+    "displayName": "Assignment",
+    "description": ""
   },
   "options": {
     "draftAndPublish": false
@@ -17,30 +18,27 @@
       "target": "api::rse.rse",
       "inversedBy": "assignments"
     },
-    "StartDate": {
+    "start": {
       "type": "date",
       "required": true,
       "default": "2022-02-01"
     },
-    "EndDate": {
+    "end": {
       "type": "date",
       "required": true,
       "default": "2025-01-01"
     },
-    "ProjectName": {
-      "type": "string",
-      "required": true
-    },
-    "HubSpotID": {
-      "type": "biginteger",
-      "required": true
-    },
-    "FTE": {
+    "fte": {
       "type": "integer",
       "default": 50,
       "required": true,
       "max": 100,
       "min": 0
+    },
+    "project": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::project.project"
     }
   }
 }

@@ -20,8 +20,16 @@
                           "attributes": {
                             "type": "object",
                             "properties": {
-                              "UID": {
+                              "clockifyID": {
                                 "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "hubspotID": {
+                                "type": "string",
+                                "pattern": "^\\d*$",
+                                "example": "123456789"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -601,8 +609,16 @@
                         "attributes": {
                           "type": "object",
                           "properties": {
-                            "UID": {
+                            "clockifyID": {
                               "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "hubspotID": {
+                              "type": "string",
+                              "pattern": "^\\d*$",
+                              "example": "123456789"
                             },
                             "createdAt": {
                               "type": "string",
@@ -1089,8 +1105,16 @@
                         "attributes": {
                           "type": "object",
                           "properties": {
-                            "UID": {
+                            "clockifyID": {
                               "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "hubspotID": {
+                              "type": "string",
+                              "pattern": "^\\d*$",
+                              "example": "123456789"
                             },
                             "createdAt": {
                               "type": "string",
@@ -1568,8 +1592,16 @@
                   "data": {
                     "type": "object",
                     "properties": {
-                      "UID": {
+                      "clockifyID": {
                         "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "hubspotID": {
+                        "type": "string",
+                        "pattern": "^\\d*$",
+                        "example": "123456789"
                       },
                       "createdAt": {
                         "type": "string",
