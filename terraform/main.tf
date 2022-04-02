@@ -115,6 +115,7 @@ resource "azurerm_app_service" "as" {
     HUBSPOT_DEAL_NOT_FUNDED = "closedlost"
     HUBSPOT_DEAL_ALLOCATED = "0fd81f66-7cda-4db7-b2e8-b0114be90ef9"
     HUBSPOT_DEAL_COMPLETED = "09b510b5-6871-4771-ad09-1438ce8e6f11"
+    CLOCKIFY_KEY = var.clockify_key
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
     DOCKER_REGISTRY_SERVER_USERNAME = azurerm_container_registry.acr.admin_username
     DOCKER_REGISTRY_SERVER_PASSWORD = azurerm_container_registry.acr.admin_password

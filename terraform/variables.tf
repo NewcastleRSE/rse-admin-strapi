@@ -70,3 +70,8 @@ variable "hubspot_key" {
   type        = string
   sensitive   = true
 }
+
+variable "clockify_key" {
+  type        = string
+  sensitive   = true
+}
