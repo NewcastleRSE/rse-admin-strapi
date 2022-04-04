@@ -26,7 +26,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     let params = args[0]
 
-    const { results, pagination } = await super.find(...args);
+    let { results, pagination } = await super.find(...args);
 
     // Only 3 filters allowed at once
     const allocatedFilter = {
@@ -98,15 +98,39 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       after,
     };
 
+    // Project list from HubSpot
     const hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+    // Project list from Strapi
+    let sProjects = results
+
+    // Clear results list ready for merging
+    results = []
 
     hsProjects.results.forEach((project) => {
-        results.push(project)
+
+        let result = project.properties
+        result.id = project.id
+        result.propertiesWithHistory = project.propertiesWithHistory
+        result.createdAt = project.createdAt
+        result.updatedAt = project.updatedAt
+        result.archived = project.archived
+        result.archivedAt = project.archivedAt
+
+        var sProject = sProjects.find(result => {
+          return project.id === result.hubspotID
+        })
+
+        if(sProject) {
+          result.clockifyID = sProject.clockifyID
+        }
+        else {
+          console.error(`Project ${result.dealname} not found in Strapi database`)
+        }
+
+        results.push(camelcaseKeys(result))
     })
 
-    pagination.pageSize = 100
-    pagination.pageCount = 1
-    pagination.total = results.length
+    pagination.total = hsProjects.results.length
 
     return { results, pagination };
   },
