@@ -20,6 +20,14 @@ const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
+// Invert stages to key by Hubspot stage names
+const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
+const hsStages = invert(stages)
+
+function formatDealStage(stage) {
+  return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+}
+
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) {  
@@ -116,6 +124,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         result.archived = project.archived
         result.archivedAt = project.archivedAt
 
+        // Modify project stage
+        result.dealstage = formatDealStage(result.dealstage)
+
+        // Fetch and set clockify ID
         var sProject = sProjects.find(result => {
           return project.id === result.hubspotID
         })
