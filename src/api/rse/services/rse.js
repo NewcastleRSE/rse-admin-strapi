@@ -7,7 +7,7 @@
 const { DateTime } = require("luxon");
 const { createCoreService } = require('@strapi/strapi').factories;
 
-function availability(rse, assignments) {
+function getAvailability(rse, assignments) {
 
     // Initialize years
     let contractStart = DateTime.fromISO(rse.contractStart)
@@ -57,7 +57,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
         let { results, pagination } = await super.find(...args);
 
         let rses = results;
-        results = rses.map(rse=> ({ ...rse, availability: availability(rse) }))
+        results = rses.map(rse=> ({ ...rse, availability: getAvailability(rse) }))
 
         return { results, pagination };
     },
@@ -74,9 +74,21 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 }
             }
           })
+
+        
     
         let result = await super.findOne(entryId, ...args);
-        result.availability = availability(result, assignments.results)
+        let availability = getAvailability(result, assignments.results)
+
+        let date = DateTime.now()
+
+        let month = availability[date.year].findIndex(function(availability) {
+            return availability > 0;
+        });
+
+        result.nextAvailableDate = new Date(Date.UTC(date.year, month, 1))
+        result.nextAvailableFTE = availability[date.year][month]
+        result.availability = availability
 
         return result;
     }
