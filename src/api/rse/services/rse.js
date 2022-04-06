@@ -7,7 +7,7 @@
 const { DateTime } = require("luxon");
 const { createCoreService } = require('@strapi/strapi').factories;
 
-function getAvailability(rse, assignments) {
+function getAvailability(rse, assignments, capacities) {
 
     // Initialize years
     let contractStart = DateTime.fromISO(rse.contractStart)
@@ -35,11 +35,44 @@ function getAvailability(rse, assignments) {
     }
 
     // Set months in first year before contract start to null
-    let month = 1
-    while(month < contractStart.month) {
-        availability[contractStart.year][month-1] = null
-        month++
+    let startMonth = 1
+    while(startMonth < contractStart.month) {
+        availability[contractStart.year][startMonth-1] = null
+        startMonth++
     }
+
+    if(contractEnd) {
+        // Set months in final year before contract end to null
+        let endMonth = 12
+        while(endMonth > contractEnd.month) {
+            availability[contractEnd.year][endMonth-1] = null
+            endMonth--
+        }
+    }
+
+    // Use each capacity to update availability
+    capacities.forEach((capacity) => {
+        let start = DateTime.fromISO(new Date(capacity.start).toISOString())
+        let end = assignmentsEnd
+
+        if(capacity.end) {
+            end = DateTime.fromISO(new Date(capacity.end).toISOString())
+        }
+        
+        // Loop over each year in the capacity
+        let year = start.year
+        while(year <= end.year) {
+            // Loop over each month in the year the capacity is valid for
+            let month = year === start.year ? start.month : 1
+            let endMonth = year === end.year ? end.month : 12
+            while(month <= endMonth) {
+                // Set assignment FTE from that months capacity
+                availability[year][month-1] = capacity.capacity
+                month++
+            }
+            year++
+        }
+    })
 
     // Use each assignment to update availability
     assignments.forEach((assignment) => {
@@ -71,6 +104,10 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
         const assignments = await strapi.service('api::assignment.assignment').find({
             populate: ['rse']
         })
+
+        const capacities = await strapi.service('api::capacity.capacity').find({
+            populate: ['rse']
+        })
     
         let { results, pagination } = await super.find(...args);
 
@@ -84,8 +121,12 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
             let rseAssignments = assignments.results.filter((assignment) => {
                 return assignment.rse.id === rse.id
             })
+
+            let rseCapacity = capacities.results.filter((capacity) => {
+                return capacity.rse.id === rse.id
+            })
     
-            let availability = getAvailability(rse, rseAssignments)
+            let availability = getAvailability(rse, rseAssignments, rseCapacity)
 
             let date = DateTime.now()
 
@@ -114,10 +155,21 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                     }
                 }
             }
-          })
+        })
+
+        const capacities = await strapi.service('api::capacity.capacity').find({
+            populate: ['rse'],
+            filters: {
+                rse: {
+                    id: {
+                        $eq: entryId
+                    }
+                }
+            }
+        })
     
         let result = await super.findOne(entryId, ...args);
-        let availability = getAvailability(result, assignments.results)
+        let availability = getAvailability(result, assignments.results, capacities.results)
 
         let date = DateTime.now()
 
