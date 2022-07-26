@@ -6,5 +6,8 @@ module.exports = ({ env }) => ({
           removeAttributesKey: true
         }
       }
+    },
+    'import-export-entries': {
+      enabled: true,
     }
   });
