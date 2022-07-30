@@ -1,0 +1,9 @@
+{
+  "name": "assignmentParsing",
+  "version": "1.0.0",
+  "main": "parse.js",
+  "license": "MIT",
+  "dependencies": {
+    "luxon": "^3.0.1"
+  }
+}
