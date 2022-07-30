@@ -66,6 +66,12 @@ function getAvailability(rse, assignments, capacities) {
             let month = year === start.year ? start.month : 1
             let endMonth = year === end.year ? end.month : 12
             while(month <= endMonth) {
+
+                // capacity spans new year so needs to be added as key
+                if(!availability.hasOwnProperty(year)) {
+                    availability[year] = []
+                }
+
                 // Set assignment FTE from that months capacity
                 availability[year][month-1] = capacity.capacity
                 month++
