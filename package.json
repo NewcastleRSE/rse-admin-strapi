@@ -12,7 +12,6 @@
   "devDependencies": {},
   "dependencies": {
     "@hubspot/api-client": "^6.0.1-beta3",
-    "@strapi/plugin-documentation": "^4.2.3",
     "@strapi/plugin-i18n": "4.2.3",
     "@strapi/plugin-sentry": "^4.2.3",
     "@strapi/plugin-users-permissions": "4.2.3",
