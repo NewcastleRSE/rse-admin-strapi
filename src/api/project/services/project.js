@@ -65,7 +65,7 @@ async function getContacts(after, limit, properties, contactIDs) {
     let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest);
     contacts = [...hsContacts.results]
     if(hsContacts.paging) {
-      return getDeals(hsContacts.paging.next.after, limit, properties, filterGroups)
+      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups)
     }
     else {
       return contacts
@@ -83,67 +83,12 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     let { results, pagination } = await super.find(...args);
 
-    // Only 3 filters allowed at once
-    const allocatedFilter = {
-      filters: [
-        { propertyName: "dealstage", operator: "EQ", value: stages.allocated },
-      ],
-    };
-    const completedFilter = {
-      filters: [
-        { propertyName: "dealstage", operator: "EQ", value: stages.completed },
-      ],
-    };
-    const awaitingAllocationFilter = {
-      filters: [
-        { propertyName: "dealstage", operator: "EQ",  value: stages.awaitingAllocation },
-      ],
-    };
-    const submittedToFunderFilter = {
-      filters: [
-        { propertyName: "dealstage", operator: "EQ", value: stages.submittedToFunder },
-      ],
-    };
-
-    let filterGroups = [];
     const sort = JSON.stringify({
       propertyName: "dealname",
       direction: "ASCENDING",
     });
     const limit = 100;
     const after = 0;
-
-    if (params && params.stage) {
-      let stages = Array.isArray(params.stage)
-        ? params.stage
-        : [params.stage];
-
-      // need to add defence for max of 3 stages
-      stages.forEach((stage) => {
-        switch (stage) {
-          case "allocated":
-            filterGroups.push(allocatedFilter);
-            break;
-          case "completed":
-            filterGroups.push(completedFilter);
-            break;
-          case "awaitingAllocation":
-            filterGroups.push(awaitingAllocationFilter);
-            break;
-          case "submittedToFunder":
-            filterGroups.push(submittedToFunderFilter);
-            break;
-          default:
-            break;
-        }
-      });
-    } else {
-      filterGroups = [
-        allocatedFilter,
-        completedFilter,
-        awaitingAllocationFilter,
-      ];
-    }
 
     let hsProjects = await getDeals(after, limit, dealProperties)
 
@@ -169,6 +114,21 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     // Clear results list ready for merging
     results = []
 
+    // If there is a query by stage, filter results
+    if (params && params.stage) {
+      // Ensure stages is always an array
+      let query = Array.isArray(params.stage) ? params.stage : [params.stage],
+          hsStages = []
+
+      query.forEach(stage => {
+        hsStages.push(stages[stage])
+      })
+
+      hsProjects = hsProjects.filter(project => {
+        return hsStages.includes(project.properties.dealstage)
+      })
+    }
+
     hsProjects.forEach((project) => {
 
       let projectContacts = []
@@ -181,7 +141,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           contacts.filter(contact => {
             return associatedContacts.includes(contact.id)
           }).forEach(contact => {
-            console.log(contact)
             projectContacts.push({
               id: contact.id,
               firstname: contact.properties.firstname,
