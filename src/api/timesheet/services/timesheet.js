@@ -47,46 +47,48 @@ module.exports = {
         }
     },
     async createClockifyProject(project) {
-
-        const projectName = project.dealname,
-              projectOwner = project.contacts[0].firstname + ' ' + project.contacts[0].lastname
-
-        try {
-
-            let clientRequest = { 
-                params: {
-                    name: projectOwner,
-                    'page-size': 200
-                }
-            }
-            let clientConfig = {...axiosConfig, ...clientRequest}
-            const responseData = await axios.get(`/workspaces/${clockifyWorkspace}/clients`, clientConfig)
-            let clientId = null
-
-            // Client does not exist, create a new one
-            if(!responseData.data || responseData.data === []) {
-                const responseData = await axios.post(`/workspaces/${clockifyWorkspace}/clients`, {
-                    name: projectOwner,
-                    note: ""
-                  })
-                clientId = responseData.data[0].id
-            }
-            else {
-                clientId = responseData.data[0].id
-            }
-
-            let project = { 
-                name: projectName,
-                clientId: clientId,
-                isPublic: "true",
-                billable: "true",
-                public: true
-            }
+        return new Promise(async (resolve, reject) => {
             
-            const response = await axios.post('/workspaces/${clockifyWorkspace}/projects', project)
-            return response.data
-        } catch (error) {
-            console.error(error)
-        }
+            const projectName = project.dealname,
+                  projectOwner = project.contacts[0].firstname + ' ' + project.contacts[0].lastname
+
+            try {
+
+                let clientRequest = { 
+                    params: {
+                        name: projectOwner,
+                        'page-size': 200
+                    }
+                }
+                let clientConfig = {...axiosConfig, ...clientRequest}
+                const responseData = await axios.get(`/workspaces/${clockifyWorkspace}/clients`, clientConfig)
+                let clientId = null
+
+                // Client does not exist, create a new one
+                if(!responseData.data || responseData.data === []) {
+                    const responseData = await axios.post(`/workspaces/${clockifyWorkspace}/clients`, {
+                        name: projectOwner,
+                        note: ""
+                    }, axiosConfig)
+                    clientId = responseData.data[0].id
+                }
+                else {
+                    clientId = responseData.data[0].id
+                }
+
+                let project = { 
+                    name: projectName,
+                    clientId: clientId,
+                    isPublic: "true",
+                    billable: "true",
+                    public: true
+                }
+                
+                const response = await axios.post(`/workspaces/${clockifyWorkspace}/projects`, project, axiosConfig)
+                resolve(response.data)
+            } catch (error) {
+                reject(error)
+            }
+        });
     }
 }
