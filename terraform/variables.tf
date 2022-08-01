@@ -75,3 +75,8 @@ variable "clockify_key" {
   type        = string
   sensitive   = true
 }
+
+variable "clockify_workspace" {
+  type        = string
+  sensitive   = true
+}

@@ -105,7 +105,7 @@ resource "azurerm_app_service" "as" {
     PUBLIC_URL = "https://rseadmin.azurewebsites.net/"
     PUBLIC_ADMIN_URL = "https://rseadmin.azurewebsites.net/dashboard"
     HUBSPOT_KEY = var.hubspot_key 
-    HUBSPOT_DEAL_PROPERTIES = "amount,dealname,dealstage,last_activity_date,account_code,award_stage,end_date,faculty,finance_contact,funding_body,project_lead,project_value,school,start_date,status"
+    HUBSPOT_DEAL_PROPERTIES = "amount,dealname,dealstage,last_activity_date,account_code,award_stage,end_date,faculty,finance_contact,funding_body,project_lead,project_value,school,start_date,status,cost_model"
     HUBSPOT_DEAL_ASSOCIATIONS = "contacts,companies"
     HUBSPOT_DEAL_MEETING_SCHEDULED = "appointmentscheduled"
     HUBSPOT_DEAL_BID_PREPARATION = "presentationscheduled"
@@ -115,7 +115,9 @@ resource "azurerm_app_service" "as" {
     HUBSPOT_DEAL_NOT_FUNDED = "closedlost"
     HUBSPOT_DEAL_ALLOCATED = "0fd81f66-7cda-4db7-b2e8-b0114be90ef9"
     HUBSPOT_DEAL_COMPLETED = "09b510b5-6871-4771-ad09-1438ce8e6f11"
+    HUBSPOT_CONTACT_PROPERTIES = "firstname,lastname,email,department,jobtitle"
     CLOCKIFY_KEY = var.clockify_key
+    CLOCKIFY_WORKSPACE = var.clockify_workspace
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
     DOCKER_REGISTRY_SERVER_USERNAME = azurerm_container_registry.acr.admin_username
     DOCKER_REGISTRY_SERVER_PASSWORD = azurerm_container_registry.acr.admin_password
