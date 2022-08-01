@@ -93,7 +93,16 @@ function getAvailability(rse, assignments, capacities) {
             let endMonth = year === end.year ? end.month : 12
             while(month <= endMonth) {
                 // Subtract assignment FTE from that months availability
-                availability[year][month-1] = availability[year][month-1] - assignment.fte
+                let currentAvailability = availability[year][month-1]
+                availability[year][month-1] = currentAvailability - assignment.fte
+
+                // How to handle when assignments are more than availability?
+                if(availability[year][month-1] < 0) {
+                    // console.log(rse.firstname + ' ' + rse.lastname)
+                    // console.log(year + '-' + month + ': ' + currentAvailability)
+                    // console.log(assignment)
+                }
+
                 month++
             }
             year++
@@ -108,7 +117,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
 
         // Get availability
         const assignments = await strapi.service('api::assignment.assignment').find({
-            populate: ['rse']
+            populate: ['rse', 'project']
         })
 
         const capacities = await strapi.service('api::capacity.capacity').find({
