@@ -8,7 +8,8 @@ const { createCoreService } = require('@strapi/strapi').factories;
 const camelcaseKeys = require('camelcase-keys');
 const Hubspot = require('@hubspot/api-client');
 const hubspotClient = new Hubspot.Client({ apiKey: process.env.HUBSPOT_KEY });
-const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
+const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
+      contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(','),
       stages = {
         meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
         bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
@@ -20,12 +21,58 @@ const properties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
+// Holder for recursive project and contact lists
+let projects = [],
+    contacts = []
+
 // Invert stages to key by Hubspot stage names
 const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
 const hsStages = invert(stages)
 
 function formatDealStage(stage) {
   return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+}
+
+async function getDeals(after, limit, properties) {
+  try {
+    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts'], false);
+    projects = [...hsProjects.results]
+    if(hsProjects.paging) {
+      return getDeals(hsProjects.paging.next.after, limit, properties)
+    }
+    else {
+      return projects
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function getContacts(after, limit, properties, contactIDs) {
+  try {
+
+    const publicObjectSearchRequest = {
+      filterGroups: [{
+        filters: [
+          { propertyName: "hs_object_id", operator: "IN",  values: contactIDs },
+        ],
+      }],
+      properties,
+      limit,
+      after
+    };
+
+    let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest);
+    contacts = [...hsContacts.results]
+    if(hsContacts.paging) {
+      return getDeals(hsContacts.paging.next.after, limit, properties, filterGroups)
+    }
+    else {
+      return contacts
+    }
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
@@ -98,31 +145,59 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       ];
     }
 
-    const publicObjectSearchRequest = {
-      filterGroups: filterGroups,
-      sorts: [sort],
-      properties,
-      limit,
-      after,
-    };
+    let hsProjects = await getDeals(after, limit, dealProperties)
 
-    // Project list from HubSpot
-    const hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+    let contactAssociations = hsProjects.map(({associations})=>{ 
+      if(associations && associations.contacts) {
+        return associations.contacts.results
+      }
+      else {
+        return []
+      }
+    });
+
+    // Remove empty associations and map to array of IDs
+    let contactIDs = [].concat.apply([], contactAssociations).map(contact => {
+      return contact.id
+    })
+
+    const contacts = await getContacts(0, limit, contactProperties, contactIDs)
+ 
     // Project list from Strapi
     let sProjects = results
 
     // Clear results list ready for merging
     results = []
 
-    hsProjects.results.forEach((project) => {
+    hsProjects.forEach((project) => {
+
+      let projectContacts = []
+
+        if (project.associations) {
+          let associatedContacts = project.associations.contacts.results.map(contact => {
+            return contact.id
+          })
+
+          contacts.filter(contact => {
+            return associatedContacts.includes(contact.id)
+          }).forEach(contact => {
+            console.log(contact)
+            projectContacts.push({
+              id: contact.id,
+              firstname: contact.properties.firstname,
+              lastname: contact.properties.lastname,
+              email: contact.properties.email,
+              jobtitle: contact.properties.jobtitle,
+              department: contact.properties.department
+            })
+          })
+        }
 
         let result = project.properties
         result.id = project.id
-        result.propertiesWithHistory = project.propertiesWithHistory
         result.createdAt = project.createdAt
         result.updatedAt = project.updatedAt
-        result.archived = project.archived
-        result.archivedAt = project.archivedAt
+        result.contacts = projectContacts
 
         // Modify project stage
         result.dealstage = formatDealStage(result.dealstage)
@@ -137,12 +212,16 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         }
         else {
           console.error(`Project ${result.dealname} not found in Strapi database`)
+
+          if (result.dealstage !== "Submitted To Funder") {
+            // strapi.service('api::timesheet.timesheet').createClockifyProject(result);
+          }
         }
 
         results.push(camelcaseKeys(result))
     })
 
-    pagination.total = hsProjects.results.length
+    pagination.total = results.length
 
     return { results, pagination };
   },
