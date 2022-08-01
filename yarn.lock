@@ -1298,10 +1298,10 @@
   dependencies:
     prop-types "^15.8.1"
 
-"@hubspot/api-client@^6.0.1-beta3":
-  version "6.0.1-beta3"
-  resolved "https://registry.yarnpkg.com/@hubspot/api-client/-/api-client-6.0.1-beta3.tgz#078dcfe2c89c38fd50bba941ca9db29fc78f5861"
-  integrity sha512-3vicEz5qgKgaNw8l9eVdDjvkGtGMwJT264RVrJ94b58jeJDlCh22WXqVpp5i8j58TZQh+TIsXHV9imqqUyKiKQ==
+"@hubspot/api-client@^7.1.2":
+  version "7.1.2"
+  resolved "https://registry.yarnpkg.com/@hubspot/api-client/-/api-client-7.1.2.tgz#a405b0a18b8caa27f129fd510b2555e5a5cc2708"
+  integrity sha512-JVQqh0fdHf97ePk0Hg/7BJsiXNlS9HQRPiM/CLgvVWt5CIviSLQ/kHLZXREmZqTWu7BisjCgHxnSx/d7gRdr2g==
   dependencies:
     bluebird "^3.7.2"
     bottleneck "^2.19.5"
