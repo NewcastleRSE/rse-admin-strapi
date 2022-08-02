@@ -20,8 +20,9 @@ function getAvailability(rse, assignments, capacities) {
     if(contractEnd && contractEnd > lastAssignmentEnd) {
         assignmentsEnd = contractEnd
     }
+    // Contract is open-ended, extend 24 months into the future past last assignment end date
     else {
-        assignmentsEnd = lastAssignmentEnd
+        assignmentsEnd = lastAssignmentEnd.plus({years: 2})
     }
 
     let availability = {}
@@ -41,11 +42,18 @@ function getAvailability(rse, assignments, capacities) {
         startMonth++
     }
 
-    if(contractEnd) {
+    if(rse.contractEnd) {
         // Set months in final year before contract end to null
         let endMonth = 12
         while(endMonth > contractEnd.month) {
             availability[contractEnd.year][endMonth-1] = null
+            endMonth--
+        }
+    } else {
+        // Set months in final year of assignments end to null
+        let endMonth = 12
+        while(endMonth > assignmentsEnd.month) {
+            availability[assignmentsEnd.year][endMonth-1] = null
             endMonth--
         }
     }
@@ -143,14 +151,39 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
     
             let availability = getAvailability(rse, rseAssignments, rseCapacity)
 
-            let date = DateTime.now()
+            let date = DateTime.now(),
+                availabilityYears = Object.keys(availability),
+                availableYear = null,
+                availableMonth = null
 
-            let month = availability[date.year].findIndex(function(availability) {
-                return availability > 0;
-            });
+            for (const year of availabilityYears) { 
+                // Availability is this year on in future
+                if(parseInt(year) >= date.year) {
+                    let month = availability[year].findIndex(function(availability) {
+                        return availability > 0;
+                    });
+                    // Availability Found
+                    if(month > -1) {
+                        availableYear = parseInt(year)
+                        availableMonth = month + 1
+                        break
+                    }
+                }
+            }
+            if(availableMonth === null) {
+                if(rse.contractEnd) {
+                    let contractEndDate = DateTime.fromISO(rse.contractEnd)
+                    availableYear = contractEndDate.year
+                    availableMonth = contractEndDate.month 
+                }
+                else {
+                    console.error(`${rse.firstname} ${rse.lastname} has no availability` )
+                    console.log(availability)
+                }
+            }
 
-            rse.nextAvailableDate = new Date(Date.UTC(date.year, month, 1))
-            rse.nextAvailableFTE = availability[date.year][month]
+            rse.nextAvailableDate = DateTime.utc(availableYear, availableMonth, 1)
+            rse.nextAvailableFTE = availability[rse.nextAvailableDate.year][rse.nextAvailableDate.month]
             rse.availability = availability
 
             results.push(rse)
