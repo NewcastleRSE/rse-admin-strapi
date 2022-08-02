@@ -16,13 +16,20 @@ function getAvailability(rse, assignments, capacities) {
     let lastAssignmentEnd = assignments.length > 0 ? DateTime.fromISO(lastAssignment.toISOString()) : DateTime.now()
     let assignmentsEnd
 
-    // If RSE has fixed term contract and end is later than last assignment
+    // RSE has fixed term contract and end is later than last assignment
     if(contractEnd && contractEnd > lastAssignmentEnd) {
         assignmentsEnd = contractEnd
+        console.log(`${rse.firstname} ${rse.lastname}: Contract Ends ${assignmentsEnd}`)
+    }
+    // RSE has fixed term contract and end is earlier than last assignment
+    else if(contractEnd && contractEnd < lastAssignment) {
+        assignmentsEnd = lastAssignmentEnd
+        console.log(`${rse.firstname} ${rse.lastname}: Assignment Ends  ${assignmentsEnd}`)
     }
     // Contract is open-ended, extend 24 months into the future past last assignment end date
     else {
         assignmentsEnd = lastAssignmentEnd.plus({years: 2})
+        console.log(`${rse.firstname} ${rse.lastname}: Open Ended  ${assignmentsEnd}`)
     }
 
     let availability = {}
@@ -151,7 +158,8 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
     
             let availability = getAvailability(rse, rseAssignments, rseCapacity),
                 currentDate = DateTime.now(),
-                nextAvailableDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null
+                contractEndDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null,
+                nextAvailableDate = null
 
             let year = currentDate.year,
                 month = null
@@ -185,11 +193,12 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
             }
             // RSE has no availability
             else {
-                console.error(`${rse.firstname} ${rse.lastname} has no availability` )
-                console.log(availability)
+                if(contractEndDate > currentDate) {
+                    console.error(`${rse.firstname} ${rse.lastname} has no availability` )
+                }
             }
 
-            rse.nextAvailableDate = nextAvailableDate.toISODate()
+            rse.nextAvailableDate = nextAvailableDate ? nextAvailableDate.toISODate() : null
             rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
 
