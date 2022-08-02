@@ -19,17 +19,17 @@ function getAvailability(rse, assignments, capacities) {
     // RSE has fixed term contract and end is later than last assignment
     if(contractEnd && contractEnd > lastAssignmentEnd) {
         assignmentsEnd = contractEnd
-        console.log(`${rse.firstname} ${rse.lastname}: Contract Ends ${assignmentsEnd}`)
+        // console.log(`${rse.firstname} ${rse.lastname}: Contract Ends ${assignmentsEnd}`)
     }
     // RSE has fixed term contract and end is earlier than last assignment
     else if(contractEnd && contractEnd < lastAssignment) {
         assignmentsEnd = lastAssignmentEnd
-        console.log(`${rse.firstname} ${rse.lastname}: Assignment Ends  ${assignmentsEnd}`)
+        // console.log(`${rse.firstname} ${rse.lastname}: Assignment Ends  ${assignmentsEnd}`)
     }
     // Contract is open-ended, extend 24 months into the future past last assignment end date
     else {
         assignmentsEnd = lastAssignmentEnd.plus({years: 2})
-        console.log(`${rse.firstname} ${rse.lastname}: Open Ended  ${assignmentsEnd}`)
+       // console.log(`${rse.firstname} ${rse.lastname}: Open Ended  ${assignmentsEnd}`)
     }
 
     let availability = {}
@@ -171,7 +171,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 
                 // If current year set start of next month
                 if(year === currentDate.year) {
-                    i = currentDate.month
+                    i = currentDate.month - 1
                 }
                 
                 // Loop over months in year
@@ -189,7 +189,12 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
             
             // Availability found, create date object
             if(month) {
-                nextAvailableDate = DateTime.utc(year, month, 1)
+                let day = 1
+                if(currentDate.year === year && currentDate.month === month) {
+                    day = currentDate.day
+                }
+                nextAvailableDate = DateTime.utc(year, month, day)
+                // console.log(`${rse.firstname} ${rse.lastname} ${nextAvailableDate.toISODate()}`)
             }
             // RSE has no availability
             else {
