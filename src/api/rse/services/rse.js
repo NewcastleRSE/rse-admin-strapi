@@ -149,41 +149,48 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 return capacity.rse.id === rse.id
             })
     
-            let availability = getAvailability(rse, rseAssignments, rseCapacity)
+            let availability = getAvailability(rse, rseAssignments, rseCapacity),
+                currentDate = DateTime.now(),
+                nextAvailableDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null
 
-            let date = DateTime.now(),
-                availabilityYears = Object.keys(availability),
-                availableYear = null,
-                availableMonth = null
+            let year = currentDate.year,
+                month = null
 
-            for (const year of availabilityYears) { 
-                // Availability is this year on in future
-                if(parseInt(year) >= date.year) {
-                    let month = availability[year].findIndex(function(availability) {
-                        return availability > 0;
-                    });
-                    // Availability Found
-                    if(month > -1) {
-                        availableYear = parseInt(year)
-                        availableMonth = month + 1
+            // Loop over years starting from current year
+            while(year < Math.max(...Object.keys(availability).map(Number))) {
+                
+                let i = 0
+                
+                // If current year set start of next month
+                if(year === currentDate.year) {
+                    i = currentDate.month
+                }
+                
+                // Loop over months in year
+                for(i; i<availability[year].length; i++) {
+                    // If availability found set month from index and break out of loop
+                    if(availability[year][i] > 0) {
+                        month = i + 1
                         break
                     }
                 }
+                // If month has been set break out of loop
+                if(month) { break }
+                year++
             }
-            if(availableMonth === null) {
-                if(rse.contractEnd) {
-                    let contractEndDate = DateTime.fromISO(rse.contractEnd)
-                    availableYear = contractEndDate.year
-                    availableMonth = contractEndDate.month 
-                }
-                else {
-                    console.error(`${rse.firstname} ${rse.lastname} has no availability` )
-                    console.log(availability)
-                }
+            
+            // Availability found, create date object
+            if(month) {
+                nextAvailableDate = DateTime.utc(year, month, 1)
+            }
+            // RSE has no availability
+            else {
+                console.error(`${rse.firstname} ${rse.lastname} has no availability` )
+                console.log(availability)
             }
 
-            rse.nextAvailableDate = DateTime.utc(availableYear, availableMonth, 1)
-            rse.nextAvailableFTE = availability[rse.nextAvailableDate.year][rse.nextAvailableDate.month]
+            rse.nextAvailableDate = nextAvailableDate.toISODate()
+            rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
 
             results.push(rse)
