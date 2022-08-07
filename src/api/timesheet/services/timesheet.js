@@ -29,7 +29,7 @@ const apiConfig = {
     }
 }
 const reportConfig = {
-    baseURL: `https://reports.api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}/reports`,
+    baseURL: `https://reports.api.clockify.me/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}/reports`,
     headers: {
         'X-Api-Key': process.env.CLOCKIFY_KEY
     }
@@ -38,10 +38,10 @@ const reportConfig = {
 module.exports = {
     async findAll (...args) {
         const payload = {
-            dateRangeStart: DateTime.now().startOf('day').minus({days: 30}),
-            dateRangeEnd: DateTime.now().endOf('day'),
+            dateRangeStart: (DateTime.utc().startOf('day').minus({days: 30})).toISO(),
+            dateRangeEnd: (DateTime.utc().endOf('day')).toISO(),
             summaryFilter: {
-                groups: ['USER']
+                groups: ['USER', 'PROJECT']
             }
         }
         try {
@@ -51,17 +51,16 @@ module.exports = {
             console.error(error)
         }
     },
-    async findOne(...args) {
-
+    async findOne(userID) {
         const payload = {
-            dateRangeStart: DateTime.now().startOf('day').minus({days: 30}),
-            dateRangeEnd: DateTime.now().endOf('day'),
+            dateRangeStart: DateTime.utc().startOf('day').minus({days: 30}).toISO(),
+            dateRangeEnd: DateTime.utc().endOf('day').toISO(),
             detailedFilter: {
                 page: 1,
                 pageSize: 100
             },
             users: {
-                ids: [args[0].userID],
+                ids: [userID],
                 contains: 'CONTAINS',
                 status: 'ALL'
             }
