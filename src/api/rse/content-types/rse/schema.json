@@ -67,7 +67,7 @@
       "required": true
     },
     "clockifyID": {
-      "type": "biginteger",
+      "type": "string",
       "unique": true
     }
   }
