@@ -36,7 +36,7 @@ function formatDealStage(stage) {
 async function getDeals(after, limit, properties) {
   try {
     let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts'], false);
-    projects = [...hsProjects.results]
+    projects = projects.concat(hsProjects.results)
     if(hsProjects.paging) {
       return getDeals(hsProjects.paging.next.after, limit, properties)
     }
@@ -106,7 +106,12 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       return contact.id
     })
 
-    const contacts = await getContacts(0, limit, contactProperties, contactIDs)
+    let contacts = []
+
+    // Can only fetch 100 contacts at once, so run in loops to segment requests
+    for (let i = 0; i < contactIDs.length; i = i+100) {
+      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100)))
+    }
  
     // Project list from Strapi
     let sProjects = results

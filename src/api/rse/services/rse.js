@@ -16,12 +16,20 @@ function getAvailability(rse, assignments, capacities) {
     let lastAssignmentEnd = assignments.length > 0 ? DateTime.fromISO(lastAssignment.toISOString()) : DateTime.now()
     let assignmentsEnd
 
-    // If RSE has fixed term contract and end is later than last assignment
+    // RSE has fixed term contract and end is later than last assignment
     if(contractEnd && contractEnd > lastAssignmentEnd) {
         assignmentsEnd = contractEnd
+        // console.log(`${rse.firstname} ${rse.lastname}: Contract Ends ${assignmentsEnd}`)
     }
-    else {
+    // RSE has fixed term contract and end is earlier than last assignment
+    else if(contractEnd && contractEnd < lastAssignment) {
         assignmentsEnd = lastAssignmentEnd
+        // console.log(`${rse.firstname} ${rse.lastname}: Assignment Ends  ${assignmentsEnd}`)
+    }
+    // Contract is open-ended, extend 24 months into the future past last assignment end date
+    else {
+        assignmentsEnd = lastAssignmentEnd.plus({years: 2})
+       // console.log(`${rse.firstname} ${rse.lastname}: Open Ended  ${assignmentsEnd}`)
     }
 
     let availability = {}
@@ -41,11 +49,18 @@ function getAvailability(rse, assignments, capacities) {
         startMonth++
     }
 
-    if(contractEnd) {
+    if(rse.contractEnd) {
         // Set months in final year before contract end to null
         let endMonth = 12
         while(endMonth > contractEnd.month) {
             availability[contractEnd.year][endMonth-1] = null
+            endMonth--
+        }
+    } else {
+        // Set months in final year of assignments end to null
+        let endMonth = 12
+        while(endMonth > assignmentsEnd.month) {
+            availability[assignmentsEnd.year][endMonth-1] = null
             endMonth--
         }
     }
@@ -141,16 +156,55 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 return capacity.rse.id === rse.id
             })
     
-            let availability = getAvailability(rse, rseAssignments, rseCapacity)
+            let availability = getAvailability(rse, rseAssignments, rseCapacity),
+                currentDate = DateTime.now(),
+                contractEndDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null,
+                nextAvailableDate = null
 
-            let date = DateTime.now()
+            let year = currentDate.year,
+                month = null
 
-            let month = availability[date.year].findIndex(function(availability) {
-                return availability > 0;
-            });
+            // Loop over years starting from current year
+            while(year < Math.max(...Object.keys(availability).map(Number))) {
+                
+                let i = 0
+                
+                // If current year set start of next month
+                if(year === currentDate.year) {
+                    i = currentDate.month - 1
+                }
+                
+                // Loop over months in year
+                for(i; i<availability[year].length; i++) {
+                    // If availability found set month from index and break out of loop
+                    if(availability[year][i] > 0) {
+                        month = i + 1
+                        break
+                    }
+                }
+                // If month has been set break out of loop
+                if(month) { break }
+                year++
+            }
+            
+            // Availability found, create date object
+            if(month) {
+                let day = 1
+                if(currentDate.year === year && currentDate.month === month) {
+                    day = currentDate.day
+                }
+                nextAvailableDate = DateTime.utc(year, month, day)
+                // console.log(`${rse.firstname} ${rse.lastname} ${nextAvailableDate.toISODate()}`)
+            }
+            // RSE has no availability
+            else {
+                if(contractEndDate > currentDate) {
+                    console.error(`${rse.firstname} ${rse.lastname} has no availability` )
+                }
+            }
 
-            rse.nextAvailableDate = new Date(Date.UTC(date.year, month, 1))
-            rse.nextAvailableFTE = availability[date.year][month]
+            rse.nextAvailableDate = nextAvailableDate ? nextAvailableDate.toISODate() : null
+            rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
 
             results.push(rse)

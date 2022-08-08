@@ -14,5 +14,13 @@ module.exports = {
       ctx.body = err;
       console.error(err)
     }
+  },
+  findOne: async (ctx, next) => {
+    try {
+      ctx.body = await service.findOne(ctx.params.id)
+    } catch (err) {
+      ctx.body = err;
+      console.error(err)
+    }
   }
 };

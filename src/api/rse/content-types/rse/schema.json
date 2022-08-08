@@ -60,6 +60,15 @@
       "relation": "oneToMany",
       "target": "api::capacity.capacity",
       "mappedBy": "rse"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "clockifyID": {
+      "type": "string",
+      "unique": true
     }
   }
 }
