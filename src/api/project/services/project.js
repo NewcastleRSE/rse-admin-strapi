@@ -30,7 +30,14 @@ const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse(
 const hsStages = invert(stages)
 
 function formatDealStage(stage) {
-  return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+  if(stage && hsStages[stage]) {
+    return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+  }
+  else {
+    console.log(stage)
+    console.log(hsStages)
+    return stage
+  }
 }
 
 async function getDeals(after, limit, properties) {
