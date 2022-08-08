@@ -111,7 +111,7 @@ module.exports = {
                     public: true
                 }
                 
-                const response = await axios.post(`/projects`, project, axiosConfig)
+                const response = await axios.post(`/projects`, project, apiConfig)
                 resolve(response.data)
             } catch (error) {
                 reject(error)
