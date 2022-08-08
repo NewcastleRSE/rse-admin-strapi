@@ -46,7 +46,10 @@ module.exports = {
         }
         try {
             const response = await axios.post(`/summary`, payload, reportConfig)
-            return response.data
+            return {
+                totals: response.data.totals,
+                team: response.data.groupOne
+            }
         } catch (error) {
             console.error(error)
         }
