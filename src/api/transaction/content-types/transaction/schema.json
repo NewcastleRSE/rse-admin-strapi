@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "transactions",
+  "info": {
+    "singularName": "transaction",
+    "pluralName": "transactions",
+    "displayName": "Transaction"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "CostElement": {
+      "type": "biginteger",
+      "required": true
+    },
+    "CostElementDescription": {
+      "type": "string",
+      "required": true
+    },
+    "ReferenceDocumentNumber": {
+      "type": "biginteger",
+      "required": true
+    },
+    "DocumentHeaderText": {
+      "type": "string"
+    },
+    "Name": {
+      "type": "string"
+    },
+    "DocumentDate": {
+      "type": "date",
+      "required": true
+    },
+    "PostingDate": {
+      "type": "date",
+      "required": true
+    },
+    "Value": {
+      "type": "decimal",
+      "required": true
+    },
+    "BWCategory": {
+      "type": "string",
+      "required": true
+    },
+    "IncomeExpenditure": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
