@@ -18,6 +18,10 @@ module.exports = createCoreController('api::transaction.transaction', ({ strapi 
           entity = await strapi.service('api::transaction.transaction').upload(file)
         }
 
+        if(entity.error) {
+          return ctx.badRequest(entity.error)
+        }
+
         const sanitizedEntity = await this.sanitizeOutput(entity, ctx);
 
         return this.transformResponse(sanitizedEntity);
