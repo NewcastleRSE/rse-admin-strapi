@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2022-08-10T21:24:00.930Z"
+    "x-generation-date": "2022-08-11T07:47:17.905Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -5225,52 +5225,52 @@
         "properties": {
           "data": {
             "required": [
-              "CostElement",
-              "CostElementDescription",
-              "ReferenceDocumentNumber",
-              "DocumentDate",
-              "PostingDate",
-              "Value",
-              "BWCategory",
-              "IncomeExpenditure"
+              "costElement",
+              "costElementDescription",
+              "documentNumber",
+              "documentDate",
+              "postedDate",
+              "value",
+              "bwCategory",
+              "ieCategory"
             ],
             "type": "object",
             "properties": {
-              "CostElement": {
+              "costElement": {
                 "type": "string",
                 "pattern": "^\\d*$",
                 "example": "123456789"
               },
-              "CostElementDescription": {
+              "costElementDescription": {
                 "type": "string"
               },
-              "ReferenceDocumentNumber": {
+              "documentNumber": {
                 "type": "string",
                 "pattern": "^\\d*$",
                 "example": "123456789"
               },
-              "DocumentHeaderText": {
+              "documentHeader": {
                 "type": "string"
               },
-              "Name": {
+              "name": {
                 "type": "string"
               },
-              "DocumentDate": {
+              "documentDate": {
                 "type": "string",
                 "format": "date"
               },
-              "PostingDate": {
+              "postedDate": {
                 "type": "string",
                 "format": "date"
               },
-              "Value": {
+              "value": {
                 "type": "number",
                 "format": "float"
               },
-              "BWCategory": {
+              "bwCategory": {
                 "type": "string"
               },
-              "IncomeExpenditure": {
+              "ieCategory": {
                 "type": "string"
               }
             }
@@ -5291,41 +5291,41 @@
                 "attributes": {
                   "type": "object",
                   "properties": {
-                    "CostElement": {
+                    "costElement": {
                       "type": "string",
                       "pattern": "^\\d*$",
                       "example": "123456789"
                     },
-                    "CostElementDescription": {
+                    "costElementDescription": {
                       "type": "string"
                     },
-                    "ReferenceDocumentNumber": {
+                    "documentNumber": {
                       "type": "string",
                       "pattern": "^\\d*$",
                       "example": "123456789"
                     },
-                    "DocumentHeaderText": {
+                    "documentHeader": {
                       "type": "string"
                     },
-                    "Name": {
+                    "name": {
                       "type": "string"
                     },
-                    "DocumentDate": {
+                    "documentDate": {
                       "type": "string",
                       "format": "date"
                     },
-                    "PostingDate": {
+                    "postedDate": {
                       "type": "string",
                       "format": "date"
                     },
-                    "Value": {
+                    "value": {
                       "type": "number",
                       "format": "float"
                     },
-                    "BWCategory": {
+                    "bwCategory": {
                       "type": "string"
                     },
-                    "IncomeExpenditure": {
+                    "ieCategory": {
                       "type": "string"
                     },
                     "createdAt": {
@@ -5667,41 +5667,41 @@
               "attributes": {
                 "type": "object",
                 "properties": {
-                  "CostElement": {
+                  "costElement": {
                     "type": "string",
                     "pattern": "^\\d*$",
                     "example": "123456789"
                   },
-                  "CostElementDescription": {
+                  "costElementDescription": {
                     "type": "string"
                   },
-                  "ReferenceDocumentNumber": {
+                  "documentNumber": {
                     "type": "string",
                     "pattern": "^\\d*$",
                     "example": "123456789"
                   },
-                  "DocumentHeaderText": {
+                  "documentHeader": {
                     "type": "string"
                   },
-                  "Name": {
+                  "name": {
                     "type": "string"
                   },
-                  "DocumentDate": {
+                  "documentDate": {
                     "type": "string",
                     "format": "date"
                   },
-                  "PostingDate": {
+                  "postedDate": {
                     "type": "string",
                     "format": "date"
                   },
-                  "Value": {
+                  "value": {
                     "type": "number",
                     "format": "float"
                   },
-                  "BWCategory": {
+                  "bwCategory": {
                     "type": "string"
                   },
-                  "IncomeExpenditure": {
+                  "ieCategory": {
                     "type": "string"
                   },
                   "createdAt": {
