@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2022-08-11T07:47:17.905Z"
+    "x-generation-date": "2022-08-11T07:52:21.161Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -5232,7 +5232,9 @@
               "postedDate",
               "value",
               "bwCategory",
-              "ieCategory"
+              "ieCategory",
+              "FiscalYear",
+              "FiscalPeriod"
             ],
             "type": "object",
             "properties": {
@@ -5272,6 +5274,12 @@
               },
               "ieCategory": {
                 "type": "string"
+              },
+              "FiscalYear": {
+                "type": "integer"
+              },
+              "FiscalPeriod": {
+                "type": "integer"
               }
             }
           }
@@ -5327,6 +5335,12 @@
                     },
                     "ieCategory": {
                       "type": "string"
+                    },
+                    "FiscalYear": {
+                      "type": "integer"
+                    },
+                    "FiscalPeriod": {
+                      "type": "integer"
                     },
                     "createdAt": {
                       "type": "string",
@@ -5703,6 +5717,12 @@
                   },
                   "ieCategory": {
                     "type": "string"
+                  },
+                  "FiscalYear": {
+                    "type": "integer"
+                  },
+                  "FiscalPeriod": {
+                    "type": "integer"
                   },
                   "createdAt": {
                     "type": "string",

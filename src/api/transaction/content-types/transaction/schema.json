@@ -49,6 +49,14 @@
     "ieCategory": {
       "type": "string",
       "required": true
+    },
+    "FiscalYear": {
+      "type": "integer",
+      "required": true
+    },
+    "FiscalPeriod": {
+      "type": "integer",
+      "required": true
     }
   }
 }
