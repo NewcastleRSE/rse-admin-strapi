@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2022-08-10T14:26:46.806Z"
+    "x-generation-date": "2022-08-12T05:08:04.150Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -5225,53 +5225,61 @@
         "properties": {
           "data": {
             "required": [
-              "CostElement",
-              "CostElementDescription",
-              "ReferenceDocumentNumber",
-              "DocumentDate",
-              "PostingDate",
-              "Value",
-              "BWCategory",
-              "IncomeExpenditure"
+              "costElement",
+              "costElementDescription",
+              "documentNumber",
+              "documentDate",
+              "postedDate",
+              "value",
+              "bwCategory",
+              "ieCategory",
+              "FiscalYear",
+              "FiscalPeriod"
             ],
             "type": "object",
             "properties": {
-              "CostElement": {
+              "costElement": {
                 "type": "string",
                 "pattern": "^\\d*$",
                 "example": "123456789"
               },
-              "CostElementDescription": {
+              "costElementDescription": {
                 "type": "string"
               },
-              "ReferenceDocumentNumber": {
+              "documentNumber": {
                 "type": "string",
                 "pattern": "^\\d*$",
                 "example": "123456789"
               },
-              "DocumentHeaderText": {
+              "documentHeader": {
                 "type": "string"
               },
-              "Name": {
+              "name": {
                 "type": "string"
               },
-              "DocumentDate": {
+              "documentDate": {
                 "type": "string",
                 "format": "date"
               },
-              "PostingDate": {
+              "postedDate": {
                 "type": "string",
                 "format": "date"
               },
-              "Value": {
+              "value": {
                 "type": "number",
                 "format": "float"
               },
-              "BWCategory": {
+              "bwCategory": {
                 "type": "string"
               },
-              "IncomeExpenditure": {
+              "ieCategory": {
                 "type": "string"
+              },
+              "FiscalYear": {
+                "type": "integer"
+              },
+              "FiscalPeriod": {
+                "type": "integer"
               }
             }
           }
@@ -5291,52 +5299,54 @@
                 "attributes": {
                   "type": "object",
                   "properties": {
-                    "CostElement": {
+                    "costElement": {
                       "type": "string",
                       "pattern": "^\\d*$",
                       "example": "123456789"
                     },
-                    "CostElementDescription": {
+                    "costElementDescription": {
                       "type": "string"
                     },
-                    "ReferenceDocumentNumber": {
+                    "documentNumber": {
                       "type": "string",
                       "pattern": "^\\d*$",
                       "example": "123456789"
                     },
-                    "DocumentHeaderText": {
+                    "documentHeader": {
                       "type": "string"
                     },
-                    "Name": {
+                    "name": {
                       "type": "string"
                     },
-                    "DocumentDate": {
+                    "documentDate": {
                       "type": "string",
                       "format": "date"
                     },
-                    "PostingDate": {
+                    "postedDate": {
                       "type": "string",
                       "format": "date"
                     },
-                    "Value": {
+                    "value": {
                       "type": "number",
                       "format": "float"
                     },
-                    "BWCategory": {
+                    "bwCategory": {
                       "type": "string"
                     },
-                    "IncomeExpenditure": {
+                    "ieCategory": {
                       "type": "string"
+                    },
+                    "FiscalYear": {
+                      "type": "integer"
+                    },
+                    "FiscalPeriod": {
+                      "type": "integer"
                     },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "publishedAt": {
                       "type": "string",
                       "format": "date-time"
                     },
@@ -5667,52 +5677,54 @@
               "attributes": {
                 "type": "object",
                 "properties": {
-                  "CostElement": {
+                  "costElement": {
                     "type": "string",
                     "pattern": "^\\d*$",
                     "example": "123456789"
                   },
-                  "CostElementDescription": {
+                  "costElementDescription": {
                     "type": "string"
                   },
-                  "ReferenceDocumentNumber": {
+                  "documentNumber": {
                     "type": "string",
                     "pattern": "^\\d*$",
                     "example": "123456789"
                   },
-                  "DocumentHeaderText": {
+                  "documentHeader": {
                     "type": "string"
                   },
-                  "Name": {
+                  "name": {
                     "type": "string"
                   },
-                  "DocumentDate": {
+                  "documentDate": {
                     "type": "string",
                     "format": "date"
                   },
-                  "PostingDate": {
+                  "postedDate": {
                     "type": "string",
                     "format": "date"
                   },
-                  "Value": {
+                  "value": {
                     "type": "number",
                     "format": "float"
                   },
-                  "BWCategory": {
+                  "bwCategory": {
                     "type": "string"
                   },
-                  "IncomeExpenditure": {
+                  "ieCategory": {
                     "type": "string"
+                  },
+                  "FiscalYear": {
+                    "type": "integer"
+                  },
+                  "FiscalPeriod": {
+                    "type": "integer"
                   },
                   "createdAt": {
                     "type": "string",
                     "format": "date-time"
                   },
                   "updatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "publishedAt": {
                     "type": "string",
                     "format": "date-time"
                   },
@@ -14814,6 +14826,87 @@
           }
         ],
         "operationId": "delete/transactions/{id}"
+      }
+    },
+    "/transactions/upload": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Transaction"
+        ],
+        "parameters": [],
+        "operationId": "post/transactions/upload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/upload/files": {

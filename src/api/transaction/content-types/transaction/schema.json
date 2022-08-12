@@ -4,49 +4,58 @@
   "info": {
     "singularName": "transaction",
     "pluralName": "transactions",
-    "displayName": "Transaction"
+    "displayName": "Transaction",
+    "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "CostElement": {
+    "costElement": {
       "type": "biginteger",
       "required": true
     },
-    "CostElementDescription": {
+    "costElementDescription": {
       "type": "string",
       "required": true
     },
-    "ReferenceDocumentNumber": {
+    "documentNumber": {
       "type": "biginteger",
       "required": true
     },
-    "DocumentHeaderText": {
+    "documentHeader": {
       "type": "string"
     },
-    "Name": {
+    "name": {
       "type": "string"
     },
-    "DocumentDate": {
+    "documentDate": {
       "type": "date",
       "required": true
     },
-    "PostingDate": {
+    "postedDate": {
       "type": "date",
       "required": true
     },
-    "Value": {
+    "value": {
       "type": "decimal",
       "required": true
     },
-    "BWCategory": {
+    "bwCategory": {
       "type": "string",
       "required": true
     },
-    "IncomeExpenditure": {
+    "ieCategory": {
       "type": "string",
+      "required": true
+    },
+    "FiscalYear": {
+      "type": "integer",
+      "required": true
+    },
+    "FiscalPeriod": {
+      "type": "integer",
       "required": true
     }
   }
