@@ -3,7 +3,7 @@
 /**
  * transaction service.
  */
-
+const { DateTime } = require('luxon')
 const { createCoreService } = require('@strapi/strapi').factories;
 const ExcelJS = require('exceljs')
 const WorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
@@ -17,7 +17,9 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
 
         let transactions = []
 
-        worksheet.eachRow(function(row, rowNumber) {
+        // strapi.query('api::transaction.transaction').delete({ id_null: false })
+
+        worksheet.eachRow(async function(row, rowNumber) {
             if(rowNumber === 1) {
 
                 // Is the first row the same as we're expecting, if not bail out
@@ -34,14 +36,19 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     name: row.values[7],
                     fiscalYear: Number(row.values[8]),
                     fiscalMonth: Number(row.values[9]),
-                    documentDate: row.values[10], 	
-                    postedDate: row.values[11],
+                    documentDate: DateTime.fromJSDate(new Date(row.values[10])).toISODate(), 	
+                    postedDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(),
                     value: parseFloat(row.values[12]),
                     bwCategory: row.values[13].result, 	
                     ieCategory: row.values[14].result
                 })
             }
         })
-        return { transactions }
+
+        let count = await strapi.db.query('api::transaction.transaction').createMany({
+            data: transactions
+          });
+
+        return { message: 'Successfully uploaded transaction data', count: count }
       },
 }))
