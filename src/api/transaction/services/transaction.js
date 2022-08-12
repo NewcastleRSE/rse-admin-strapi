@@ -56,6 +56,6 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             data: transactions
           });
 
-        return { message: 'Successfully uploaded transaction data', count: count }
+        return { message: 'Successfully uploaded transaction data', count }
       },
 }))
