@@ -17,7 +17,14 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
 
         let transactions = []
 
-        // strapi.query('api::transaction.transaction').delete({ id_null: false })
+        // clear all previous transactions; ID is always not null
+        await strapi.db.query('api::transaction.transaction').deleteMany({
+            where: {
+              id: {
+                $notNull: true,
+              },
+            },
+        });
 
         worksheet.eachRow(async function(row, rowNumber) {
             if(rowNumber === 1) {
