@@ -50,11 +50,11 @@
       "type": "string",
       "required": true
     },
-    "FiscalYear": {
+    "fiscalYear": {
       "type": "integer",
       "required": true
     },
-    "FiscalPeriod": {
+    "fiscalPeriod": {
       "type": "integer",
       "required": true
     }

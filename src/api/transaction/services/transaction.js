@@ -42,7 +42,7 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     documentHeader: row.values[6],
                     name: row.values[7],
                     fiscalYear: Number(row.values[8]),
-                    fiscalMonth: Number(row.values[9]),
+                    fiscalPeriod: Number(row.values[9]),
                     documentDate: DateTime.fromJSDate(new Date(row.values[10])).toISODate(), 	
                     postedDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(),
                     value: parseFloat(row.values[12]),
