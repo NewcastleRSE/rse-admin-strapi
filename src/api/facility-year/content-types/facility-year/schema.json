@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "facility_years",
+  "info": {
+    "singularName": "facility-year",
+    "pluralName": "facility-years",
+    "displayName": "Facility"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "year": {
+      "type": "integer",
+      "required": true,
+      "min": 2020,
+      "unique": true
+    },
+    "salaryCosts": {
+      "type": "biginteger",
+      "required": true
+    },
+    "nonSalaryCosts": {
+      "type": "biginteger",
+      "required": true
+    },
+    "estatesCosts": {
+      "type": "biginteger",
+      "required": true
+    },
+    "annualCapacity": {
+      "type": "integer",
+      "required": true
+    },
+    "annualUseage": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}
