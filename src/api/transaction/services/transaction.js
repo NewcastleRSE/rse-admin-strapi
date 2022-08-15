@@ -46,8 +46,8 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     documentDate: DateTime.fromJSDate(new Date(row.values[10])).toISODate(), 	
                     postedDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(),
                     value: parseFloat(row.values[12]),
-                    bwCategory: row.values[13].result, 	
-                    ieCategory: row.values[14].result
+                    bwCategory: Object.hasOwnProperty(row.values[13], 'result') ? row.values[13].result : row.values[13], 	
+                    ieCategory: Object.hasOwnProperty(row.values[14], 'result') ? row.values[14].result : row.values[14]
                 })
             }
         })
