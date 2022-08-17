@@ -1,5 +1,5 @@
 {
-  "/facility-years": {
+  "/facilities": {
     "get": {
       "responses": {
         "200": {
@@ -7,7 +7,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearListResponse"
+                "$ref": "#/components/schemas/FacilityListResponse"
               }
             }
           }
@@ -64,7 +64,7 @@
         }
       },
       "tags": [
-        "Facility-year"
+        "Facility"
       ],
       "parameters": [
         {
@@ -148,7 +148,7 @@
           }
         }
       ],
-      "operationId": "get/facility-years"
+      "operationId": "get/facilities"
     },
     "post": {
       "responses": {
@@ -157,7 +157,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearResponse"
+                "$ref": "#/components/schemas/FacilityResponse"
               }
             }
           }
@@ -214,23 +214,23 @@
         }
       },
       "tags": [
-        "Facility-year"
+        "Facility"
       ],
       "parameters": [],
-      "operationId": "post/facility-years",
+      "operationId": "post/facilities",
       "requestBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/FacilityYearRequest"
+              "$ref": "#/components/schemas/FacilityRequest"
             }
           }
         }
       }
     }
   },
-  "/facility-years/{id}": {
+  "/facilities/{id}": {
     "get": {
       "responses": {
         "200": {
@@ -238,7 +238,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearResponse"
+                "$ref": "#/components/schemas/FacilityResponse"
               }
             }
           }
@@ -295,7 +295,7 @@
         }
       },
       "tags": [
-        "Facility-year"
+        "Facility"
       ],
       "parameters": [
         {
@@ -309,7 +309,7 @@
           }
         }
       ],
-      "operationId": "get/facility-years/{id}"
+      "operationId": "get/facilities/{id}"
     },
     "put": {
       "responses": {
@@ -318,7 +318,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearResponse"
+                "$ref": "#/components/schemas/FacilityResponse"
               }
             }
           }
@@ -375,7 +375,7 @@
         }
       },
       "tags": [
-        "Facility-year"
+        "Facility"
       ],
       "parameters": [
         {
@@ -389,13 +389,13 @@
           }
         }
       ],
-      "operationId": "put/facility-years/{id}",
+      "operationId": "put/facilities/{id}",
       "requestBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/FacilityYearRequest"
+              "$ref": "#/components/schemas/FacilityRequest"
             }
           }
         }
@@ -466,7 +466,7 @@
         }
       },
       "tags": [
-        "Facility-year"
+        "Facility"
       ],
       "parameters": [
         {
@@ -480,7 +480,7 @@
           }
         }
       ],
-      "operationId": "delete/facility-years/{id}"
+      "operationId": "delete/facilities/{id}"
     }
   }
 }

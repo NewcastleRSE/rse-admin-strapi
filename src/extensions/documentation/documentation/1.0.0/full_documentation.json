@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2022-08-15T21:37:41.881Z"
+    "x-generation-date": "2022-08-16T04:53:04.340Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -2957,7 +2957,7 @@
           }
         }
       },
-      "FacilityYearRequest": {
+      "FacilityRequest": {
         "type": "object",
         "required": [
           "data"
@@ -2970,7 +2970,8 @@
               "nonSalaryCosts",
               "estatesCosts",
               "annualCapacity",
-              "annualUseage"
+              "annualUseage",
+              "dayRate"
             ],
             "type": "object",
             "properties": {
@@ -2978,31 +2979,29 @@
                 "type": "integer"
               },
               "salaryCosts": {
-                "type": "string",
-                "pattern": "^\\d*$",
-                "example": "123456789"
+                "type": "integer"
               },
               "nonSalaryCosts": {
-                "type": "string",
-                "pattern": "^\\d*$",
-                "example": "123456789"
+                "type": "integer"
               },
               "estatesCosts": {
-                "type": "string",
-                "pattern": "^\\d*$",
-                "example": "123456789"
+                "type": "integer"
               },
               "annualCapacity": {
                 "type": "integer"
               },
               "annualUseage": {
                 "type": "integer"
+              },
+              "dayRate": {
+                "type": "number",
+                "format": "float"
               }
             }
           }
         }
       },
-      "FacilityYearListResponse": {
+      "FacilityListResponse": {
         "type": "object",
         "properties": {
           "data": {
@@ -3020,25 +3019,23 @@
                       "type": "integer"
                     },
                     "salaryCosts": {
-                      "type": "string",
-                      "pattern": "^\\d*$",
-                      "example": "123456789"
+                      "type": "integer"
                     },
                     "nonSalaryCosts": {
-                      "type": "string",
-                      "pattern": "^\\d*$",
-                      "example": "123456789"
+                      "type": "integer"
                     },
                     "estatesCosts": {
-                      "type": "string",
-                      "pattern": "^\\d*$",
-                      "example": "123456789"
+                      "type": "integer"
                     },
                     "annualCapacity": {
                       "type": "integer"
                     },
                     "annualUseage": {
                       "type": "integer"
+                    },
+                    "dayRate": {
+                      "type": "number",
+                      "format": "float"
                     },
                     "createdAt": {
                       "type": "string",
@@ -3363,7 +3360,7 @@
           }
         }
       },
-      "FacilityYearResponse": {
+      "FacilityResponse": {
         "type": "object",
         "properties": {
           "data": {
@@ -3379,25 +3376,23 @@
                     "type": "integer"
                   },
                   "salaryCosts": {
-                    "type": "string",
-                    "pattern": "^\\d*$",
-                    "example": "123456789"
+                    "type": "integer"
                   },
                   "nonSalaryCosts": {
-                    "type": "string",
-                    "pattern": "^\\d*$",
-                    "example": "123456789"
+                    "type": "integer"
                   },
                   "estatesCosts": {
-                    "type": "string",
-                    "pattern": "^\\d*$",
-                    "example": "123456789"
+                    "type": "integer"
                   },
                   "annualCapacity": {
                     "type": "integer"
                   },
                   "annualUseage": {
                     "type": "integer"
+                  },
+                  "dayRate": {
+                    "type": "number",
+                    "format": "float"
                   },
                   "createdAt": {
                     "type": "string",
@@ -14280,7 +14275,7 @@
         "operationId": "delete/capacities/{id}"
       }
     },
-    "/facility-years": {
+    "/facilities": {
       "get": {
         "responses": {
           "200": {
@@ -14288,7 +14283,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityYearListResponse"
+                  "$ref": "#/components/schemas/FacilityListResponse"
                 }
               }
             }
@@ -14345,7 +14340,7 @@
           }
         },
         "tags": [
-          "Facility-year"
+          "Facility"
         ],
         "parameters": [
           {
@@ -14429,7 +14424,7 @@
             }
           }
         ],
-        "operationId": "get/facility-years"
+        "operationId": "get/facilities"
       },
       "post": {
         "responses": {
@@ -14438,7 +14433,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityYearResponse"
+                  "$ref": "#/components/schemas/FacilityResponse"
                 }
               }
             }
@@ -14495,23 +14490,23 @@
           }
         },
         "tags": [
-          "Facility-year"
+          "Facility"
         ],
         "parameters": [],
-        "operationId": "post/facility-years",
+        "operationId": "post/facilities",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearRequest"
+                "$ref": "#/components/schemas/FacilityRequest"
               }
             }
           }
         }
       }
     },
-    "/facility-years/{id}": {
+    "/facilities/{id}": {
       "get": {
         "responses": {
           "200": {
@@ -14519,7 +14514,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityYearResponse"
+                  "$ref": "#/components/schemas/FacilityResponse"
                 }
               }
             }
@@ -14576,7 +14571,7 @@
           }
         },
         "tags": [
-          "Facility-year"
+          "Facility"
         ],
         "parameters": [
           {
@@ -14590,7 +14585,7 @@
             }
           }
         ],
-        "operationId": "get/facility-years/{id}"
+        "operationId": "get/facilities/{id}"
       },
       "put": {
         "responses": {
@@ -14599,7 +14594,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FacilityYearResponse"
+                  "$ref": "#/components/schemas/FacilityResponse"
                 }
               }
             }
@@ -14656,7 +14651,7 @@
           }
         },
         "tags": [
-          "Facility-year"
+          "Facility"
         ],
         "parameters": [
           {
@@ -14670,13 +14665,13 @@
             }
           }
         ],
-        "operationId": "put/facility-years/{id}",
+        "operationId": "put/facilities/{id}",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FacilityYearRequest"
+                "$ref": "#/components/schemas/FacilityRequest"
               }
             }
           }
@@ -14747,7 +14742,7 @@
           }
         },
         "tags": [
-          "Facility-year"
+          "Facility"
         ],
         "parameters": [
           {
@@ -14761,7 +14756,7 @@
             }
           }
         ],
-        "operationId": "delete/facility-years/{id}"
+        "operationId": "delete/facilities/{id}"
       }
     },
     "/projects": {
