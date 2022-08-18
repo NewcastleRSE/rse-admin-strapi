@@ -78,11 +78,11 @@ module.exports = {
     },
     async createClockifyProject(project) {
         return new Promise(async (resolve, reject) => {
-            
-            const projectName = project.dealname,
-                  projectOwner = project.contacts[0].firstname + ' ' + project.contacts[0].lastname
-
+        
             try {
+
+                const projectName = project.dealname,
+                projectOwner = project.contacts[0].firstname + ' ' + project.contacts[0].lastname
 
                 let clientRequest = { 
                     params: {
