@@ -21,10 +21,6 @@ const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
-// Holder for recursive project and contact lists
-let projects = [],
-    contacts = []
-
 // Invert stages to key by Hubspot stage names
 const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
 const hsStages = invert(stages)
@@ -40,22 +36,22 @@ function formatDealStage(stage) {
   }
 }
 
-async function getDeals(after, limit, properties) {
+async function getDeals(after, limit, properties, projectList) {
   try {
     let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts'], false);
-    projects = projects.concat(hsProjects.results)
+    projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
-      return getDeals(hsProjects.paging.next.after, limit, properties)
+      return getDeals(hsProjects.paging.next.after, limit, properties, projectList)
     }
     else {
-      return projects
+      return projectList
     }
   } catch (e) {
     console.error(e)
   }
 }
 
-async function getContacts(after, limit, properties, contactIDs) {
+async function getContacts(after, limit, properties, contactIDs, contactList) {
   try {
 
     const publicObjectSearchRequest = {
@@ -70,12 +66,12 @@ async function getContacts(after, limit, properties, contactIDs) {
     };
 
     let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest);
-    contacts = [...hsContacts.results]
+    contactList = contactList.concat(hsContacts.results)
     if(hsContacts.paging) {
-      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups)
+      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups, contactList)
     }
     else {
-      return contacts
+      return contactList
     }
   } catch (e) {
     console.error(e)
@@ -97,7 +93,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     const limit = 100;
     const after = 0;
 
-    let hsProjects = await getDeals(after, limit, dealProperties)
+    let hsProjects = await getDeals(after, limit, dealProperties, [])
 
     let contactAssociations = hsProjects.map(({associations})=>{ 
       if(associations && associations.contacts) {
@@ -117,7 +113,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     // Can only fetch 100 contacts at once, so run in loops to segment requests
     for (let i = 0; i < contactIDs.length; i = i+100) {
-      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100)))
+      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100), []))
     }
  
     // Project list from Strapi
