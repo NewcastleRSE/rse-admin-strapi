@@ -180,6 +180,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         else {
           if (['Completed', 'Allocated', 'Funded Awaiting Allocations'].includes(result.dealstage)) {
             console.error(`Project ${result.dealname} not found in Strapi database`)
+            console.log(result.id)
             // Get or create the Clockify project
             strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(result)).then(clockifyProject => {
               // Create the entry in Strapi to link Hubspot and Clockify
@@ -191,6 +192,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                 },
               });
             }).catch(error => {
+              // console.log('Error creating ' + result.dealname)
               console.error(error)
             })
           }
