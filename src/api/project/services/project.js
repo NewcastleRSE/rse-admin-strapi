@@ -141,30 +141,30 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       let projectContacts = []
 
-        if (project.associations) {
-          let associatedContacts = project.associations.contacts.results.map(contact => {
-            return contact.id
-          })
+      if (project.associations) {
+        let associatedContacts = project.associations.contacts.results.map(contact => {
+          return contact.id
+        })
 
-          contacts.filter(contact => {
-            return associatedContacts.includes(contact.id)
-          }).forEach(contact => {
-            projectContacts.push({
-              id: contact.id,
-              firstname: contact.properties.firstname,
-              lastname: contact.properties.lastname,
-              email: contact.properties.email,
-              jobtitle: contact.properties.jobtitle,
-              department: contact.properties.department
-            })
+        contacts.filter(contact => {
+          return associatedContacts.includes(contact.id)
+        }).forEach(contact => {
+          projectContacts.push({
+            id: contact.id,
+            firstname: contact.properties.firstname,
+            lastname: contact.properties.lastname,
+            email: contact.properties.email,
+            jobtitle: contact.properties.jobtitle,
+            department: contact.properties.department
           })
-        }
+        })
+      }
 
-        let result = project.properties
-        result.id = project.id
-        result.createdAt = project.createdAt
-        result.updatedAt = project.updatedAt
-        result.contacts = projectContacts
+      let result = project.properties
+      result.id = project.id
+      result.createdAt = project.createdAt
+      result.updatedAt = project.updatedAt
+      result.contacts = projectContacts
 
         // Modify project stage
         result.dealstage = formatDealStage(result.dealstage)
@@ -178,9 +178,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           result.clockifyID = sProject.clockifyID
         }
         else {
-          if (['Completed', 'Allocated', 'Funded Awaiting Allocations'].includes(result.dealstage)) {
+          if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(result.dealstage)) {
             console.error(`Project ${result.dealname} not found in Strapi database`)
-            console.log(result.id)
             // Get or create the Clockify project
             strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(result)).then(clockifyProject => {
               // Create the entry in Strapi to link Hubspot and Clockify
