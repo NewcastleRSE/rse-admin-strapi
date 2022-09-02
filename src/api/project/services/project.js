@@ -188,7 +188,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                   name: result.dealname,
                   hubspotID: result.id,
                   clockifyID: clockifyProject.id
-                },
+                }
               });
             }).catch(error => {
               // console.log('Error creating ' + result.dealname)
@@ -200,6 +200,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         results.push(camelcaseKeys(result))
     })
 
+    pagination.page = 1
+    pagination.pageCount = 1
+    pagination.pageSize = results.length
     pagination.total = results.length
 
     return { results, pagination };
