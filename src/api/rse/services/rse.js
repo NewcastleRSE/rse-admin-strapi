@@ -108,15 +108,9 @@ function getAvailability(rse, assignments, capacities) {
             let endMonth = year === end.year ? end.month : 12
             while(month <= endMonth) {
                 // Subtract assignment FTE from that months availability
-                let currentAvailability = availability[year][month-1]
-                availability[year][month-1] = currentAvailability - assignment.fte
-
-                // How to handle when assignments are more than availability?
-                if(availability[year][month-1] < 0) {
-                    // console.log(rse.firstname + ' ' + rse.lastname)
-                    // console.log(year + '-' + month + ': ' + currentAvailability)
-                    // console.log(assignment)
-                }
+                let maxAvailability = availability[year][month-1],
+                    currentAvailability = maxAvailability - assignment.fte
+                availability[year][month-1] = currentAvailability < 0 ? 0 : currentAvailability
 
                 month++
             }
@@ -129,34 +123,30 @@ function getAvailability(rse, assignments, capacities) {
 
 module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
     async find(...args) {  
-
-        // Get availability
-        const assignments = await strapi.service('api::assignment.assignment').find({
-            populate: ['rse', 'project']
-        })
-
-        const capacities = await strapi.service('api::capacity.capacity').find({
-            populate: ['rse']
-        })
     
         let { results, pagination } = await super.find(...args);
 
-        let objects = results;
+        let rses = results;
         results = []
 
-        objects.forEach((object) => {
+        for await (const rse of rses) {
 
-            let rse = object
-
-            let rseAssignments = assignments.results.filter((assignment) => {
-                return assignment.rse.id === rse.id
+            // Get availability
+            const assignments = await strapi.service('api::assignment.assignment').find({
+                populate: ['rse', 'project'],
+                filters: {
+                    rse: rse.id
+                }
             })
 
-            let rseCapacity = capacities.results.filter((capacity) => {
-                return capacity.rse.id === rse.id
+            const capacities = await strapi.service('api::capacity.capacity').find({
+                populate: ['rse'],
+                filters: {
+                    rse: rse.id
+                }
             })
     
-            let availability = getAvailability(rse, rseAssignments, rseCapacity),
+            let availability = getAvailability(rse, assignments.results, capacities.results),
                 currentDate = DateTime.now(),
                 contractEndDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null,
                 nextAvailableDate = null
@@ -208,7 +198,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
             rse.availability = availability
 
             results.push(rse)
-        })
+        }
 
         return { results, pagination };
     },
