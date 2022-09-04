@@ -98,8 +98,7 @@ module.exports = {
                         name: projectOwner,
                         note: ""
                     }, apiConfig)
-                    console.log(responseData)
-                    clientId = responseData.data[0].id
+                    clientId = responseData.data.id
                 }
                 else {
                     clientId = responseData.data[0].id
