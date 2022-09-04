@@ -98,6 +98,7 @@ module.exports = {
                         name: projectOwner,
                         note: ""
                     }, apiConfig)
+                    console.log(responseData)
                     clientId = responseData.data[0].id
                 }
                 else {
@@ -115,7 +116,7 @@ module.exports = {
                 const response = await axios.post(`/projects`, project, apiConfig)
                 resolve(response.data)
             } catch (error) {
-                reject(error.response.data)
+                reject(error.response ? error.response.data : error)
             }
         });
     }
