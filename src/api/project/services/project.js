@@ -21,10 +21,6 @@ const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       };
 
-// Holder for recursive project and contact lists
-let projects = [],
-    contacts = []
-
 // Invert stages to key by Hubspot stage names
 const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
 const hsStages = invert(stages)
@@ -40,22 +36,22 @@ function formatDealStage(stage) {
   }
 }
 
-async function getDeals(after, limit, properties) {
+async function getDeals(after, limit, properties, projectList) {
   try {
     let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts'], false);
-    projects = projects.concat(hsProjects.results)
+    projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
-      return getDeals(hsProjects.paging.next.after, limit, properties)
+      return getDeals(hsProjects.paging.next.after, limit, properties, projectList)
     }
     else {
-      return projects
+      return projectList
     }
   } catch (e) {
     console.error(e)
   }
 }
 
-async function getContacts(after, limit, properties, contactIDs) {
+async function getContacts(after, limit, properties, contactIDs, contactList) {
   try {
 
     const publicObjectSearchRequest = {
@@ -70,12 +66,12 @@ async function getContacts(after, limit, properties, contactIDs) {
     };
 
     let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest);
-    contacts = [...hsContacts.results]
+    contactList = contactList.concat(hsContacts.results)
     if(hsContacts.paging) {
-      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups)
+      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups, contactList)
     }
     else {
-      return contacts
+      return contactList
     }
   } catch (e) {
     console.error(e)
@@ -97,7 +93,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     const limit = 100;
     const after = 0;
 
-    let hsProjects = await getDeals(after, limit, dealProperties)
+    let hsProjects = await getDeals(after, limit, dealProperties, [])
 
     let contactAssociations = hsProjects.map(({associations})=>{ 
       if(associations && associations.contacts) {
@@ -117,7 +113,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     // Can only fetch 100 contacts at once, so run in loops to segment requests
     for (let i = 0; i < contactIDs.length; i = i+100) {
-      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100)))
+      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100), []))
     }
  
     // Project list from Strapi
@@ -145,30 +141,30 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       let projectContacts = []
 
-        if (project.associations) {
-          let associatedContacts = project.associations.contacts.results.map(contact => {
-            return contact.id
-          })
+      if (project.associations) {
+        let associatedContacts = project.associations.contacts.results.map(contact => {
+          return contact.id
+        })
 
-          contacts.filter(contact => {
-            return associatedContacts.includes(contact.id)
-          }).forEach(contact => {
-            projectContacts.push({
-              id: contact.id,
-              firstname: contact.properties.firstname,
-              lastname: contact.properties.lastname,
-              email: contact.properties.email,
-              jobtitle: contact.properties.jobtitle,
-              department: contact.properties.department
-            })
+        contacts.filter(contact => {
+          return associatedContacts.includes(contact.id)
+        }).forEach(contact => {
+          projectContacts.push({
+            id: contact.id,
+            firstname: contact.properties.firstname,
+            lastname: contact.properties.lastname,
+            email: contact.properties.email,
+            jobtitle: contact.properties.jobtitle,
+            department: contact.properties.department
           })
-        }
+        })
+      }
 
-        let result = project.properties
-        result.id = project.id
-        result.createdAt = project.createdAt
-        result.updatedAt = project.updatedAt
-        result.contacts = projectContacts
+      let result = project.properties
+      result.id = project.id
+      result.createdAt = project.createdAt
+      result.updatedAt = project.updatedAt
+      result.contacts = projectContacts
 
         // Modify project stage
         result.dealstage = formatDealStage(result.dealstage)
@@ -182,7 +178,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           result.clockifyID = sProject.clockifyID
         }
         else {
-          if (['Completed', 'Allocated', 'Funded Awaiting Allocations'].includes(result.dealstage)) {
+          if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(result.dealstage)) {
             console.error(`Project ${result.dealname} not found in Strapi database`)
             // Get or create the Clockify project
             strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(result)).then(clockifyProject => {
@@ -192,9 +188,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                   name: result.dealname,
                   hubspotID: result.id,
                   clockifyID: clockifyProject.id
-                },
+                }
               });
             }).catch(error => {
+              // console.log('Error creating ' + result.dealname)
               console.error(error)
             })
           }
@@ -203,6 +200,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         results.push(camelcaseKeys(result))
     })
 
+    pagination.page = 1
+    pagination.pageCount = 1
+    pagination.pageSize = results.length
     pagination.total = results.length
 
     return { results, pagination };

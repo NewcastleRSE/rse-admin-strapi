@@ -76,13 +76,11 @@ module.exports = {
             console.error(error)
         }
     },
-    async createClockifyProject(project) {
+    async createClockifyProject(hsProject) {
         return new Promise(async (resolve, reject) => {
-            
-            const projectName = project.dealname,
-                  projectOwner = project.contacts[0].firstname + ' ' + project.contacts[0].lastname
-
             try {
+                const projectName = hsProject.dealname,
+                projectOwner = hsProject.contacts[0].firstname + ' ' + hsProject.contacts[0].lastname
 
                 let clientRequest = { 
                     params: {
@@ -95,12 +93,12 @@ module.exports = {
                 let clientId = null
 
                 // Client does not exist, create a new one
-                if(!responseData.data || responseData.data === []) {
+                if(!responseData.data || !responseData.data.length) {
                     const responseData = await axios.post(`/clients`, {
                         name: projectOwner,
                         note: ""
-                    }, axiosConfig)
-                    clientId = responseData.data[0].id
+                    }, apiConfig)
+                    clientId = responseData.data.id
                 }
                 else {
                     clientId = responseData.data[0].id
@@ -117,7 +115,7 @@ module.exports = {
                 const response = await axios.post(`/projects`, project, apiConfig)
                 resolve(response.data)
             } catch (error) {
-                reject(error)
+                reject(error.response ? error.response.data : error)
             }
         });
     }
