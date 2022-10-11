@@ -12,7 +12,7 @@ function getAvailability(rse, assignments, capacities) {
     // Initialize years
     let contractStart = DateTime.fromISO(rse.contractStart)
     let contractEnd = DateTime.fromISO(rse.contractEnd)
-    let lastAssignment = new Date(Math.max(...assignments.map(e => new Date(e.end))));
+    let lastAssignment = new Date(Math.max(...assignments.map(e => new Date(e.end))))
     let lastAssignmentEnd = assignments.length > 0 ? DateTime.fromISO(lastAssignment.toISOString()) : DateTime.now()
     let assignmentsEnd
 
@@ -193,6 +193,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 }
             }
 
+            rse.lastAssignmentEnd = new Date(Math.max(...assignments.results.map(e => new Date(e.end))))
             rse.nextAvailableDate = nextAvailableDate ? nextAvailableDate.toISODate() : null
             rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
