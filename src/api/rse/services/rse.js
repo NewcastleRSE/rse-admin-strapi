@@ -193,7 +193,7 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 }
             }
 
-            rse.lastAssignmentEnd = new Date(Math.max(...assignments.results.map(e => new Date(e.end))))
+            rse.lastAssignmentEnd = new Date(Math.max(...assignments.results.map(e => DateTime.fromJSDate(new Date(e.end)).toISODate() )))
             rse.nextAvailableDate = nextAvailableDate ? nextAvailableDate.toISODate() : null
             rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
