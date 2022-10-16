@@ -72,10 +72,6 @@ resource "azurerm_mysql_flexible_server" "mysql" {
   }
 }
 
-output "fqdn" {
-  value = azurerm_mysql_flexible_server.mysql.fqdn
-}
-
 resource "azurerm_mysql_flexible_database" "database" {
   name                = azurerm_resource_group.rg.name
   resource_group_name = azurerm_resource_group.rg.name
@@ -131,7 +127,7 @@ resource "azurerm_linux_web_app" "as" {
     DATABASE_HOST = azurerm_mysql_flexible_server.mysql.fqdn
     DATABASE_PORT = "3306"
     DATABASE_NAME = azurerm_resource_group.rg.name
-    DATABASE_USERNAME = azurerm_resource_group.rg.name
+    DATABASE_USERNAME = var.database_username
     DATABASE_PASSWORD = var.database_password
     DATABASE_SSL = "true"
     SENTRY_DSN = "https://61fabb3453014b8d8d4a3181de8314eb@o1080315.ingest.sentry.io/6118106"
@@ -155,6 +151,8 @@ resource "azurerm_linux_web_app" "as" {
     DOCKER_REGISTRY_SERVER_USERNAME = azurerm_container_registry.acr.admin_username
     DOCKER_REGISTRY_SERVER_PASSWORD = azurerm_container_registry.acr.admin_password
     DOCKER_REGISTRY_SERVER_URL = azurerm_container_registry.acr.login_server
+    TRANSACTIONS_SHEET = var.transactions_sheet
+    TRANSACTIONS_HEADER = var.transactions_header
   }
 
   tags = {

@@ -67,12 +67,12 @@ variable "clockify_workspace" {
   sensitive   = true
 }
 
-variable "TRANSACTIONS_SHEET" {
+variable "transactions_sheet" {
   type        = string
   default     = "Transactions_All_Time"
 }
 
-variable "TRANSACTIONS_HEADER" {
+variable "transactions_header" {
   type        = string
   default     = "null,CO_Object_Name,WBS_element,Cost_Elem.,Cost_element_descr.,RefDocNo,Document_Header_Text,Name,Year,frm,Doc._Date,Postg_Date,Val/COArea_Crcy,BW_Category,I/E"
 }
