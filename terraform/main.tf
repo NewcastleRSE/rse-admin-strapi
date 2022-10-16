@@ -113,8 +113,8 @@ resource "azurerm_linux_web_app" "as" {
   # }
   site_config {
     application_stack {
-      docker_image      = azurerm_container_registry.acr.login_server
-      docker_image_tag  = "api:latest"
+      docker_image      = "${azurerm_container_registry.acr.login_server}/api"
+      docker_image_tag  = "latest"
     }
   }
 
