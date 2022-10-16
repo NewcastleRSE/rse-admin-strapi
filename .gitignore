@@ -120,3 +120,4 @@ build
 .terraform
 terraform.*
 terraform.*
+.auto.tfvars
