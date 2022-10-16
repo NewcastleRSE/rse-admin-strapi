@@ -1,8 +1,14 @@
+locals {
+  env = terraform.workspace == "production" ? "" : "-dev"
+}
+
 variable "resource_group_name" {
+  type = string
   default = "rseadmin"
 }
 
 variable "resource_group_location" {
+  type = string
   default = "uksouth"
 }
 
@@ -18,7 +24,7 @@ variable "project_pi" {
 
 variable "project_contributors" {
   type = string
-  default = "Mark Turner"
+  default = "Mark Turner, Kate Court, Rebecca Osselton"
 }
 
 variable "app_keys" {
@@ -36,32 +42,12 @@ variable "api_token_salt" {
   sensitive   = true
 }
 
-variable "database_host" {
-  type        = string
-  sensitive   = true
-}
-
-variable "database_port" {
-  type        = string
-  sensitive   = true
-}
-
-variable "database_name" {
-  type        = string
-  sensitive   = true
-}
-
 variable "database_username" {
   type        = string
   sensitive   = true
 }
 
 variable "database_password" {
-  type        = string
-  sensitive   = true
-}
-
-variable "database_ssl" {
   type        = string
   sensitive   = true
 }
@@ -79,4 +65,14 @@ variable "clockify_key" {
 variable "clockify_workspace" {
   type        = string
   sensitive   = true
+}
+
+variable "TRANSACTIONS_SHEET" {
+  type        = string
+  default     = "Transactions_All_Time"
+}
+
+variable "TRANSACTIONS_HEADER" {
+  type        = string
+  default     = "null,CO_Object_Name,WBS_element,Cost_Elem.,Cost_element_descr.,RefDocNo,Document_Header_Text,Name,Year,frm,Doc._Date,Postg_Date,Val/COArea_Crcy,BW_Category,I/E"
 }
