@@ -12,10 +12,13 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@3.04
+      uses: elgohr/Publish-Docker-Github-Action@v4
+      env:
+        PUBLIC_URL: https://rseadminstaging.azurewebsites.net/
       with:
         registry: rseadminstaging.azurecr.io
         name: rseadminstaging.azurecr.io/api
         username: ${{ secrets.STAGING_REGISTRY_USERNAME }}
         password: ${{ secrets.STAGING_REGISTRY_PASSWORD }}
         tags: "latest"
+        buildargs: PUBLIC_URL

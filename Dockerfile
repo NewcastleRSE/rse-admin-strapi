@@ -1,5 +1,7 @@
 FROM node:16
 
+ARG PUBLIC_URL
+
 # Create directory for source code and set as working directory
 RUN mkdir -p /usr/local/src
 WORKDIR /usr/local/src
@@ -27,7 +29,7 @@ COPY favicon.ico ./
 RUN yarn install
 
 # Build app in production mode
-RUN NODE_ENV=production PUBLIC_URL=https://rseadmin.azurewebsites.net/ yarn build
+RUN NODE_ENV=production PUBLIC_URL=${PUBLIC_URL} yarn build
 
 EXPOSE 8080 2222
 
