@@ -131,8 +131,8 @@ resource "azurerm_linux_web_app" "as" {
     DATABASE_PASSWORD = var.database_password
     DATABASE_SSL = "true"
     SENTRY_DSN = "https://61fabb3453014b8d8d4a3181de8314eb@o1080315.ingest.sentry.io/6118106"
-    PUBLIC_URL = "https://rseadmin.azurewebsites.net/"
-    PUBLIC_ADMIN_URL = "https://rseadmin.azurewebsites.net/dashboard"
+    PUBLIC_URL = "https://${azurerm_resource_group.rg.name}.azurewebsites.net/"
+    PUBLIC_ADMIN_URL = "https://${azurerm_resource_group.rg.name}.azurewebsites.net/dashboard"
     HUBSPOT_KEY = var.hubspot_key 
     HUBSPOT_DEAL_PROPERTIES = "amount,dealname,dealstage,last_activity_date,account_code,award_stage,end_date,faculty,finance_contact,funding_body,project_lead,project_value,school,start_date,status,cost_model"
     HUBSPOT_DEAL_ASSOCIATIONS = "contacts,companies"
