@@ -15,10 +15,6 @@ provider "azurerm" {
   subscription_id = "e7cbfebb-f482-46c4-a90b-126855b03325"
 }
 
-locals {
-  resource_group_name = terraform.workspace == "production" ? var.resource_group_name : join("", [var.resource_group_name, "staging"])
-}
-
 resource "azurerm_resource_group" "rg" {
   name = local.resource_group_name
   location = var.resource_group_location
