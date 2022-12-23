@@ -88,32 +88,46 @@ module.exports = {
                         'page-size': 200
                     }
                 }
+                let projectRequest = {
+                    params: {
+                        name: projectName,
+                        'page-size': 200
+                    }
+                }
                 let clientConfig = {...apiConfig, ...clientRequest}
-                const responseData = await axios.get(`/clients`, clientConfig)
+                let response = await axios.get(`/clients`, clientConfig)
                 let clientId = null
 
                 // Client does not exist, create a new one
-                if(!responseData.data || !responseData.data.length) {
-                    const responseData = await axios.post(`/clients`, {
+                if(!response.data || !response.data.length) {
+                    response = await axios.post(`/clients`, {
                         name: projectOwner,
                         note: ""
                     }, apiConfig)
-                    clientId = responseData.data.id
+                    clientId = response.data.id
                 }
                 else {
-                    clientId = responseData.data[0].id
+                    clientId = response.data[0].id
                 }
 
-                let project = { 
-                    name: projectName,
-                    clientId: clientId,
-                    isPublic: "true",
-                    billable: "true",
-                    public: true
+                response = await axios.get(`/projects`, projectRequest)
+
+                // Clockify project doesn't exist, create it
+                if(!response.data || !response.data.length) {
+                    let project = { 
+                        name: projectName,
+                        clientId: clientId,
+                        isPublic: "true",
+                        billable: "true",
+                        public: true
+                    }
+                    
+                    resolve(await axios.post(`/projects`, project, apiConfig))
                 }
-                
-                const response = await axios.post(`/projects`, project, apiConfig)
-                resolve(response.data)
+                else {
+                    resolve(response.data[0])
+                }
+
             } catch (error) {
                 reject(error.response ? error.response.data : error)
             }

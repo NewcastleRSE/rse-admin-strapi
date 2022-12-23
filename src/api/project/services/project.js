@@ -7,7 +7,7 @@
 const { createCoreService } = require('@strapi/strapi').factories;
 const camelcaseKeys = require('camelcase-keys');
 const Hubspot = require('@hubspot/api-client');
-const hubspotClient = new Hubspot.Client({ apiKey: process.env.HUBSPOT_KEY });
+const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
       contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(','),
       stages = {
