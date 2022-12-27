@@ -16,7 +16,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "rg" {
-  name = local.resource_group_name
+  name = var.resource_group_name
   location = var.resource_group_location
   tags = {
     Name = var.project_name
@@ -26,7 +26,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 resource "azurerm_storage_account" "storage" {
-  name                      = local.resource_group_name
+  name                      = var.resource_group_name
   resource_group_name       = azurerm_resource_group.rg.name
   location                  = azurerm_resource_group.rg.location
   account_tier              = "Standard"
@@ -40,7 +40,7 @@ resource "azurerm_storage_account" "storage" {
 }
 
 resource "azurerm_container_registry" "acr" {
-  name                = local.resource_group_name
+  name                = var.resource_group_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Standard"
@@ -53,7 +53,7 @@ resource "azurerm_container_registry" "acr" {
 }
 
 resource "azurerm_mysql_flexible_server" "mysql" {
-  name                   = local.resource_group_name
+  name                   = var.resource_group_name
   resource_group_name    = azurerm_resource_group.rg.name
   location               = azurerm_resource_group.rg.location
   administrator_login    = var.database_username
@@ -70,6 +70,14 @@ resource "azurerm_mysql_flexible_server" "mysql" {
 
 resource "azurerm_mysql_flexible_database" "database" {
   name                = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.rg.name
+  server_name         = azurerm_mysql_flexible_server.mysql.name
+  charset             = "utf8"
+  collation           = "utf8_unicode_ci"
+}
+
+resource "azurerm_mysql_flexible_database" "database-staging" {
+  name                = join("", [azurerm_resource_group.rg.name, "-staging"])
   resource_group_name = azurerm_resource_group.rg.name
   server_name         = azurerm_mysql_flexible_server.mysql.name
   charset             = "utf8"
