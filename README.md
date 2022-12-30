@@ -1,57 +1,99 @@
-# 🚀 Getting started with Strapi
+# RSE Admin - Strapi
+A Strapi powered backend for the RSE Admin Tool
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/developer-docs/latest/developer-resources/cli/CLI.html) (CLI) which lets you scaffold and manage your project in seconds.
+## About
 
-### `develop`
+The RSE Admin tool is for tracking the assignment of RSEs to projects, cost recovery and project status. Authentication is managed by University AAD and the backend app brings together data from HubSpot, Clockify and the University Leave System. It also connects to a database to store users and assignment data. All of this is presented via a REST API consumed by the [SPA code](https://github.com/NewcastleRSE/rse-admin-webapp).
 
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/developer-docs/latest/developer-resources/cli/CLI.html#strapi-develop)
+### Project Team
+Mark Turner, Newcastle University  ([mark.turner@newcastle.ac.uk](mailto:mark.turner@newcastle.ac.uk))    
+Kate Court, Newcastle University  ([kate.court@newcastle.ac.uk](mailto:kate.court@newcastle.ac.uk))  
+Becky Osselton, Newcastle University  ([rebecca.osselton@newcastle.ac.uk](mailto:rebecca.osselton@newcastle.ac.uk))  
+
+### RSE Contact
+Mark Turner  
+RSE Team  
+Newcastle University  
+([mark.turner@newcastle.ac.uk](mailto:mark.turner@newcastle.ac.uk))  
+
+## Built With
+
+The application uses Strapi to create a role-based middleware app to fetch data from multiple sources. Some are third-party services and others are databases or files included as part of the app. There are third-party Strapi plugins for powering the auto-generation of API documentation and connectivity with [Sentry](https://sentry.io).
+
+[Strapi](https://strapi.io/)   
+[Sentry](https://strapi.io/integrations/sentry)   
+[Swagger](https://docs.strapi.io/developer-docs/latest/plugins/documentation.html)   
+[HubSpot API](https://developers.hubspot.com/docs/api/overview)  
+[Clockify API](https://clockify.me/developers-api)  
+
+## Getting Started
+
+### Prerequisites
+
+A local version of NodeJS ([nvm](https://github.com/nvm-sh/nvm) is recommended) between `12.x.x` and `16.x.x`.  
+
+A local [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) running for development. Whilst possible to interact with the database via an interactive shell, it is recommended to use a GUI tool such as [MySQL Workbench](https://dev.mysql.com/downloads/workbench/).
+
+The `.env` file needs to be setup with the database credentials for the connection string, these will be unique to each setup. It is **HIGHLY** recommended not to use the default `root` user and instead generate a new user with only the right level of access to the `rseadmin` schema.
+
+### Installation
+
+Install dependencies
 
 ```
-npm run develop
-# or
-yarn develop
+yarn install
 ```
 
-### `start`
+### Running Locally
 
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/developer-docs/latest/developer-resources/cli/CLI.html#strapi-start)
-
-```
-npm run start
-# or
-yarn start
-```
-
-### `build`
-
-Build your admin panel. [Learn more](https://docs.strapi.io/developer-docs/latest/developer-resources/cli/CLI.html#strapi-build)
+In order to use the admin portal the code needs to be built from source. To do that run
 
 ```
-npm run build
-# or
 yarn build
 ```
 
-## ⚙️ Deployment
+Run with hot reload for development
 
-Strapi gives you many possible deployment options for your project. Find the one that suits you on the [deployment section of the documentation](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/deployment.html).
+```
+yarn develop
+```
 
-## 📚 Learn more
+## Deployment
 
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://docs.strapi.io) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
+### Local
 
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
+Deploying to a production style setup but on the local system. The following command builds a Docker container configured with the variables for a production environment with a tag of `latest`.
 
-## ✨ Community
+```
+docker build -t rseadmin.azurecr.io/api .
+```
 
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
+### Production
 
----
+Deployment to production is handled by [GitHub Workflows](https://docs.github.com/en/actions/using-workflows) in the `.github/workflows` directory.
 
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+## Usage
+
+Any push to the `dev` branch will trigger a rebuild of the `latest` tag for the Docker image stored in the `rseadmin.azurecr.io` registry. Properly tagged images are generated via releases on the `main` branch and match the version number from the release. For example, a code release of version `1.2.3` will create a Docker image in the registry with name and tag of `rseadmin.azurecr.io/api:1.2.3`.
+
+## Roadmap
+
+- [x] Initial Research  
+- [x] Minimum viable product
+- [x] Alpha Release  
+- [ ] Feature-Complete Release  
+
+## Contributing
+
+### Main Branch
+Protected and can only be pushed to via pull requests. Should be considered stable and a representation of production code.
+
+### Dev Branch
+Should be considered fragile, code should compile and run but features may be prone to errors.
+
+### Feature Branches
+A branch per feature being worked on.
+
+https://nvie.com/posts/a-successful-git-branching-model/
+
+## License
