@@ -14,8 +14,8 @@ jobs:
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@v4
       with:
-        registry: rseadminstaging.azurecr.io
-        name: rseadminstaging.azurecr.io/api
-        username: ${{ secrets.STAGING_REGISTRY_USERNAME }}
-        password: ${{ secrets.STAGING_REGISTRY_PASSWORD }}
+        registry: rseadmin.azurecr.io
+        name: rseadmin.azurecr.io/api
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
         tags: "latest"
