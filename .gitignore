@@ -107,8 +107,18 @@ coverage
 ############################
 
 .env
+.env.prod
 license.txt
 exports
 *.cache
 build
 .strapi-updater.json
+
+############################
+# Terraform
+############################
+
+.terraform
+terraform.*
+terraform.*
+.auto.tfvars

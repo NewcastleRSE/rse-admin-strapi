@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "capacities",
+  "info": {
+    "singularName": "capacity",
+    "pluralName": "capacities",
+    "displayName": "Capacity",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "capacity": {
+      "type": "integer",
+      "max": 100,
+      "min": 0,
+      "required": true,
+      "default": 100
+    },
+    "start": {
+      "type": "date",
+      "required": true
+    },
+    "end": {
+      "type": "date"
+    },
+    "rse": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::rse.rse",
+      "inversedBy": "capacities"
+    }
+  }
+}

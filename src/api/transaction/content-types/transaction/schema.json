@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "transactions",
+  "info": {
+    "singularName": "transaction",
+    "pluralName": "transactions",
+    "displayName": "Transaction",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "costElement": {
+      "type": "biginteger",
+      "required": true
+    },
+    "costElementDescription": {
+      "type": "string",
+      "required": true
+    },
+    "documentNumber": {
+      "type": "biginteger",
+      "required": true
+    },
+    "documentHeader": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "documentDate": {
+      "type": "date",
+      "required": true
+    },
+    "postedDate": {
+      "type": "date",
+      "required": true
+    },
+    "value": {
+      "type": "decimal",
+      "required": true
+    },
+    "bwCategory": {
+      "type": "string",
+      "required": true
+    },
+    "ieCategory": {
+      "type": "string",
+      "required": true
+    },
+    "fiscalYear": {
+      "type": "integer",
+      "required": true
+    },
+    "fiscalPeriod": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}

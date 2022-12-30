@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rses",
+  "info": {
+    "singularName": "rse",
+    "pluralName": "rses",
+    "displayName": "RSE",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "firstname": {
+      "type": "string",
+      "required": true
+    },
+    "lastname": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true
+    },
+    "contractStart": {
+      "type": "date",
+      "required": true,
+      "default": "2019-04-01"
+    },
+    "contractEnd": {
+      "type": "date",
+      "default": "2025-03-31",
+      "required": false
+    },
+    "personnelNumber": {
+      "type": "biginteger",
+      "required": true,
+      "unique": true
+    },
+    "team": {
+      "type": "enumeration",
+      "enum": [
+        "WebMobile",
+        "Middleware",
+        "DataScience"
+      ],
+      "required": true
+    },
+    "assignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::assignment.assignment",
+      "mappedBy": "rse"
+    },
+    "capacities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::capacity.capacity",
+      "mappedBy": "rse"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    },
+    "clockifyID": {
+      "type": "string",
+      "unique": true
+    }
+  }
+}

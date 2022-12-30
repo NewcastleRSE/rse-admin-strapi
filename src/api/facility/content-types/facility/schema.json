@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "facilities",
+  "info": {
+    "singularName": "facility",
+    "pluralName": "facilities",
+    "displayName": "Facility"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "year": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "salaryCosts": {
+      "type": "integer",
+      "required": true
+    },
+    "nonSalaryCosts": {
+      "type": "integer",
+      "required": true
+    },
+    "estatesCosts": {
+      "type": "integer",
+      "required": true
+    },
+    "annualCapacity": {
+      "type": "integer",
+      "required": true
+    },
+    "annualUseage": {
+      "type": "integer",
+      "required": true
+    },
+    "dayRate": {
+      "type": "decimal",
+      "required": true
+    }
+  }
+}

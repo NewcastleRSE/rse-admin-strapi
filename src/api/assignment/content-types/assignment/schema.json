@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "assignments",
+  "info": {
+    "singularName": "assignment",
+    "pluralName": "assignments",
+    "displayName": "Assignment",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "rse": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::rse.rse",
+      "inversedBy": "assignments"
+    },
+    "start": {
+      "type": "date",
+      "required": true,
+      "default": "2022-02-01"
+    },
+    "end": {
+      "type": "date",
+      "required": true,
+      "default": "2025-01-01"
+    },
+    "fte": {
+      "type": "integer",
+      "default": 50,
+      "required": true,
+      "max": 100,
+      "min": 0
+    },
+    "project": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::project.project"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'dev'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v4
+      with:
+        registry: rseadmin.azurecr.io
+        name: rseadmin.azurecr.io/api
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        tags: "latest"
