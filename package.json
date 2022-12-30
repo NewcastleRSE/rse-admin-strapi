@@ -11,19 +11,19 @@
   },
   "devDependencies": {},
   "dependencies": {
-    "@hubspot/api-client": "^8.2.0",
-    "@strapi/plugin-documentation": "4.5.4",
-    "@strapi/plugin-i18n": "4.5.4",
-    "@strapi/plugin-sentry": "^4.5.4",
-    "@strapi/plugin-users-permissions": "4.5.4",
-    "@strapi/strapi": "4.5.4",
-    "axios": "^0.26.1",
-    "camelcase-keys": "^7.0.2",
+    "@hubspot/api-client": "^8.3.2",
+    "@strapi/plugin-documentation": "4.5.5",
+    "@strapi/plugin-i18n": "4.5.5",
+    "@strapi/plugin-sentry": "^4.5.5",
+    "@strapi/plugin-users-permissions": "4.5.5",
+    "@strapi/strapi": "4.5.5",
+    "axios": "^1.2.2",
+    "camelcase-keys": "^8.0.2",
     "exceljs": "^4.3.0",
-    "luxon": "^2.3.1",
+    "luxon": "^3.2.0",
     "mysql": "2.18.1",
-    "strapi-plugin-import-export-entries": "^1.6.9",
-    "strapi-plugin-transformer": "^2.0.0"
+    "strapi-plugin-import-export-entries": "^1.18.0",
+    "strapi-plugin-transformer": "^2.1.1"
   },
   "author": {
     "name": "Mark Turner"
