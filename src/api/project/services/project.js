@@ -1,15 +1,16 @@
-'use strict';
+'use strict'
 
 /**
  * projects service.
  */
 
-const { createCoreService } = require('@strapi/strapi').factories;
-const camelcaseKeys = require('camelcase-keys');
-const Hubspot = require('@hubspot/api-client');
-const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN });
+const { createCoreService } = require('@strapi/strapi').factories
+const camelcaseKeys = require('camelcase-keys')
+const Hubspot = require('@hubspot/api-client')
+const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
       contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(','),
+      engagementProperties = process.env.HUBSPOT_ENGAGEMENT_PROPERTIES.split(','),
       stages = {
         meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
         bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
@@ -19,7 +20,7 @@ const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         notFunded: process.env.HUBSPOT_DEAL_NOT_FUNDED,
         allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
         completed: process.env.HUBSPOT_DEAL_COMPLETED
-      };
+      }
 
 // Invert stages to key by Hubspot stage names
 const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
@@ -27,7 +28,7 @@ const hsStages = invert(stages)
 
 function formatDealStage(stage) {
   if(stage && hsStages[stage]) {
-    return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+    return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase() })
   }
   else {
     console.log(stage)
@@ -38,7 +39,7 @@ function formatDealStage(stage) {
 
 async function getDeals(after, limit, properties, projectList) {
   try {
-    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts'], false);
+    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts', 'engagements'], false)
     projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
       return getDeals(hsProjects.paging.next.after, limit, properties, projectList)
@@ -63,9 +64,9 @@ async function getContacts(after, limit, properties, contactIDs, contactList) {
       properties,
       limit,
       after
-    };
+    }
 
-    let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest);
+    let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
     contactList = contactList.concat(hsContacts.results)
     if(hsContacts.paging) {
       return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups, contactList)
@@ -78,20 +79,47 @@ async function getContacts(after, limit, properties, contactIDs, contactList) {
   }
 }
 
+async function getEngagements(after, limit, properties, engagementIDs, engagementList) {
+  try {
+
+    const publicObjectSearchRequest = {
+      filterGroups: [{
+        filters: [
+          { propertyName: "hs_object_id", operator: "IN",  values: engagementIDs },
+        ],
+      }],
+      properties,
+      limit,
+      after
+    }
+
+    let hsEngagements = await hubspotClient.crm.objects.notes.searchApi.doSearch(publicObjectSearchRequest)
+    engagementList = engagementList.concat(hsEngagements.results)
+    if(hsEngagements.paging) {
+      return getEngagements(hsEngagements.paging.next.after, limit, properties, filterGroups, engagementList)
+    }
+    else {
+      return engagementList
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) {  
 
     let params = args[0]
 
-    let { results, pagination } = await super.find(...args);
+    let { results, pagination } = await super.find(...args)
 
     const sort = JSON.stringify({
       propertyName: "dealname",
       direction: "ASCENDING",
-    });
-    const limit = 100;
-    const after = 0;
+    })
+    const limit = 100
+    const after = 0
 
     let hsProjects = await getDeals(after, limit, dealProperties, [])
 
@@ -102,18 +130,36 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       else {
         return []
       }
-    });
+    })
+
+    let engagementAssociations = hsProjects.map(({associations})=>{ 
+      if(associations && associations.engagements) {
+        return associations.engagements.results
+      }
+      else {
+        return []
+      }
+    })
 
     // Remove empty associations and map to array of IDs
     let contactIDs = [].concat.apply([], contactAssociations).map(contact => {
       return contact.id
     })
 
-    let contacts = []
+    let engagementIDs = [].concat.apply([], engagementAssociations).map(engagement => {
+      return engagement.id
+    })
 
-    // Can only fetch 100 contacts at once, so run in loops to segment requests
+    let contacts = [],
+        engagements = []
+
+    // Can only fetch 100 associations at once, so run in loops to segment requests
     for (let i = 0; i < contactIDs.length; i = i+100) {
       contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100), []))
+    }
+
+    for (let i = 0; i < engagementIDs.length; i = i+100) {
+      engagements = engagements.concat(await getEngagements(0, limit, engagementProperties, engagementIDs.slice(i, i+100), []))
     }
  
     // Project list from Strapi
@@ -139,25 +185,47 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     hsProjects.forEach((project) => {
 
-      let projectContacts = []
+      let projectContacts = [],
+          projectEngagements = []
 
       if (project.associations) {
-        let associatedContacts = project.associations.contacts.results.map(contact => {
-          return contact.id
-        })
 
-        contacts.filter(contact => {
-          return associatedContacts.includes(contact.id)
-        }).forEach(contact => {
-          projectContacts.push({
-            id: contact.id,
-            firstname: contact.properties.firstname,
-            lastname: contact.properties.lastname,
-            email: contact.properties.email,
-            jobtitle: contact.properties.jobtitle,
-            department: contact.properties.department
+        if(project.associations.contacts) {
+          let associatedContacts = project.associations.contacts.results.map(contact => {
+            return contact.id
           })
-        })
+
+          contacts.filter(contact => {
+            return associatedContacts.includes(contact.id)
+          }).forEach(contact => {
+            projectContacts.push({
+              id: contact.id,
+              firstname: contact.properties.firstname,
+              lastname: contact.properties.lastname,
+              email: contact.properties.email,
+              jobtitle: contact.properties.jobtitle,
+              department: contact.properties.department
+            })
+          })
+        }
+
+        if(project.associations.engagements) {
+
+          let associatedEngagements = project.associations.engagements.results.map(engagement => {
+            return engagement.id
+          })
+
+          engagements.filter(engagement => {
+            return associatedEngagements.includes(engagement.id)
+          }).forEach(engagement => {
+            projectEngagements.push({
+              id: engagement.id,
+              note: engagement.properties.hs_note_body,
+              created: engagement.properties.hs_createdate,
+              lastUpdated: engagement.properties.hs_lastmodifieddate
+            })
+          })
+        }
       }
 
       let result = project.properties
@@ -165,6 +233,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       result.createdAt = project.createdAt
       result.updatedAt = project.updatedAt
       result.contacts = projectContacts
+      result.notes = projectEngagements
 
         // Modify project stage
         result.dealstage = formatDealStage(result.dealstage)
@@ -189,7 +258,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                   hubspotID: result.id,
                   clockifyID: clockifyProject.id
                 }
-              });
+              })
             }).catch(error => {
               // console.log('Error creating ' + result.dealname)
               console.error(error)
@@ -205,7 +274,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     pagination.pageSize = results.length
     pagination.total = results.length
 
-    return { results, pagination };
+    return { results, pagination }
   },
 
   async findOne(...args) {
@@ -220,17 +289,17 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           },
         ],
       },
-    ];
+    ]
 
-    const limit = 1;
-    const after = 0;
+    const limit = 1
+    const after = 0
 
     const publicObjectSearchRequest = {
       filterGroups: filter,
       properties,
       limit,
       after,
-    };
+    }
 
     let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
 
@@ -248,8 +317,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async update(...args) {
     // add error handling
-    const id = args.id;
-    const status = args.status;
+    const id = args.id
+    const status = args.status
 
     // add check if status is equal to Red, Amber or Green
     const prj = {
@@ -257,15 +326,15 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       properties: {
         status: status,
       },
-    };
+    }
 
     await hubspotClient.crm.deals.batchApi
       .update({ inputs: [prj] })
       .then((results) => {
-        return {results};
+        return {results}
       })
       .catch((err) => {
-        console.log(err);
-      });
+        console.log(err)
+      })
   }
-}));
+}))
