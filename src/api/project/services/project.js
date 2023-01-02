@@ -10,7 +10,7 @@ const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
       contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(','),
-      engagementProperties = process.env.HUBSPOT_ENGAGEMENT_PROPERTIES.split(','),
+      noteProperties = process.env.HUBSPOT_NOTE_PROPERTIES.split(','),
       stages = {
         meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
         bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
@@ -39,7 +39,7 @@ function formatDealStage(stage) {
 
 async function getDeals(after, limit, properties, projectList) {
   try {
-    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts', 'engagements'], false)
+    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts', 'notes'], false)
     projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
       return getDeals(hsProjects.paging.next.after, limit, properties, projectList)
@@ -52,13 +52,13 @@ async function getDeals(after, limit, properties, projectList) {
   }
 }
 
-async function getContacts(after, limit, properties, contactIDs, contactList) {
+async function getAssociations(association, after, limit, properties, ids, associationList) {
   try {
 
     const publicObjectSearchRequest = {
       filterGroups: [{
         filters: [
-          { propertyName: "hs_object_id", operator: "IN",  values: contactIDs },
+          { propertyName: "hs_object_id", operator: "IN",  values: ids },
         ],
       }],
       properties,
@@ -66,40 +66,22 @@ async function getContacts(after, limit, properties, contactIDs, contactList) {
       after
     }
 
-    let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
-    contactList = contactList.concat(hsContacts.results)
-    if(hsContacts.paging) {
-      return getContacts(hsContacts.paging.next.after, limit, properties, filterGroups, contactList)
+    let hsAssociations
+
+    switch(association) {
+      case 'contacts':
+        hsAssociations = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
+        associationList = associationList.concat(hsAssociations.results)
+      case 'notes':
+        hsAssociations = await hubspotClient.crm.objects.notes.searchApi.doSearch(publicObjectSearchRequest)
+        associationList = associationList.concat(hsAssociations.results)
+    }
+
+    if(hsAssociations.paging) {
+      return getAssociations(association, hsAssociations.paging.next.after, limit, properties, filterGroups, associationList)
     }
     else {
-      return contactList
-    }
-  } catch (e) {
-    console.error(e)
-  }
-}
-
-async function getEngagements(after, limit, properties, engagementIDs, engagementList) {
-  try {
-
-    const publicObjectSearchRequest = {
-      filterGroups: [{
-        filters: [
-          { propertyName: "hs_object_id", operator: "IN",  values: engagementIDs },
-        ],
-      }],
-      properties,
-      limit,
-      after
-    }
-
-    let hsEngagements = await hubspotClient.crm.objects.notes.searchApi.doSearch(publicObjectSearchRequest)
-    engagementList = engagementList.concat(hsEngagements.results)
-    if(hsEngagements.paging) {
-      return getEngagements(hsEngagements.paging.next.after, limit, properties, filterGroups, engagementList)
-    }
-    else {
-      return engagementList
+      return associationList
     }
   } catch (e) {
     console.error(e)
@@ -132,9 +114,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
     })
 
-    let engagementAssociations = hsProjects.map(({associations})=>{ 
-      if(associations && associations.engagements) {
-        return associations.engagements.results
+    let noteAssociations = hsProjects.map(({associations})=>{ 
+      if(associations && associations.notes) {
+        return associations.notes.results
       }
       else {
         return []
@@ -146,20 +128,22 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       return contact.id
     })
 
-    let engagementIDs = [].concat.apply([], engagementAssociations).map(engagement => {
-      return engagement.id
+    let noteIDs = [].concat.apply([], noteAssociations).map(note => {
+      return note.id
     })
 
     let contacts = [],
-        engagements = []
+        notes = []
 
     // Can only fetch 100 associations at once, so run in loops to segment requests
     for (let i = 0; i < contactIDs.length; i = i+100) {
-      contacts = contacts.concat(await getContacts(0, limit, contactProperties, contactIDs.slice(i, i+100), []))
+      contacts = contacts.concat(await getAssociations('contacts', 0, limit, contactProperties, contactIDs.slice(i, i+100), []))
     }
 
-    for (let i = 0; i < engagementIDs.length; i = i+100) {
-      engagements = engagements.concat(await getEngagements(0, limit, engagementProperties, engagementIDs.slice(i, i+100), []))
+    console.log(contacts)
+
+    for (let i = 0; i < noteIDs.length; i = i+100) {
+      notes = notes.concat(await getAssociations('notes', 0, limit, noteProperties, noteIDs.slice(i, i+100), []))
     }
  
     // Project list from Strapi
@@ -186,7 +170,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     hsProjects.forEach((project) => {
 
       let projectContacts = [],
-          projectEngagements = []
+          projectNotes = []
 
       if (project.associations) {
 
@@ -209,20 +193,20 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           })
         }
 
-        if(project.associations.engagements) {
+        if(project.associations.notes) {
 
-          let associatedEngagements = project.associations.engagements.results.map(engagement => {
-            return engagement.id
+          let associatedNotes = project.associations.notes.results.map(note => {
+            return note.id
           })
 
-          engagements.filter(engagement => {
-            return associatedEngagements.includes(engagement.id)
-          }).forEach(engagement => {
-            projectEngagements.push({
-              id: engagement.id,
-              note: engagement.properties.hs_note_body,
-              created: engagement.properties.hs_createdate,
-              lastUpdated: engagement.properties.hs_lastmodifieddate
+          notes.filter(note => {
+            return associatedNotes.includes(note.id)
+          }).forEach(note => {
+            projectNotes.push({
+              id: note.id,
+              note: note.properties.hs_note_body,
+              created: note.properties.hs_createdate,
+              lastUpdated: note.properties.hs_lastmodifieddate
             })
           })
         }
@@ -233,7 +217,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       result.createdAt = project.createdAt
       result.updatedAt = project.updatedAt
       result.contacts = projectContacts
-      result.notes = projectEngagements
+      result.notes = projectNotes
 
         // Modify project stage
         result.dealstage = formatDealStage(result.dealstage)
@@ -260,7 +244,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                 }
               })
             }).catch(error => {
-              // console.log('Error creating ' + result.dealname)
+              console.log('Error creating ' + result.dealname)
               console.error(error)
             })
           }
