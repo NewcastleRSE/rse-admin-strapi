@@ -95,6 +95,7 @@ module.exports = {
                     }
                 }
                 let clientConfig = {...apiConfig, ...clientRequest}
+                let projectConfig = {...apiConfig, ...projectRequest}
                 let response = await axios.get(`/clients`, clientConfig)
                 let clientId = null
 
@@ -110,7 +111,7 @@ module.exports = {
                     clientId = response.data[0].id
                 }
 
-                response = await axios.get(`/projects`, projectRequest)
+                response = await axios.get(`/projects`, projectConfig)
 
                 // Clockify project doesn't exist, create it
                 if(!response.data || !response.data.length) {
