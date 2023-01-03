@@ -19,6 +19,7 @@
     "@strapi/strapi": "4.5.5",
     "axios": "^1.2.2",
     "camelcase-keys": "^7.0.2",
+    "deepdash": "^5.3.9",
     "exceljs": "^4.3.0",
     "luxon": "^3.2.0",
     "mysql": "2.18.1",

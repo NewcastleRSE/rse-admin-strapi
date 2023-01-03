@@ -6,6 +6,7 @@
 
 const { createCoreService } = require('@strapi/strapi').factories
 const camelcaseKeys = require('camelcase-keys')
+const omitDeep = require('deepdash/omitDeep');
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -88,6 +89,32 @@ async function getAssociations(association, after, limit, properties, ids, assoc
   }
 }
 
+function createStrapiProject(hubspotProject) {
+  if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(hubspotProject.dealstage)) {
+    console.error(`Project ${hubspotProject.dealname} not found in Strapi database`)
+    // Get or create the Clockify project
+    strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(hubspotProject)).then(clockifyProject => {
+      // Create the entry in Strapi to link Hubspot and Clockify
+      strapi.entityService.create('api::project.project', {
+        data: {
+          name: hubspotProject.dealname,
+          hubspotID: hubspotProject.id,
+          clockifyID: clockifyProject.id
+        }
+      }).catch(error => {
+        console.log('Error creating ' + hubspotProject.dealname)
+        console.error(error.details.errors)
+      })
+    }).catch(error => {
+      console.log('Error creating ' + hubspotProject.dealname)
+      console.error(error)
+    })
+  }
+  else {
+    console.error('Too early in lifecycle to create a project')
+  }
+}
+
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) {  
@@ -146,6 +173,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
  
     // Project list from Strapi
     let sProjects = results
+
+    console.log(JSON.stringify(sProjects))
 
     // Clear results list ready for merging
     results = []
@@ -229,23 +258,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           result.clockifyID = sProject.clockifyID
         }
         else {
-          if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(result.dealstage)) {
-            console.error(`Project ${result.dealname} not found in Strapi database`)
-            // Get or create the Clockify project
-            strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(result)).then(clockifyProject => {
-              // Create the entry in Strapi to link Hubspot and Clockify
-              strapi.entityService.create('api::project.project', {
-                data: {
-                  name: result.dealname,
-                  hubspotID: result.id,
-                  clockifyID: clockifyProject.id
-                }
-              })
-            }).catch(error => {
-              console.log('Error creating ' + result.dealname)
-              console.error(error)
-            })
-          }
+          createStrapiProject(result)
         }
 
         results.push(camelcaseKeys(result))
@@ -259,42 +272,73 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     return { results, pagination }
   },
 
-  async findOne(...args) {
+  async findOne(projectID) {
 
-    const filter = [
-      {
-        filters: [
-          {
-            propertyName: "hs_object_id",
-            operator: "EQ",
-            value: args[0],
-          },
-        ],
-      },
-    ]
+    // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+    return hubspotClient.crm.deals.basicApi.getById(projectID, dealProperties, null, ['contacts', 'notes']).then(async (project) => {
 
-    const limit = 1
-    const after = 0
+      // Format project object ready for manipulation
+      let projectProperties = project.properties
+      delete project.properties
+      project = {...project, ...projectProperties}
+      project.contacts = []
+      project.notes = []
 
-    const publicObjectSearchRequest = {
-      filterGroups: filter,
-      properties,
-      limit,
-      after,
-    }
+      // Set correct dealstage name from key
+      project.dealstage = formatDealStage(project.dealstage)
 
-    let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+      // Add project contacts
+      if(project.associations.contacts) {
+        let contacts = await getAssociations('contacts', 0, 100, contactProperties, project.associations.contacts.results.map(contact => contact.id), [])
+      
+        contacts.forEach(contact => {
+          let contactProperties = contact.properties
+          delete contact.properties
+          project.contacts.push({...contact, ...contactProperties})
+        })
+      }
 
-    let data = {}
+      // Add project notes
+      if(project.associations.notes) {
+        let notes = await getAssociations('notes', 0, 100, noteProperties, project.associations.notes.results.map(note => note.id), [])
+      
+        notes.forEach(note => {
+          let noteProperties = note.properties
+          delete note.properties
+          project.notes.push({...note, ...noteProperties})
+        })
+      }
 
-    if(response.results.length === 1) {
-        data = response.results[0]
-    }
-    else {
-        console.error("ID should be unique")
-    }
+      delete project.associations
 
-    return data
+      // Remove HubSpot properties - prefixed 'hs_'
+      project = omitDeep(project, /hs_[a-zA-Z_]*$/g, { onMatch: { skipChildren: false } })
+
+      // Fetch existing Strapi project
+      const strapiProjects = await super.find({ filters: { hubspotID: projectID }})
+
+      // Strapi project exists, attach Clockify ID
+      if(strapiProjects.results.length === 1) {
+        project.clockifyID = strapiProjects.results[0].clockifyID
+      }
+      // Strapi project doesn't exist, create it
+      else if(strapiProjects.results.length === 0) {
+        console.log('Strapi Project doesn\'t exist')
+        createStrapiProject(project)
+      }
+      // Only possible if duplicate HubspotIDs in the database, schema makes this impossible
+      else {
+        console.error('More than two projects found - impossible!')
+      }
+
+      return project
+    }).catch((err) => {
+      if(err.code !== 404) {
+        console.error(err)
+      }
+      console.error(err)
+      return null
+    })
   },
 
   async update(...args) {
