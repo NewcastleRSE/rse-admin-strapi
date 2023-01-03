@@ -6,7 +6,8 @@
 
 const { createCoreService } = require('@strapi/strapi').factories
 const camelcaseKeys = require('camelcase-keys')
-const omitDeep = require('deepdash/omitDeep');
+const camelcase = require('camelcase')
+const omitDeep = require('deepdash/omitDeep')
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -23,7 +24,7 @@ const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
         completed: process.env.HUBSPOT_DEAL_COMPLETED
       }
 
-// Invert stages to key by Hubspot stage names
+// Invert stages to key by HubSpot stage names
 const invert = obj => Object.fromEntries(Object.entries(obj).map(a => a.reverse()))
 const hsStages = invert(stages)
 
@@ -32,18 +33,30 @@ function formatDealStage(stage) {
     return hsStages[stage].replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase() })
   }
   else {
-    console.log(stage)
-    console.log(hsStages)
+    console.error(`${stage} is not in ${hsStages}`)
     return stage
   }
 }
 
-async function getDeals(after, limit, properties, projectList) {
+// Recursively fetch all HubSpot deals
+async function getDeals(after, limit, stages, projectList) {
   try {
-    let hsProjects = await hubspotClient.crm.deals.basicApi.getPage(limit, after, properties, [], ['contacts', 'notes'], false)
+
+    const publicObjectSearchRequest = {
+      filterGroups: [{
+        filters: [
+          { propertyName: "dealstage", operator: "IN",  values: stages },
+        ],
+      }],
+      properties: dealProperties,
+      limit,
+      after
+    }
+
+    let hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
-      return getDeals(hsProjects.paging.next.after, limit, properties, projectList)
+      return getDeals(hsProjects.paging.next.after, limit, projectList)
     }
     else {
       return projectList
@@ -53,6 +66,7 @@ async function getDeals(after, limit, properties, projectList) {
   }
 }
 
+// Recursively fetch all project associations (contacts, notes, etc.)
 async function getAssociations(association, after, limit, properties, ids, associationList) {
   try {
 
@@ -89,6 +103,30 @@ async function getAssociations(association, after, limit, properties, ids, assoc
   }
 }
 
+// Takes a HubSpot response and reformats the keys
+function formatProjectObject(project) {
+
+  // Format project object ready for manipulation
+  let projectProperties = project.properties
+  delete project.properties
+
+  project = { ...project, ...projectProperties }
+  project.contacts = []
+  project.notes = []
+
+  // Set correct dealstage name from key
+  project.dealstage = formatDealStage(project.dealstage)
+
+  // Remove HubSpot properties - prefixed 'hs_'
+  delete project.hs_lastmodifieddate
+  delete project.hs_object_id
+
+  // Remove duplicate creation date property
+  delete project.createdate
+
+  return camelcaseKeys(project)
+}
+
 function createStrapiProject(hubspotProject) {
   if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(hubspotProject.dealstage)) {
     console.error(`Project ${hubspotProject.dealname} not found in Strapi database`)
@@ -117,7 +155,97 @@ function createStrapiProject(hubspotProject) {
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
-  async find(...args) {  
+  async find(...args) { 
+    let params = args[0]
+
+    let hubspotDealStages = []
+
+    params.dealstage.forEach(stage => {
+      hubspotDealStages.push(stages[camelcase(stage)])
+    })
+
+    let response = await getDeals(0, 100, hubspotDealStages, [])
+
+    let projects = []
+
+    response.forEach(project => {
+      projects.push(formatProjectObject(project))
+    })
+
+    let projectIDs = []
+    projects.map(project => project.id).forEach(projectId => {
+      projectIDs.push({ id: projectId })
+    })
+
+    let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
+    let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
+
+    const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
+    const contactIDs = contactAssociations.map(contact => contact.id)
+    const contacts = await getAssociations('contacts', 0, 100, contactProperties, contactIDs, [])
+
+    const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
+    const noteIDs = noteAssociations.map(note => note.id)
+    const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
+
+    projects.forEach(project => {
+
+      let contactAssociation = contactAssociationsResponse.results.filter((association) => {
+        return association._from.id === project.id
+      })
+
+      let projectContacts = []
+
+      if(contactAssociation.length) {
+
+        let contactIDs = contactAssociation[0].to.map(association => association.id)
+
+        contacts.filter((contact) => {
+          return contactIDs.includes(contact.id)
+        }).forEach(contact => {
+          let contactProperties = contact.properties
+          contact = { ...contact, ...contactProperties }
+          delete contact.properties
+          delete contact.hs_object_id
+          delete contact.createdate
+          delete contact.lastmodifieddate
+
+          projectContacts.push(contact)
+        })
+      }
+
+      project.contacts = projectContacts
+
+      let noteAssociation = noteAssociationsResponse.results.filter((association) => {
+        return association._from.id === project.id
+      })
+
+      let projectNotes = []
+
+      if(noteAssociation.length) {
+        let noteIDs = noteAssociation[0].to.map(association => association.id)
+
+        notes.filter((note) => {
+          return noteIDs.includes(note.id)
+        }).forEach(note => {
+          let noteProperties = note.properties
+          note = { ...note, ...noteProperties }
+          delete note.properties
+          delete note.hs_object_id
+          delete note.createdate
+          delete note.lastmodifieddate
+  
+          projectNotes.push(note)
+        })
+      }
+
+      project.notes = projectNotes
+    })
+
+    return projects
+  },
+
+  async findOld(...args) {  
 
     let params = args[0]
 
@@ -130,7 +258,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     const limit = 100
     const after = 0
 
-    let hsProjects = await getDeals(after, limit, dealProperties, [])
+    let hsProjects = await getDeals(after, limit, [])
 
     let contactAssociations = hsProjects.map(({associations})=>{ 
       if(associations && associations.contacts) {
@@ -173,8 +301,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
  
     // Project list from Strapi
     let sProjects = results
-
-    console.log(JSON.stringify(sProjects))
 
     // Clear results list ready for merging
     results = []
@@ -277,15 +403,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi.getById(projectID, dealProperties, null, ['contacts', 'notes']).then(async (project) => {
 
-      // Format project object ready for manipulation
-      let projectProperties = project.properties
-      delete project.properties
-      project = {...project, ...projectProperties}
-      project.contacts = []
-      project.notes = []
-
-      // Set correct dealstage name from key
-      project.dealstage = formatDealStage(project.dealstage)
+      project = formatProjectObject(project)
 
       // Add project contacts
       if(project.associations.contacts) {
@@ -310,9 +428,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
 
       delete project.associations
-
-      // Remove HubSpot properties - prefixed 'hs_'
-      project = omitDeep(project, /hs_[a-zA-Z_]*$/g, { onMatch: { skipChildren: false } })
 
       // Fetch existing Strapi project
       const strapiProjects = await super.find({ filters: { hubspotID: projectID }})
