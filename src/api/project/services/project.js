@@ -164,42 +164,52 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       hubspotDealStages.push(stages[camelcase(stage)])
     })
 
+    // Recursively get all HubSpot deals that match the deal stage filter
     let response = await getDeals(0, 100, hubspotDealStages, [])
 
     let projects = []
 
+    // Create an array of formatted projects
     response.forEach(project => {
       projects.push(formatProjectObject(project))
     })
 
+    // Create a filter list of all project IDs
     let projectIDs = []
     projects.map(project => project.id).forEach(projectId => {
       projectIDs.push({ id: projectId })
     })
 
+    // Use the filter list to fetch all contact and note associations
     let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
     let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
 
+    // Use the contact associations to get an array of all contact objects
     const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
     const contactIDs = contactAssociations.map(contact => contact.id)
     const contacts = await getAssociations('contacts', 0, 100, contactProperties, contactIDs, [])
 
+    // Use the note associations to get an array of all note objects
     const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
     const noteIDs = noteAssociations.map(note => note.id)
     const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
 
+    // Loop over all projects to build final response
     projects.forEach(project => {
 
+      // Get contact IDs associated with this project
       let contactAssociation = contactAssociationsResponse.results.filter((association) => {
         return association._from.id === project.id
       })
 
       let projectContacts = []
 
+      // If project has associated contacts
       if(contactAssociation.length) {
 
         let contactIDs = contactAssociation[0].to.map(association => association.id)
 
+        // Filter the global contact list for just those associated with the project
         contacts.filter((contact) => {
           return contactIDs.includes(contact.id)
         }).forEach(contact => {
@@ -214,17 +224,21 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         })
       }
 
+      // Add array of contacts to project object
       project.contacts = projectContacts
-
+      
+      // Get note IDs associated with this project
       let noteAssociation = noteAssociationsResponse.results.filter((association) => {
         return association._from.id === project.id
       })
 
       let projectNotes = []
 
+      // If project has associated contacts
       if(noteAssociation.length) {
         let noteIDs = noteAssociation[0].to.map(association => association.id)
 
+        // Filter the global notes list for just those associated with the project
         notes.filter((note) => {
           return noteIDs.includes(note.id)
         }).forEach(note => {
@@ -238,7 +252,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           projectNotes.push(note)
         })
       }
-
+      // Add array of notes to project object
       project.notes = projectNotes
     })
 
