@@ -140,8 +140,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       contacts = contacts.concat(await getAssociations('contacts', 0, limit, contactProperties, contactIDs.slice(i, i+100), []))
     }
 
-    console.log(contacts)
-
     for (let i = 0; i < noteIDs.length; i = i+100) {
       notes = notes.concat(await getAssociations('notes', 0, limit, noteProperties, noteIDs.slice(i, i+100), []))
     }
