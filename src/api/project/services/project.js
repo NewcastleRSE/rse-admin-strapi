@@ -167,6 +167,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) { 
 
+    const { results, pagination } = await super.find(...args)
+
     let params = args[0]
 
     let hubspotDealStages = []
@@ -176,7 +178,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     })
 
     // Recursively get all HubSpot deals that match the deal stage filter
-    return getDeals(0, 100, hubspotDealStages, []).then(async (response) => {
+    let response = await getDeals(0, 100, hubspotDealStages, [])
 
       let projects = []
 
@@ -206,7 +208,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
 
       // Loop over all projects to build final response
-      projects.forEach(async (project) => {
+      projects.forEach((project) => {
 
         // Get contact IDs associated with this project
         let contactAssociation = contactAssociationsResponse.results.filter((association) => {
@@ -267,28 +269,33 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         project.notes = projectNotes
 
         // Fetch existing Strapi project
-        let strapiProjects = await super.find({ filters: { hubspotID: project.id }}),
-        strapiProject = null
-
-        // Strapi project exists, attach Clockify ID
-        if(strapiProjects.results.length === 1) {
-          strapiProject = strapiProjects.results[0]
-        }
-        // Strapi project doesn't exist, create it
-        else if(strapiProjects.results.length === 0) {
-          console.log(`Strapi entry for ${project.dealname} doesn't exist`)
-          strapiProject = createStrapiProject(project)
-        }
-        // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
-        else {
-          console.error('More than two projects found - impossible!')
-        }
-
+        super.find({ filters: { hubspotID: project.id }}).then(strapiProjects => {
+          
+          let strapiProject
+          
+          // Strapi project exists, attach Clockify ID
+          if(strapiProjects.results.length === 1) {
+            strapiProject = strapiProjects.results[0]
+          }
+          // Strapi project doesn't exist, create it
+          else if(strapiProjects.results.length === 0) {
+            console.log(`Strapi entry for ${project.dealname} doesn't exist`)
+            strapiProject = createStrapiProject(project)
+          }
+          // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
+          else {
+            console.error('More than two projects found - impossible!')
+          }
+        })
       })
 
-      console.log(projects.length)
-      return projects
-    })
+      pagination.page = 1
+      pagination.pageCount = 1
+      pagination.pageSize = projects.length
+      pagination.total = projects.length
+
+      return { results: projects, pagination }
+    
   },
 
   async findOne(projectID) {
