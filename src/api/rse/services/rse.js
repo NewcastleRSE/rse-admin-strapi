@@ -151,10 +151,10 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 contractEndDate = rse.contractEnd ? DateTime.fromISO(rse.contractEnd) : null,
                 nextAvailableDate = null
 
-            let year = currentDate.year,
+            let year = contractEndDate ? contractEndDate.year : currentDate.year,
                 month = null
 
-            // Loop over years starting from current year
+            // Loop over years starting from contract end year or current year
             while(year < Math.max(...Object.keys(availability).map(Number))) {
                 
                 let i = 0
@@ -193,10 +193,16 @@ module.exports = createCoreService('api::rse.rse', ({ strapi }) => ({
                 }
             }
 
+            try{
+
             rse.lastAssignmentEnd = new Date(Math.max(...assignments.results.map(e => DateTime.fromJSDate(new Date(e.end)).toISODate() )))
             rse.nextAvailableDate = nextAvailableDate ? nextAvailableDate.toISODate() : null
             rse.nextAvailableFTE = availability[year][month-1]
             rse.availability = availability
+            }
+            catch(err) {
+                console.log(rse)
+            }
 
             results.push(rse)
         }
