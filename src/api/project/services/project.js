@@ -104,27 +104,34 @@ async function getAssociations(association, after, limit, properties, ids, assoc
 }
 
 // Takes a HubSpot response and reformats the keys
-function formatProjectObject(project) {
+function formatHubSpotObject(object) {
 
-  // Format project object ready for manipulation
-  let projectProperties = project.properties
-  delete project.properties
+  // Format object ready for manipulation
+  let objectProperties = object.properties
+  delete object.properties
 
-  project = { ...project, ...projectProperties }
-  project.contacts = []
-  project.notes = []
-
-  // Set correct dealstage name from key
-  project.dealstage = formatDealStage(project.dealstage)
+  object = { ...object, ...objectProperties }
+  object.contacts = []
+  object.notes = []
 
   // Remove HubSpot properties - prefixed 'hs_'
-  delete project.hs_lastmodifieddate
-  delete project.hs_object_id
+  delete object.hs_lastmodifieddate
+  delete object.hs_object_id
 
   // Remove duplicate creation date property
-  delete project.createdate
+  delete object.createdate
 
-  return camelcaseKeys(project)
+  // Deal obejct specifics
+  if(object.dealstage) {
+    // Set correct dealstage name from key
+    object.dealstage = formatDealStage(object.dealstage)
+
+    // Set properties for associated contacts and notes
+    object.contacts = []
+    object.notes = []
+  }
+
+  return camelcaseKeys(object)
 }
 
 function createStrapiProject(hubspotProject) {
@@ -139,6 +146,8 @@ function createStrapiProject(hubspotProject) {
           hubspotID: hubspotProject.id,
           clockifyID: clockifyProject.id
         }
+      }).then(strapiProject => {
+        return strapiProject
       }).catch(error => {
         console.log('Error creating ' + hubspotProject.dealname)
         console.error(error.details.errors)
@@ -150,12 +159,14 @@ function createStrapiProject(hubspotProject) {
   }
   else {
     console.error('Too early in lifecycle to create a project')
+    return null
   }
 }
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
   async find(...args) { 
+
     let params = args[0]
 
     let hubspotDealStages = []
@@ -165,251 +176,119 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     })
 
     // Recursively get all HubSpot deals that match the deal stage filter
-    let response = await getDeals(0, 100, hubspotDealStages, [])
+    return getDeals(0, 100, hubspotDealStages, []).then(async (response) => {
 
-    let projects = []
+      let projects = []
 
-    // Create an array of formatted projects
-    response.forEach(project => {
-      projects.push(formatProjectObject(project))
-    })
-
-    // Create a filter list of all project IDs
-    let projectIDs = []
-    projects.map(project => project.id).forEach(projectId => {
-      projectIDs.push({ id: projectId })
-    })
-
-    // Use the filter list to fetch all contact and note associations
-    let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
-    let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
-
-    // Use the contact associations to get an array of all contact objects
-    const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
-    const contactIDs = contactAssociations.map(contact => contact.id)
-    const contacts = await getAssociations('contacts', 0, 100, contactProperties, contactIDs, [])
-
-    // Use the note associations to get an array of all note objects
-    const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
-    const noteIDs = noteAssociations.map(note => note.id)
-    const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
-
-    // Loop over all projects to build final response
-    projects.forEach(project => {
-
-      // Get contact IDs associated with this project
-      let contactAssociation = contactAssociationsResponse.results.filter((association) => {
-        return association._from.id === project.id
+      // Create an array of formatted projects
+      response.forEach(project => {
+        projects.push(formatHubSpotObject(project))
       })
 
-      let projectContacts = []
+      // Create a filter list of all project IDs
+      let projectIDs = []
+      projects.map(project => project.id).forEach(projectId => {
+        projectIDs.push({ id: projectId })
+      })
 
-      // If project has associated contacts
-      if(contactAssociation.length) {
+      // Use the filter list to fetch all contact and note associations
+      let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
+      let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
 
-        let contactIDs = contactAssociation[0].to.map(association => association.id)
+      // Use the contact associations to get an array of all contact objects
+      const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
+      const contactIDs = contactAssociations.map(contact => contact.id)
+      const contacts = await getAssociations('contacts', 0, 100, contactProperties, contactIDs, [])
 
-        // Filter the global contact list for just those associated with the project
-        contacts.filter((contact) => {
-          return contactIDs.includes(contact.id)
-        }).forEach(contact => {
-          let contactProperties = contact.properties
-          contact = { ...contact, ...contactProperties }
-          delete contact.properties
-          delete contact.hs_object_id
-          delete contact.createdate
-          delete contact.lastmodifieddate
+      // Use the note associations to get an array of all note objects
+      const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
+      const noteIDs = noteAssociations.map(note => note.id)
+      const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
 
-          projectContacts.push(contact)
+      // Loop over all projects to build final response
+      projects.forEach(async (project) => {
+
+        // Get contact IDs associated with this project
+        let contactAssociation = contactAssociationsResponse.results.filter((association) => {
+          return association._from.id === project.id
         })
-      }
 
-      // Add array of contacts to project object
-      project.contacts = projectContacts
-      
-      // Get note IDs associated with this project
-      let noteAssociation = noteAssociationsResponse.results.filter((association) => {
-        return association._from.id === project.id
-      })
+        let projectContacts = []
 
-      let projectNotes = []
+        // If project has associated contacts
+        if(contactAssociation.length) {
 
-      // If project has associated contacts
-      if(noteAssociation.length) {
-        let noteIDs = noteAssociation[0].to.map(association => association.id)
+          let contactIDs = contactAssociation[0].to.map(association => association.id)
 
-        // Filter the global notes list for just those associated with the project
-        notes.filter((note) => {
-          return noteIDs.includes(note.id)
-        }).forEach(note => {
-          let noteProperties = note.properties
-          note = { ...note, ...noteProperties }
-          delete note.properties
-          delete note.hs_object_id
-          delete note.createdate
-          delete note.lastmodifieddate
-  
-          projectNotes.push(note)
-        })
-      }
-      // Add array of notes to project object
-      project.notes = projectNotes
-    })
-
-    return projects
-  },
-
-  async findOld(...args) {  
-
-    let params = args[0]
-
-    let { results, pagination } = await super.find(...args)
-
-    const sort = JSON.stringify({
-      propertyName: "dealname",
-      direction: "ASCENDING",
-    })
-    const limit = 100
-    const after = 0
-
-    let hsProjects = await getDeals(after, limit, [])
-
-    let contactAssociations = hsProjects.map(({associations})=>{ 
-      if(associations && associations.contacts) {
-        return associations.contacts.results
-      }
-      else {
-        return []
-      }
-    })
-
-    let noteAssociations = hsProjects.map(({associations})=>{ 
-      if(associations && associations.notes) {
-        return associations.notes.results
-      }
-      else {
-        return []
-      }
-    })
-
-    // Remove empty associations and map to array of IDs
-    let contactIDs = [].concat.apply([], contactAssociations).map(contact => {
-      return contact.id
-    })
-
-    let noteIDs = [].concat.apply([], noteAssociations).map(note => {
-      return note.id
-    })
-
-    let contacts = [],
-        notes = []
-
-    // Can only fetch 100 associations at once, so run in loops to segment requests
-    for (let i = 0; i < contactIDs.length; i = i+100) {
-      contacts = contacts.concat(await getAssociations('contacts', 0, limit, contactProperties, contactIDs.slice(i, i+100), []))
-    }
-
-    for (let i = 0; i < noteIDs.length; i = i+100) {
-      notes = notes.concat(await getAssociations('notes', 0, limit, noteProperties, noteIDs.slice(i, i+100), []))
-    }
- 
-    // Project list from Strapi
-    let sProjects = results
-
-    // Clear results list ready for merging
-    results = []
-
-    // If there is a query by stage, filter results
-    if (params && params.stage) {
-      // Ensure stages is always an array
-      let query = Array.isArray(params.stage) ? params.stage : [params.stage],
-          hsStages = []
-
-      query.forEach(stage => {
-        hsStages.push(stages[stage])
-      })
-
-      hsProjects = hsProjects.filter(project => {
-        return hsStages.includes(project.properties.dealstage)
-      })
-    }
-
-    hsProjects.forEach((project) => {
-
-      let projectContacts = [],
-          projectNotes = []
-
-      if (project.associations) {
-
-        if(project.associations.contacts) {
-          let associatedContacts = project.associations.contacts.results.map(contact => {
-            return contact.id
-          })
-
-          contacts.filter(contact => {
-            return associatedContacts.includes(contact.id)
+          // Filter the global contact list for just those associated with the project
+          contacts.filter((contact) => {
+            return contactIDs.includes(contact.id)
           }).forEach(contact => {
-            projectContacts.push({
-              id: contact.id,
-              firstname: contact.properties.firstname,
-              lastname: contact.properties.lastname,
-              email: contact.properties.email,
-              jobtitle: contact.properties.jobtitle,
-              department: contact.properties.department
-            })
+            let contactProperties = contact.properties
+            contact = { ...contact, ...contactProperties }
+            delete contact.properties
+            delete contact.hs_object_id
+            delete contact.createdate
+            delete contact.lastmodifieddate
+
+            projectContacts.push(contact)
           })
         }
 
-        if(project.associations.notes) {
-
-          let associatedNotes = project.associations.notes.results.map(note => {
-            return note.id
-          })
-
-          notes.filter(note => {
-            return associatedNotes.includes(note.id)
-          }).forEach(note => {
-            projectNotes.push({
-              id: note.id,
-              note: note.properties.hs_note_body,
-              created: note.properties.hs_createdate,
-              lastUpdated: note.properties.hs_lastmodifieddate
-            })
-          })
-        }
-      }
-
-      let result = project.properties
-      result.id = project.id
-      result.createdAt = project.createdAt
-      result.updatedAt = project.updatedAt
-      result.contacts = projectContacts
-      result.notes = projectNotes
-
-        // Modify project stage
-        result.dealstage = formatDealStage(result.dealstage)
-
-        // Fetch and set clockify ID
-        var sProject = sProjects.find(result => {
-          return project.id === result.hubspotID
+        // Add array of contacts to project object
+        project.contacts = projectContacts
+        
+        // Get note IDs associated with this project
+        let noteAssociation = noteAssociationsResponse.results.filter((association) => {
+          return association._from.id === project.id
         })
 
-        if(sProject) {
-          result.clockifyID = sProject.clockifyID
+        let projectNotes = []
+
+        // If project has associated contacts
+        if(noteAssociation.length) {
+          let noteIDs = noteAssociation[0].to.map(association => association.id)
+
+          // Filter the global notes list for just those associated with the project
+          notes.filter((note) => {
+            return noteIDs.includes(note.id)
+          }).forEach(note => {
+            let noteProperties = note.properties
+            note = { ...note, ...noteProperties }
+            delete note.properties
+            delete note.hs_object_id
+            delete note.createdate
+            delete note.lastmodifieddate
+    
+            projectNotes.push(note)
+          })
         }
+        // Add array of notes to project object
+        project.notes = projectNotes
+
+        // Fetch existing Strapi project
+        let strapiProjects = await super.find({ filters: { hubspotID: project.id }}),
+        strapiProject = null
+
+        // Strapi project exists, attach Clockify ID
+        if(strapiProjects.results.length === 1) {
+          strapiProject = strapiProjects.results[0]
+        }
+        // Strapi project doesn't exist, create it
+        else if(strapiProjects.results.length === 0) {
+          console.log(`Strapi entry for ${project.dealname} doesn't exist`)
+          strapiProject = createStrapiProject(project)
+        }
+        // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
         else {
-          createStrapiProject(result)
+          console.error('More than two projects found - impossible!')
         }
 
-        results.push(camelcaseKeys(result))
+      })
+
+      console.log(projects.length)
+      return projects
     })
-
-    pagination.page = 1
-    pagination.pageCount = 1
-    pagination.pageSize = results.length
-    pagination.total = results.length
-
-    return { results, pagination }
   },
 
   async findOne(projectID) {
@@ -417,50 +296,44 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi.getById(projectID, dealProperties, null, ['contacts', 'notes']).then(async (project) => {
 
-      project = formatProjectObject(project)
+      project = formatHubSpotObject(project)
 
       // Add project contacts
       if(project.associations.contacts) {
         let contacts = await getAssociations('contacts', 0, 100, contactProperties, project.associations.contacts.results.map(contact => contact.id), [])
-      
-        contacts.forEach(contact => {
-          let contactProperties = contact.properties
-          delete contact.properties
-          project.contacts.push({...contact, ...contactProperties})
-        })
+        contacts.forEach(contact => { project.contacts.push(formatHubSpotObject(contact)) })
       }
 
       // Add project notes
       if(project.associations.notes) {
         let notes = await getAssociations('notes', 0, 100, noteProperties, project.associations.notes.results.map(note => note.id), [])
-      
-        notes.forEach(note => {
-          let noteProperties = note.properties
-          delete note.properties
-          project.notes.push({...note, ...noteProperties})
-        })
+        notes.forEach(note => { project.notes.push(formatHubSpotObject(note)) })
       }
 
       delete project.associations
 
       // Fetch existing Strapi project
-      const strapiProjects = await super.find({ filters: { hubspotID: projectID }})
+      let strapiProjects = await super.find({ filters: { hubspotID: project.id }}),
+          strapiProject = null
 
       // Strapi project exists, attach Clockify ID
       if(strapiProjects.results.length === 1) {
-        project.clockifyID = strapiProjects.results[0].clockifyID
+        strapiProject = strapiProjects.results[0]
       }
       // Strapi project doesn't exist, create it
       else if(strapiProjects.results.length === 0) {
         console.log('Strapi Project doesn\'t exist')
-        createStrapiProject(project)
+        strapiProject = createStrapiProject(project)
       }
-      // Only possible if duplicate HubspotIDs in the database, schema makes this impossible
+      // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
       else {
         console.error('More than two projects found - impossible!')
       }
 
+      project.clockifyID = strapiProject ? strapiProject.clockifyID : null
+
       return project
+
     }).catch((err) => {
       if(err.code !== 404) {
         console.error(err)
