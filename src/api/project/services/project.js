@@ -97,17 +97,20 @@ async function getAssociations(association, after, limit, properties, ids, assoc
 
     let hsAssociations
 
-    switch(association) {
-      case 'contacts':
+    if(association === 'contacts') {
         hsAssociations = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
         associationList = associationList.concat(hsAssociations.results)
-      case 'notes':
+    }
+    else if(association === 'notes') {
         hsAssociations = await hubspotClient.crm.objects.notes.searchApi.doSearch(publicObjectSearchRequest)
         associationList = associationList.concat(hsAssociations.results)
     }
+    else {
+      console.error('Invalid association type')
+    }
 
     if(hsAssociations.paging) {
-      return getAssociations(association, hsAssociations.paging.next.after, limit, properties, filterGroups, associationList)
+      return getAssociations(association, hsAssociations.paging.next.after, limit, properties, ids, associationList)
     }
     else {
       return associationList
@@ -242,8 +245,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         return response.flat(1)
       })
 
-      console.log(`${notes.length} notes`)
-
       // Loop over all projects to build final response
       projects.forEach((project) => {
 
@@ -316,7 +317,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           }
           // Strapi project doesn't exist, create it
           else if(strapiProjects.results.length === 0) {
-            console.log(`Strapi entry for ${project.dealname} doesn't exist`)
+            console.info(`Strapi entry for ${project.dealname} doesn't exist`)
             strapiProject = createStrapiProject(project)
           }
           // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
