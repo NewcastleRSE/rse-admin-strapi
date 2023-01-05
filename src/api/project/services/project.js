@@ -235,12 +235,14 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       let getNotes = []
 
       noteIDs.forEach(async (batch) => {
-        getNotes.push(await getAssociations('notes', 0, 100, noteProperties, batch, []))
+        getNotes.push(getAssociations('notes', 0, 100, noteProperties, batch, []))
       })
 
       const notes = await Promise.all(getNotes).then(response => {
         return response.flat(1)
       })
+
+      console.log(`${notes.length} notes`)
 
       // Loop over all projects to build final response
       projects.forEach((project) => {
@@ -321,6 +323,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           else {
             console.error('More than two projects found - impossible!')
           }
+
+          project.clockifyID = strapiProject ? strapiProject.clockifyID : null
         })
       })
 
