@@ -38,14 +38,28 @@ function formatDealStage(stage) {
   }
 }
 
+function sliceArrayIntoChunks(arr, chunkSize) {
+  const res = [];
+  for (let i = 0; i < arr.length; i += chunkSize) {
+      const chunk = arr.slice(i, i + chunkSize);
+      res.push(chunk);
+  }
+  return res;
+}
+
 // Recursively fetch all HubSpot deals
-async function getDeals(after, limit, stages, projectList) {
+async function getDeals(after, limit, stageFilter, projectList) {
   try {
+
+    // Stages are null or empty
+    if(!stageFilter || !stageFilter.length) {
+      stageFilter = Object.keys(hsStages)
+    }
 
     const publicObjectSearchRequest = {
       filterGroups: [{
         filters: [
-          { propertyName: "dealstage", operator: "IN",  values: stages },
+          { propertyName: "dealstage", operator: "IN",  values: stageFilter },
         ],
       }],
       properties: dealProperties,
@@ -56,7 +70,7 @@ async function getDeals(after, limit, stages, projectList) {
     let hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     projectList = projectList.concat(hsProjects.results)
     if(hsProjects.paging) {
-      return getDeals(hsProjects.paging.next.after, limit, projectList)
+      return getDeals(hsProjects.paging.next.after, limit, stageFilter, projectList)
     }
     else {
       return projectList
@@ -173,9 +187,12 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     let hubspotDealStages = []
 
-    params.dealstage.forEach(stage => {
-      hubspotDealStages.push(stages[camelcase(stage)])
-    })
+    // Stage is present in query string, create array for filter
+    if(params.stage) {
+      params.stage.forEach(stage => {
+        hubspotDealStages.push(stages[camelcase(stage)])
+      })
+    }
 
     // Recursively get all HubSpot deals that match the deal stage filter
     let response = await getDeals(0, 100, hubspotDealStages, [])
@@ -199,13 +216,31 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       // Use the contact associations to get an array of all contact objects
       const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
-      const contactIDs = contactAssociations.map(contact => contact.id)
-      const contacts = await getAssociations('contacts', 0, 100, contactProperties, contactIDs, [])
+      const contactIDs = sliceArrayIntoChunks([...new Set(contactAssociations.map(contact => contact.id))], 100)
+
+      let getContacts = []
+
+      contactIDs.forEach(batch => {
+        getContacts.push(getAssociations('contacts', 0, 100, contactProperties, batch, []))
+      })
+
+      const contacts = await Promise.all(getContacts).then(response => {
+        return response.flat(1)
+      })
 
       // Use the note associations to get an array of all note objects
       const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
-      const noteIDs = noteAssociations.map(note => note.id)
-      const notes = await getAssociations('notes', 0, 100, noteProperties, noteIDs, [])
+      const noteIDs = sliceArrayIntoChunks([...new Set(noteAssociations.map(note => note.id))], 100)
+  
+      let getNotes = []
+
+      noteIDs.forEach(async (batch) => {
+        getNotes.push(await getAssociations('notes', 0, 100, noteProperties, batch, []))
+      })
+
+      const notes = await Promise.all(getNotes).then(response => {
+        return response.flat(1)
+      })
 
       // Loop over all projects to build final response
       projects.forEach((project) => {
@@ -307,13 +342,13 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       // Add project contacts
       if(project.associations.contacts) {
-        let contacts = await getAssociations('contacts', 0, 100, contactProperties, project.associations.contacts.results.map(contact => contact.id), [])
+        let contacts = await getAssociations('contacts', 0, 100, contactProperties, [...new Set(project.associations.contacts.results.map(contact => contact.id))], [])
         contacts.forEach(contact => { project.contacts.push(formatHubSpotObject(contact)) })
       }
 
       // Add project notes
       if(project.associations.notes) {
-        let notes = await getAssociations('notes', 0, 100, noteProperties, project.associations.notes.results.map(note => note.id), [])
+        let notes = await getAssociations('notes', 0, 100, noteProperties, [...new Set(project.associations.notes.results.map(note => note.id))], [])
         notes.forEach(note => { project.notes.push(formatHubSpotObject(note)) })
       }
 
