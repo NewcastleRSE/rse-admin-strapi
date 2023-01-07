@@ -149,6 +149,7 @@ resource "azurerm_linux_web_app" "as" {
     HUBSPOT_DEAL_ALLOCATED = "0fd81f66-7cda-4db7-b2e8-b0114be90ef9"
     HUBSPOT_DEAL_COMPLETED = "09b510b5-6871-4771-ad09-1438ce8e6f11"
     HUBSPOT_CONTACT_PROPERTIES = "firstname,lastname,email,department,jobtitle"
+    HUBSPOT_NOTE_PROPERTIES = "hs_note_body,hs_attachment_ids"
     CLOCKIFY_KEY = var.clockify_key
     CLOCKIFY_WORKSPACE = var.clockify_workspace
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"

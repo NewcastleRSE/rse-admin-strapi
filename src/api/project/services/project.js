@@ -59,7 +59,7 @@ async function getDeals(after, limit, stageFilter, projectList) {
     const publicObjectSearchRequest = {
       filterGroups: [{
         filters: [
-          { propertyName: "dealstage", operator: "IN",  values: stages },
+          { propertyName: "dealstage", operator: "IN",  values: stageFilter },
         ],
       }],
       properties: dealProperties,
@@ -97,17 +97,20 @@ async function getAssociations(association, after, limit, properties, ids, assoc
 
     let hsAssociations
 
-    switch(association) {
-      case 'contacts':
+    if(association === 'contacts') {
         hsAssociations = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
         associationList = associationList.concat(hsAssociations.results)
-      case 'notes':
+    }
+    else if(association === 'notes') {
         hsAssociations = await hubspotClient.crm.objects.notes.searchApi.doSearch(publicObjectSearchRequest)
         associationList = associationList.concat(hsAssociations.results)
     }
+    else {
+      console.error('Invalid association type')
+    }
 
     if(hsAssociations.paging) {
-      return getAssociations(association, hsAssociations.paging.next.after, limit, properties, filterGroups, associationList)
+      return getAssociations(association, hsAssociations.paging.next.after, limit, properties, ids, associationList)
     }
     else {
       return associationList
@@ -181,6 +184,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
     let hubspotDealStages = []
 
+    // Stage is present in query string, create array for filter
     if(params.stage) {
       params.stage.forEach(stage => {
         hubspotDealStages.push(stages[camelcase(stage)])
@@ -347,13 +351,13 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       // Add project contacts
       if(project.associations.contacts) {
-        let contacts = await getAssociations('contacts', 0, 100, contactProperties, project.associations.contacts.results.map(contact => contact.id), [])
+        let contacts = await getAssociations('contacts', 0, 100, contactProperties, [...new Set(project.associations.contacts.results.map(contact => contact.id))], [])
         contacts.forEach(contact => { project.contacts.push(formatHubSpotObject(contact)) })
       }
 
       // Add project notes
       if(project.associations.notes) {
-        let notes = await getAssociations('notes', 0, 100, noteProperties, project.associations.notes.results.map(note => note.id), [])
+        let notes = await getAssociations('notes', 0, 100, noteProperties, [...new Set(project.associations.notes.results.map(note => note.id))], [])
         notes.forEach(note => { project.notes.push(formatHubSpotObject(note)) })
       }
 
