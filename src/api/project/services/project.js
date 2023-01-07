@@ -128,6 +128,7 @@ function formatHubSpotObject(object) {
   delete object.properties
 
   object = { ...object, ...objectProperties }
+  object.hubspotID = object.hs_object_id
   object.contacts = []
   object.notes = []
 
@@ -138,7 +139,7 @@ function formatHubSpotObject(object) {
   // Remove duplicate creation date property
   delete object.createdate
 
-  // Deal obejct specifics
+  // Deal object specifics
   if(object.dealstage) {
     // Set correct dealstage name from key
     object.dealstage = formatDealStage(object.dealstage)
@@ -152,32 +153,25 @@ function formatHubSpotObject(object) {
 }
 
 function createStrapiProject(hubspotProject) {
-  if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(hubspotProject.dealstage)) {
-    console.error(`Project ${hubspotProject.dealname} not found in Strapi database`)
-    // Get or create the Clockify project
-    strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(hubspotProject)).then(clockifyProject => {
-      // Create the entry in Strapi to link Hubspot and Clockify
-      strapi.entityService.create('api::project.project', {
-        data: {
-          name: hubspotProject.dealname,
-          hubspotID: hubspotProject.id,
-          clockifyID: clockifyProject.id
-        }
-      }).then(strapiProject => {
-        return strapiProject
-      }).catch(error => {
-        console.log('Error creating ' + hubspotProject.dealname)
-        console.error(error.details.errors)
-      })
+  // Get or create the Clockify project
+  strapi.service('api::timesheet.timesheet').createClockifyProject(camelcaseKeys(hubspotProject)).then(clockifyProject => {
+    // Create the entry in Strapi to link Hubspot and Clockify
+    strapi.entityService.create('api::project.project', {
+      data: {
+        name: hubspotProject.dealname,
+        hubspotID: hubspotProject.id,
+        clockifyID: clockifyProject.id
+      }
+    }).then(strapiProject => {
+      return strapiProject
     }).catch(error => {
       console.log('Error creating ' + hubspotProject.dealname)
-      console.error(error)
+      console.error(error.details.errors)
     })
-  }
-  else {
-    console.error('Too early in lifecycle to create a project')
-    return null
-  }
+  }).catch(error => {
+    console.log('Error creating ' + hubspotProject.dealname)
+    console.error(error)
+  })
 }
 
 module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
@@ -200,142 +194,152 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     // Recursively get all HubSpot deals that match the deal stage filter
     let response = await getDeals(0, 100, hubspotDealStages, [])
 
-      let projects = []
+    let projects = []
 
-      // Create an array of formatted projects
-      response.forEach(project => {
-        projects.push(formatHubSpotObject(project))
+    // Create an array of formatted projects
+    response.forEach(project => {
+      projects.push(formatHubSpotObject(project))
+    })
+
+    // Create a filter list of all project IDs
+    let projectIDs = []
+    projects.map(project => project.id).forEach(projectId => {
+      projectIDs.push({ id: projectId })
+    })
+
+    // Use the filter list to fetch all contact and note associations
+    let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
+    let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
+
+    // Use the contact associations to get an array of all contact objects
+    const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
+    const contactIDs = sliceArrayIntoChunks([...new Set(contactAssociations.map(contact => contact.id))], 100)
+
+    let getContacts = []
+
+    contactIDs.forEach(batch => {
+      getContacts.push(getAssociations('contacts', 0, 100, contactProperties, batch, []))
+    })
+
+    const contacts = await Promise.all(getContacts).then(response => {
+      return response.flat(1)
+    })
+
+    // Use the note associations to get an array of all note objects
+    const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
+    const noteIDs = sliceArrayIntoChunks([...new Set(noteAssociations.map(note => note.id))], 100)
+
+    let getNotes = []
+
+    noteIDs.forEach(async (batch) => {
+      getNotes.push(getAssociations('notes', 0, 100, noteProperties, batch, []))
+    })
+
+    const notes = await Promise.all(getNotes).then(response => {
+      return response.flat(1)
+    })
+
+    let projectPromises = []
+
+    // Loop over all projects to build final response
+    await projects.forEach(async (project) => {
+
+      // Get contact IDs associated with this project
+      let contactAssociation = contactAssociationsResponse.results.filter((association) => {
+        return association._from.id === project.id
       })
 
-      // Create a filter list of all project IDs
-      let projectIDs = []
-      projects.map(project => project.id).forEach(projectId => {
-        projectIDs.push({ id: projectId })
+      let projectContacts = []
+
+      // If project has associated contacts
+      if(contactAssociation.length) {
+
+        let contactIDs = contactAssociation[0].to.map(association => association.id)
+
+        // Filter the global contact list for just those associated with the project
+        contacts.filter((contact) => {
+          return contactIDs.includes(contact.id)
+        }).forEach(contact => {
+          let contactProperties = contact.properties
+          contact = { ...contact, ...contactProperties }
+          delete contact.properties
+          delete contact.hs_object_id
+          delete contact.createdate
+          delete contact.lastmodifieddate
+
+          projectContacts.push(contact)
+        })
+      }
+
+      // Add array of contacts to project object
+      project.contacts = projectContacts
+      
+      // Get note IDs associated with this project
+      let noteAssociation = noteAssociationsResponse.results.filter((association) => {
+        return association._from.id === project.id
       })
 
-      // Use the filter list to fetch all contact and note associations
-      let contactAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'contact', { inputs: projectIDs })
-      let noteAssociationsResponse = await hubspotClient.crm.associations.batchApi.read('deal', 'engagements', { inputs: projectIDs })
+      let projectNotes = []
 
-      // Use the contact associations to get an array of all contact objects
-      const contactAssociations = contactAssociationsResponse.results.map(association => association.to).flat(1)
-      const contactIDs = sliceArrayIntoChunks([...new Set(contactAssociations.map(contact => contact.id))], 100)
+      // If project has associated contacts
+      if(noteAssociation.length) {
+        let noteIDs = noteAssociation[0].to.map(association => association.id)
 
-      let getContacts = []
-
-      contactIDs.forEach(batch => {
-        getContacts.push(getAssociations('contacts', 0, 100, contactProperties, batch, []))
-      })
-
-      const contacts = await Promise.all(getContacts).then(response => {
-        return response.flat(1)
-      })
-
-      // Use the note associations to get an array of all note objects
-      const noteAssociations = noteAssociationsResponse.results.map(association => association.to).flat(1)
-      const noteIDs = sliceArrayIntoChunks([...new Set(noteAssociations.map(note => note.id))], 100)
+        // Filter the global notes list for just those associated with the project
+        notes.filter((note) => {
+          return noteIDs.includes(note.id)
+        }).forEach(note => {
+          let noteProperties = note.properties
+          note = { ...note, ...noteProperties }
+          delete note.properties
+          delete note.hs_object_id
+          delete note.createdate
+          delete note.lastmodifieddate
   
-      let getNotes = []
-
-      noteIDs.forEach(async (batch) => {
-        getNotes.push(getAssociations('notes', 0, 100, noteProperties, batch, []))
-      })
-
-      const notes = await Promise.all(getNotes).then(response => {
-        return response.flat(1)
-      })
-
-      // Loop over all projects to build final response
-      projects.forEach((project) => {
-
-        // Get contact IDs associated with this project
-        let contactAssociation = contactAssociationsResponse.results.filter((association) => {
-          return association._from.id === project.id
+          projectNotes.push(note)
         })
+      }
+      // Add array of notes to project object
+      project.notes = projectNotes
 
-        let projectContacts = []
-
-        // If project has associated contacts
-        if(contactAssociation.length) {
-
-          let contactIDs = contactAssociation[0].to.map(association => association.id)
-
-          // Filter the global contact list for just those associated with the project
-          contacts.filter((contact) => {
-            return contactIDs.includes(contact.id)
-          }).forEach(contact => {
-            let contactProperties = contact.properties
-            contact = { ...contact, ...contactProperties }
-            delete contact.properties
-            delete contact.hs_object_id
-            delete contact.createdate
-            delete contact.lastmodifieddate
-
-            projectContacts.push(contact)
-          })
-        }
-
-        // Add array of contacts to project object
-        project.contacts = projectContacts
+      // Fetch existing Strapi project
+      projectPromises.push(super.find({ filters: { hubspotID: project.id }}).then(async (strapiProjects) => {
         
-        // Get note IDs associated with this project
-        let noteAssociation = noteAssociationsResponse.results.filter((association) => {
-          return association._from.id === project.id
-        })
-
-        let projectNotes = []
-
-        // If project has associated contacts
-        if(noteAssociation.length) {
-          let noteIDs = noteAssociation[0].to.map(association => association.id)
-
-          // Filter the global notes list for just those associated with the project
-          notes.filter((note) => {
-            return noteIDs.includes(note.id)
-          }).forEach(note => {
-            let noteProperties = note.properties
-            note = { ...note, ...noteProperties }
-            delete note.properties
-            delete note.hs_object_id
-            delete note.createdate
-            delete note.lastmodifieddate
-    
-            projectNotes.push(note)
-          })
+        let strapiProject
+        
+        // Strapi project exists, attach Clockify ID
+        if(strapiProjects.results.length === 1) {
+          strapiProject = strapiProjects.results[0]
         }
-        // Add array of notes to project object
-        project.notes = projectNotes
-
-        // Fetch existing Strapi project
-        super.find({ filters: { hubspotID: project.id }}).then(strapiProjects => {
-          
-          let strapiProject
-          
-          // Strapi project exists, attach Clockify ID
-          if(strapiProjects.results.length === 1) {
-            strapiProject = strapiProjects.results[0]
+        // Strapi project doesn't exist, create it
+        else if(strapiProjects.results.length === 0) {
+          if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(project.dealstage)) {
+            console.log(`Creating Strapi project for ${project.dealname}.`)
+            strapiProject = await createStrapiProject(project)
           }
-          // Strapi project doesn't exist, create it
-          else if(strapiProjects.results.length === 0) {
-            console.info(`Strapi entry for ${project.dealname} doesn't exist`)
-            strapiProject = createStrapiProject(project)
-          }
-          // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
           else {
-            console.error('More than two projects found - impossible!')
+            console.info(`Too early in lifecycle to create a Strapi project for ${project.dealname}`)
           }
+        }
+        // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
+        else {
+          console.error('More than two projects found - impossible!')
+        }
 
-          project.clockifyID = strapiProject ? strapiProject.clockifyID : null
-        })
-      })
+        project.clockifyID = strapiProject ? strapiProject.clockifyID : null
+        project.id = strapiProject ? strapiProject.id : null
 
+      }))
+    })
+
+    return Promise.all(projectPromises).then(() => {
       pagination.page = 1
       pagination.pageCount = 1
       pagination.pageSize = projects.length
       pagination.total = projects.length
-
+  
       return { results: projects, pagination }
-    
+    })
   },
 
   async findOne(projectID) {
@@ -369,8 +373,13 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
       // Strapi project doesn't exist, create it
       else if(strapiProjects.results.length === 0) {
-        console.log('Strapi Project doesn\'t exist')
-        strapiProject = createStrapiProject(project)
+        if (['Completed', 'Allocated', 'Awaiting Allocation'].includes(project.dealstage)) {
+          console.log(`Creating Strapi project for ${project.dealname}.`)
+          strapiProject = createStrapiProject(project)
+        }
+        else {
+          console.info(`Too early in lifecycle to create a Strapi project for ${project.dealname}`)
+        }
       }
       // Only possible if duplicate HubSpotIDs in the database, schema makes this impossible
       else {
@@ -378,6 +387,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
 
       project.clockifyID = strapiProject ? strapiProject.clockifyID : null
+      project.id = strapiProject ? strapiProject.id : null
 
       return project
 
