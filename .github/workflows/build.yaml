@@ -19,3 +19,13 @@ jobs:
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
         tags: "latest"
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: 'Deploy to Azure Web App'
+      uses: azure/webapps-deploy@v2
+      with: 
+        app-name: rseadmin
+        publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+        images: rseadmin.azurecr.io/api:${{ github.ref_name }}
