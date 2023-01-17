@@ -58,6 +58,8 @@ Run with hot reload for development
 yarn develop
 ```
 
+Once running, you may need to change the redirect URL that is used after you have authenticated. Strapi gets this value from the database and so, if using a database dump from production, it may redirect you to the production url. To change this, log into the Strapi admin UI, go to Settings > Providers, and edit the Microsoft provider. Change the redirect URL to `http://localhost:3000/auth/login`.
+
 ## Deployment
 
 ### Local
