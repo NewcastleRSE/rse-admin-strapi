@@ -23,4 +23,12 @@ module.exports = {
       console.error(err);
     }
   },
+  project: async (ctx, next) => {
+    try {
+      ctx.body = await service.findProject(ctx.params.id);
+    } catch (err) {
+      ctx.body = err;
+      console.error(err);
+    }
+  },
 };

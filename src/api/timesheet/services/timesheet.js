@@ -36,6 +36,43 @@ const reportConfig = {
   },
 };
 
+// Formats the passed in project into a object that contains
+const formatProject = (data, id) => {
+  let result = [];
+  if (data) {
+    data.map((user) => {
+      let userName = user.name;
+      let duration = 0;
+      user.children.map((project) => {
+        if (project._id === id) {
+          duration += project.duration;
+        }
+      });
+      duration = duration * 60;
+      if (duration > 0) {
+        let hours = 0;
+        let minutes = 0;
+        result.push({ user: userName, minutesSpent: duration });
+      }
+    });
+  }
+  return result;
+};
+
+const getProjectName = (data, id) => {
+  let projectName = "";
+  if (data) {
+    data.map((user) => {
+      user.children.map((project) => {
+        if (project._id === id) {
+          projectName = project.name;
+        }
+      });
+    });
+  }
+  return projectName;
+};
+
 // Creates and returns a report for all users in the workspace.
 module.exports = {
   async findAll(...args) {
@@ -82,6 +119,31 @@ module.exports = {
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
       return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  async findProject(id) {
+    const payload = {
+      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
+      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
+      summaryFilter: {
+        groups: ["USER", "PROJECT"],
+      },
+    };
+    try {
+      const response = await axios.post(`/summary`, payload, reportConfig);
+      console.log(id);
+      return {
+        projectAllocation: {
+          project: {
+            projectName: getProjectName(response.data.groupOne, id),
+            allocation: formatProject(response.data.groupOne, id),
+          },
+        },
+      };
     } catch (error) {
       console.error(error);
     }
