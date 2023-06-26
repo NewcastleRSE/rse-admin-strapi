@@ -418,6 +418,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
     });
   },
 
+  // This function takes a hubspotId as a parameter and then returns all of the project information associated with that id from hubspot.
   async findOne(projectID) {
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi
