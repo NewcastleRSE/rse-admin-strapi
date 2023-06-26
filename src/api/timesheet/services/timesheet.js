@@ -36,29 +36,35 @@ const reportConfig = {
   },
 };
 
-// Formats the passed in project into a object that contains
+// Maps through each user and their projects and searches for the project id (id), then adds up all of the duration (time spent) for each staff member and formats the duration into hours, minutes and seconds. Then pushes the staff members name and timespent into an array. This array only contains staff members that have spent more than 0 seconds on the project.
 const formatProject = (data, id) => {
   let result = [];
   if (data) {
     data.map((user) => {
-      let userName = user.name;
+      let staffName = user.name;
       let duration = 0;
       user.children.map((project) => {
         if (project._id === id) {
           duration += project.duration;
         }
       });
-      duration = duration * 60;
       if (duration > 0) {
-        let hours = 0;
-        let minutes = 0;
-        result.push({ user: userName, minutesSpent: duration });
+        // Convert time into hours, minutes and seeconds.
+        let hours = Math.floor(duration / 3600);
+        let minutes = Math.floor((duration % 3600) / 60);
+        let seconds = Math.floor((duration % 3600) % 60);
+
+        result.push({
+          staffMember: staffName,
+          timeSpent: { hours: hours, minutes: minutes, seconds: seconds },
+        });
       }
     });
   }
   return result;
 };
 
+// Maps through to find the project name. There is a way to do this through clockify too. https://docs.clockify.me/#tag/Project/operation/getProject
 const getProjectName = (data, id) => {
   let projectName = "";
   if (data) {
@@ -124,6 +130,22 @@ module.exports = {
     }
   },
 
+  // Request:
+  // GET:http://localhost:8080/api/timesheets/project/{projectID}?populate=*
+  // Output:
+  // "projectAllocation": {
+  //   "project": {
+  //       "projectName": "RSE Team",
+  //       "allocation": [
+  //           {
+  //               "user": "Tiago Sousa Garcia",
+  //               "timeSpent": {
+  //                   "hours": 14,
+  //                   "minutes": 30,
+  //                   "seconds": 1800
+  //               }
+  //           },
+  // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
   async findProject(id) {
     const payload = {
       dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
