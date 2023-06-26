@@ -39,6 +39,7 @@ const reportConfig = {
 // Maps through each user and their projects and searches for the project id (id), then adds up all of the duration (time spent) for each staff member and formats the duration into hours, minutes and seconds. Then pushes the staff members name and timespent into an array. This array only contains staff members that have spent more than 0 seconds on the project.
 const formatProject = (data, id) => {
   let result = [];
+  let totalDuration = 0;
   if (data) {
     data.map((user) => {
       let staffName = user.name;
@@ -53,7 +54,7 @@ const formatProject = (data, id) => {
         let hours = Math.floor(duration / 3600);
         let minutes = Math.floor((duration % 3600) / 60);
         let seconds = Math.floor((duration % 3600) % 60);
-
+        totalDuration += duration;
         result.push({
           staffMember: staffName,
           timeSpent: { hours: hours, minutes: minutes, seconds: seconds },
@@ -61,6 +62,18 @@ const formatProject = (data, id) => {
       }
     });
   }
+
+  // works out the users percentile time allocation contribution to the project this month.
+  result.map((user) => {
+    let percentile = 0;
+    let duration = 0;
+    duration += user.timeSpent.hours * 3600;
+    duration += user.timeSpent.minutes * 60;
+    duration += user.timeSpent.seconds;
+    percentile = (duration / totalDuration) * 100;
+    user.percentageOfProject = percentile.toFixed(2).concat("%");
+  });
+
   return result;
 };
 
