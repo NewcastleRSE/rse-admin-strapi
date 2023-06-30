@@ -353,7 +353,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         // Filter the global notes list for just those associated with the project
         notes
           .filter((note) => {
-            if (note.id) return noteIDs.includes(note.id);
+            if (note && note.id) return noteIDs.includes(note.id);
           })
           .forEach((note) => {
             let noteProperties = note.properties;
