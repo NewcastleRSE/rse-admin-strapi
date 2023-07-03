@@ -71,7 +71,7 @@ const formatProject = (data, id) => {
     duration += user.timeSpent.minutes * 60;
     duration += user.timeSpent.seconds;
     percentile = (duration / totalDuration) * 100;
-    user.percentageOfProject = percentile.toFixed(2).concat("%");
+    user.percentageOfProject = percentile.toFixed(2);
   });
 
   return result;
@@ -90,6 +90,11 @@ const getProjectName = (data, id) => {
     });
   }
   return projectName;
+};
+
+const getProjects = (data, id) => {
+  // projectName: getProjectName(response.data.groupOne, id);
+  // allocation: formatProject(response.data.groupOne, id);
 };
 
 // Creates and returns a report for all users in the workspace.
@@ -170,12 +175,38 @@ module.exports = {
     };
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
-      console.log(id);
       return {
-        projectAllocation: {
-          project: {
-            projectName: getProjectName(response.data.groupOne, id),
-            allocation: formatProject(response.data.groupOne, id),
+        projectName: getProjectName(response.data.groupOne, id),
+        allocation: formatProject(response.data.groupOne, id),
+      };
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  async findUser(id) {
+    const payload = {
+      // Generates a report from the last 30 days.
+      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
+      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      detailedFilter: {
+        page: 1,
+        pageSize: 100,
+      },
+      users: {
+        ids: [userID],
+        contains: "CONTAINS",
+        status: "ALL",
+      },
+    };
+
+    try {
+      const response = await axios.post(`/detailed`, payload, reportConfig);
+      return {
+        userAllocation: {
+          user: {
+            userName: getUserName(response.data, id),
+            projects: getProjects(response.data, id),
           },
         },
       };

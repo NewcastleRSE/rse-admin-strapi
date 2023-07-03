@@ -31,4 +31,12 @@ module.exports = {
       console.error(err);
     }
   },
+  user: async (ctx, next) => {
+    try {
+      ctx.body = await service.findUser(ctx.params.id);
+    } catch (err) {
+      ctx.body = err;
+      console.error(err);
+    }
+  },
 };

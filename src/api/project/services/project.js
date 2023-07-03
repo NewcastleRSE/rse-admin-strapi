@@ -191,11 +191,12 @@ function createStrapiProject(hubspotProject) {
         .create("api::project.project", {
           data: {
             name: hubspotProject.dealname,
-            hubspotID: hubspotProject.id,
+            hubspotID: hubspotProject.id || hubspotProject.hubspotId,
             clockifyID: clockifyProject.id,
           },
         })
         .then((strapiProject) => {
+          console.log(strapiProject);
           return strapiProject;
         })
         .catch((error) => {
@@ -353,10 +354,10 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         // Filter the global notes list for just those associated with the project
         notes
           .filter((note) => {
-            if (note.id) return noteIDs.includes(note.id);
+            if (note?.id) return noteIDs.includes(note.id);
           })
           .forEach((note) => {
-            let noteProperties = note.properties;
+            let noteProperties = note?.properties;
             note = { ...note, ...noteProperties };
             delete note.properties;
             delete note.hs_object_id;
@@ -388,7 +389,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
                 )
               ) {
                 console.log(`Creating Strapi project for ${project.dealname}.`);
-                strapiProject = await createStrapiProject(project);
+                strapiProject = createStrapiProject(project);
               } else {
                 console.info(
                   `Too early in lifecycle to create a Strapi project for ${project.dealname}`

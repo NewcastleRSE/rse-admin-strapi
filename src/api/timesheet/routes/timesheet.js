@@ -27,5 +27,14 @@ module.exports = {
         middlewares: [],
       },
     },
+    {
+      method: "GET",
+      path: "/timesheets/user/:id",
+      handler: "timesheet.user",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
