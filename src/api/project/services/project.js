@@ -427,9 +427,8 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
     });
 
     // The project will return as a normal strapi project which lacks the hubspot extra fields, so we can set the projectID to equal the hubspotID of that project which we do have in strapi and then continue as normal
-    console.log(strapiProject);
     if (strapiProject.results.length > 0)
-      projectID = strapiProject.results[0].hubspotID;
+      projectID = strapiProject?.results[0]?.hubspotID;
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi
       .getById(projectID, dealProperties, null, ["contacts", "notes"])

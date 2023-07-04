@@ -111,8 +111,18 @@ module.exports = {
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
       return {
-        totals: response.data.totals,
-        team: response.data.groupOne,
+        data: {
+          totals: response.data.totals,
+          team: response.data.groupOne,
+        },
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 100,
+            pageCount: 1,
+            total: response.data.groupOne.length,
+          },
+        },
       };
     } catch (error) {
       console.error(error);
@@ -138,11 +148,20 @@ module.exports = {
       },
     };
 
-    console.log(payload);
-
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
-      return response.data;
+      console.log(response);
+      return {
+        data: response.data,
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 100,
+            pageCount: 1,
+            total: response.data.timeentries.length,
+          },
+        },
+      };
     } catch (error) {
       console.error(error);
     }
@@ -176,8 +195,18 @@ module.exports = {
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
       return {
-        projectName: getProjectName(response.data.groupOne, id),
-        allocation: formatProject(response.data.groupOne, id),
+        data: {
+          projectName: getProjectName(response.data.groupOne, id),
+          allocation: formatProject(response.data.groupOne, id),
+        },
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 100,
+            pageCount: 1,
+            total: response.data.groupOne.length,
+          },
+        },
       };
     } catch (error) {
       console.error(error);
@@ -203,10 +232,18 @@ module.exports = {
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
       return {
-        userAllocation: {
+        data: {
           user: {
             userName: getUserName(response.data, id),
             projects: getProjects(response.data, id),
+          },
+          meta: {
+            pagination: {
+              page: 1,
+              pageSize: 100,
+              pageCount: 1,
+              total: response.data.timeentries.length,
+            },
           },
         },
       };
