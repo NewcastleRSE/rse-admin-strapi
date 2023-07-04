@@ -421,6 +421,14 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
 
   // This function takes a hubspotId as a parameter and then returns all of the project information associated with that id from hubspot.
   async findOne(projectID) {
+    // Look for a clockifyID first, these have vastly different formats so if it cant find a clockifyID then we can continue and look for a hubspot project with the ID.
+    let strapiProject = await super.find({
+      filters: { clockifyID: projectID },
+    });
+
+    // The project will return as a normal strapi project which lacks the hubspot extra fields, so we can set the projectID to equal the hubspotID of that project which we do have in strapi and then continue as normal
+    console.log(strapiProject);
+    if (strapiProject) projectID = strapiProject.results[0].hubspotID;
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi
       .getById(projectID, dealProperties, null, ["contacts", "notes"])
