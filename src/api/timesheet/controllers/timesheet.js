@@ -25,7 +25,16 @@ module.exports = {
   },
   project: async (ctx, next) => {
     try {
-      ctx.body = await service.findProject(ctx.params.id);
+      let period = ctx.request.headers["period"];
+      ctx.body = await service.findProject(ctx.params.id, period);
+    } catch (err) {
+      ctx.body = err;
+      console.error(err);
+    }
+  },
+  allocated: async (ctx, next) => {
+    try {
+      ctx.body = await service.findAllocated();
     } catch (err) {
       ctx.body = err;
       console.error(err);
@@ -33,7 +42,8 @@ module.exports = {
   },
   user: async (ctx, next) => {
     try {
-      ctx.body = await service.findUser(ctx.params.id);
+      let period = ctx.request.headers["period"];
+      ctx.body = await service.findUser(ctx.params.id, period);
     } catch (err) {
       ctx.body = err;
       console.error(err);

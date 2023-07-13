@@ -29,6 +29,15 @@ module.exports = {
     },
     {
       method: "GET",
+      path: "/timesheets/allocated",
+      handler: "timesheet.allocated",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: "GET",
       path: "/timesheets/user/:id",
       handler: "timesheet.user",
       config: {

@@ -487,6 +487,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         if (strapiProjects.results.length === 1) {
           strapiProject = strapiProjects.results[0];
         }
+
         // Strapi project doesn't exist, create it
         else if (strapiProjects.results.length === 0) {
           if (

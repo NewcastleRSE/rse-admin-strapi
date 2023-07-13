@@ -36,6 +36,10 @@ const reportConfig = {
   },
 };
 
+const getTotalAllocatedDays = (data) => {
+  return data;
+};
+
 // Maps through each user and their projects and searches for the project id (id), then adds up all of the duration (time spent) for each staff member and formats the duration into hours, minutes and seconds. Then pushes the staff members name and timespent into an array. This array only contains staff members that have spent more than 0 seconds on the project.
 const formatProject = (data, id) => {
   let result = [];
@@ -51,13 +55,21 @@ const formatProject = (data, id) => {
       });
       if (duration > 0) {
         // Convert time into hours, minutes and seeconds.
-        let hours = Math.floor(duration / 3600);
+        // Calculate days, hours, minutes and seconds
+        let days = Math.floor(duration / 86400);
+        let hours = Math.floor((duration % 86400) / 3600);
         let minutes = Math.floor((duration % 3600) / 60);
-        let seconds = Math.floor((duration % 3600) % 60);
+        let seconds = Math.floor(duration % 60);
+
         totalDuration += duration;
         result.push({
           staffMember: staffName,
-          timeSpent: { hours: hours, minutes: minutes, seconds: seconds },
+          timeSpent: {
+            days: days,
+            hours: hours,
+            minutes: minutes,
+            seconds: seconds,
+          },
         });
       }
     });
@@ -67,6 +79,7 @@ const formatProject = (data, id) => {
   result.map((user) => {
     let percentile = 0;
     let duration = 0;
+    duration += user.timeSpent.days * 86400;
     duration += user.timeSpent.hours * 3600;
     duration += user.timeSpent.minutes * 60;
     duration += user.timeSpent.seconds;
@@ -92,9 +105,88 @@ const getProjectName = (data, id) => {
   return projectName;
 };
 
-const getProjects = (data, id) => {
-  // projectName: getProjectName(response.data.groupOne, id);
-  // allocation: formatProject(response.data.groupOne, id);
+// Gets the projects names and time allocation to each project
+const getProjects = (data) => {
+  // loop through all of the timeentries, find the unique project names.
+  const projectNames = [];
+  const projects = [];
+  data.timeentries.map((project) => {
+    if (!projectNames.includes(project.projectName)) {
+      projectNames.push(project.projectName);
+    }
+  });
+  // Loop through the projectNames then loop through the timeentries.
+  projectNames.map((projectName) => {
+    // Track amount of time spent on each project
+    let allocatedTime = 0;
+    data.timeentries.map((timeentry) => {
+      // If the project is billable then increase time but the duration spent on the project
+      if ((timeentry.projectName = projectName && timeentry.billable)) {
+        allocatedTime += timeentry.timeInterval.duration;
+      }
+    });
+
+    // Calculate days, hours, minutes and seconds
+    let days = Math.floor(allocatedTime / 86400);
+    let hours = Math.floor((allocatedTime % 86400) / 3600);
+    let minutes = Math.floor((allocatedTime % 3600) / 60);
+    let seconds = Math.floor(allocatedTime % 60);
+
+    // Create an object and push it to projects that has a projectname and time allocation in days, hours, minutes and seconds.
+    projects.push({
+      project: projectName,
+      timeAllocation: {
+        days: days,
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds,
+      },
+    });
+  });
+  return projects;
+};
+
+const getUserName = (data) => {
+  return data.timeentries[0]?.userName;
+};
+
+const getDateRanges = (period) => {
+  const now = DateTime.utc();
+  let dateRangeStart, dateRangeEnd;
+  switch (period) {
+    case "monthly":
+      (dateRangeStart = DateTime.utc()
+        .startOf("day")
+        .minus({ days: 30 })
+        .toISO()),
+        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      break;
+    case "yearly":
+      if (now.month > 7) {
+        dateRangeStart = DateTime.utc(now.year, 8, 1);
+        dateRangeEnd = DateTime.utc(now.year + 1, 7, 31);
+        // If it's earlier than July then the start should be 1st of August of last year and the end should be July 31st of this year.
+      } else {
+        dateRangeStart = DateTime.utc(now.year - 1, 8, 1);
+        dateRangeEnd = DateTime.utc(now.year, 7, 31);
+      }
+      break;
+    case "weekly":
+      (dateRangeStart = DateTime.utc()
+        .startOf("day")
+        .minus({ days: 7 })
+        .toISO()),
+        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      break;
+    default:
+      (dateRangeStart = DateTime.utc()
+        .startOf("day")
+        .minus({ days: 30 })
+        .toISO()),
+        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      break;
+  }
+  return { dateRangeStart: dateRangeStart, dateRangeEnd: dateRangeEnd };
 };
 
 // Creates and returns a report for all users in the workspace.
@@ -130,7 +222,6 @@ module.exports = {
   },
 
   // Can look through by userID and check if a user is working on two projects as much as the other.
-
   // Creates and returns a report for a specified user in the workspace.
   async findOne(userID) {
     const payload = {
@@ -183,10 +274,14 @@ module.exports = {
   //               }
   //           },
   // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
-  async findProject(id) {
+  async findProject(id, period) {
+    let dateRangeStart = getDateRanges(period).dateRangeStart;
+    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
+
+    // This time range gets the entire fiscal annum
     const payload = {
-      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
-      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      dateRangeStart: dateRangeStart,
+      dateRangeEnd: dateRangeEnd,
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
       summaryFilter: {
         groups: ["USER", "PROJECT"],
@@ -194,6 +289,7 @@ module.exports = {
     };
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
+      console.log(response);
       return {
         data: {
           projectName: getProjectName(response.data.groupOne, id),
@@ -213,17 +309,20 @@ module.exports = {
     }
   },
 
-  async findUser(id) {
+  async findUser(id, period) {
+    let dateRangeStart = getDateRanges(period).dateRangeStart;
+    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
+
     const payload = {
       // Generates a report from the last 30 days.
-      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
-      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      dateRangeStart: dateRangeStart,
+      dateRangeEnd: dateRangeEnd,
       detailedFilter: {
         page: 1,
         pageSize: 100,
       },
       users: {
-        ids: [userID],
+        ids: [id],
         contains: "CONTAINS",
         status: "ALL",
       },
@@ -231,19 +330,62 @@ module.exports = {
 
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
+      console.log(response.data);
       return {
         data: {
-          user: {
-            userName: getUserName(response.data, id),
-            projects: getProjects(response.data, id),
+          userName: getUserName(response.data, id),
+          projects: getProjects(response.data, id),
+        },
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 100,
+            pageCount: 1,
+            total: response.data.timeentries.length,
           },
-          meta: {
-            pagination: {
-              page: 1,
-              pageSize: 100,
-              pageCount: 1,
-              total: response.data.timeentries.length,
-            },
+        },
+      };
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  async findAllocated() {
+    const now = DateTime.utc();
+    let dateRangeStart, dateRangeEnd;
+    // If it's later than July then the start should be 1st of August of this year and the end should be July 31st of next year.
+    if (now.month > 7) {
+      dateRangeStart = DateTime.utc(now.year, 8, 1);
+      dateRangeEnd = DateTime.utc(now.year + 1, 7, 31);
+      // If it's earlier than July then the start should be 1st of August of last year and the end should be July 31st of this year.
+    } else {
+      dateRangeStart = DateTime.utc(now.year - 1, 8, 1);
+      dateRangeEnd = DateTime.utc(now.year, 7, 31);
+    }
+
+    // This time range gets the entire fiscal annum
+    const payload = {
+      dateRangeStart: dateRangeStart.toISO(),
+      dateRangeEnd: dateRangeEnd.toISO(),
+      // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
+      summaryFilter: {
+        groups: ["USER", "PROJECT"],
+      },
+    };
+    try {
+      const response = await axios.post(`/summary`, payload, reportConfig);
+      console.log(response);
+      // not currently giving a response for some reason.
+      return {
+        data: {
+          totalALlocatedDays: getTotalAllocatedDays(response.data.groupOne),
+        },
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 100,
+            pageCount: 1,
+            total: response.data.groupOne.length,
           },
         },
       };
