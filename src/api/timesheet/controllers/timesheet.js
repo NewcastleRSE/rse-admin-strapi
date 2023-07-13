@@ -34,7 +34,8 @@ module.exports = {
   },
   allocated: async (ctx, next) => {
     try {
-      ctx.body = await service.findAllocated();
+      let period = ctx.request.headers["period"];
+      ctx.body = await service.findAllocatedTime(period);
     } catch (err) {
       ctx.body = err;
       console.error(err);

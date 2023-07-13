@@ -54,21 +54,15 @@ const formatProject = (data, id) => {
         }
       });
       if (duration > 0) {
-        // Convert time into hours, minutes and seeconds.
-        // Calculate days, hours, minutes and seconds
-        let days = Math.floor(duration / 86400);
-        let hours = Math.floor((duration % 86400) / 3600);
-        let minutes = Math.floor((duration % 3600) / 60);
-        let seconds = Math.floor(duration % 60);
-
+        let formattedTime = calculateTime(duration);
         totalDuration += duration;
         result.push({
           staffMember: staffName,
           timeSpent: {
-            days: days,
-            hours: hours,
-            minutes: minutes,
-            seconds: seconds,
+            days: formattedTime.days,
+            hours: formattedTime.hours,
+            minutes: formattedTime.minutes,
+            seconds: formattedTime.seconds,
           },
         });
       }
@@ -79,7 +73,7 @@ const formatProject = (data, id) => {
   result.map((user) => {
     let percentile = 0;
     let duration = 0;
-    duration += user.timeSpent.days * 86400;
+    duration += user.timeSpent.days * 26640;
     duration += user.timeSpent.hours * 3600;
     duration += user.timeSpent.minutes * 60;
     duration += user.timeSpent.seconds;
@@ -105,6 +99,15 @@ const getProjectName = (data, id) => {
   return projectName;
 };
 
+// Format time. Each day is 7.4 hours.
+const calculateTime = (time) => {
+  let days = Math.floor(time / 26640);
+  let hours = Math.floor((time % 26640) / 3600);
+  let minutes = Math.floor((time % 3600) / 60);
+  let seconds = Math.floor(time % 60);
+  return { days: days, hours: hours, minutes: minutes, seconds: seconds };
+};
+
 // Gets the projects names and time allocation to each project
 const getProjects = (data) => {
   // loop through all of the timeentries, find the unique project names.
@@ -126,20 +129,17 @@ const getProjects = (data) => {
       }
     });
 
-    // Calculate days, hours, minutes and seconds
-    let days = Math.floor(allocatedTime / 86400);
-    let hours = Math.floor((allocatedTime % 86400) / 3600);
-    let minutes = Math.floor((allocatedTime % 3600) / 60);
-    let seconds = Math.floor(allocatedTime % 60);
+    // Calculate days, hours, minutes and seconds // change so its 7.4 hours per day.
+    let formattedTime = calculateTime(allocatedTime);
 
     // Create an object and push it to projects that has a projectname and time allocation in days, hours, minutes and seconds.
     projects.push({
       project: projectName,
       timeAllocation: {
-        days: days,
-        hours: hours,
-        minutes: minutes,
-        seconds: seconds,
+        days: formattedTime.days,
+        hours: formattedTime.hours,
+        minutes: formattedTime.minutes,
+        seconds: formattedTime.seconds,
       },
     });
   });
@@ -151,32 +151,109 @@ const getUserName = (data) => {
 };
 
 const getDateRanges = (period) => {
+  period = period.toLowerCase();
   const now = DateTime.utc();
-  let dateRangeStart, dateRangeEnd;
+  let dateRangeStart, dateRangeEnd, days, months;
+  // Can say last30days or last6months, cant say years becase we don't have permissiosn to see reports for date ranges longer than a year.
+  if (period.indexOf("last") == 0) {
+    days = period.slice(4, period.indexOf("days"));
+    months = period.slice(4, period.indexOf("months"));
+    if (days > 365) days = 365; // dont have permission to see reports for date ranges longer than a year.
+    if (months > 12) months = 12;
+    if (days < 0) days = 0;
+    if (months < 0) months = 0;
+    period = days && "days";
+    period = months && "months";
+  }
+
+  // Switch statement to work out time periods.
   switch (period) {
     case "monthly":
-      (dateRangeStart = DateTime.utc()
-        .startOf("day")
-        .minus({ days: 30 })
-        .toISO()),
-        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      dateRangeStart = DateTime.utc(now.year, now.month, 1).toISO();
+      dateRangeEnd = DateTime.utc().endOf("day").toISO();
       break;
     case "yearly":
       if (now.month > 7) {
-        dateRangeStart = DateTime.utc(now.year, 8, 1);
-        dateRangeEnd = DateTime.utc(now.year + 1, 7, 31);
+        dateRangeStart = DateTime.utc(now.year, 8, 1).toISO();
+        dateRangeEnd = DateTime.utc(now.year + 1, 7, 31).toISO();
         // If it's earlier than July then the start should be 1st of August of last year and the end should be July 31st of this year.
       } else {
-        dateRangeStart = DateTime.utc(now.year - 1, 8, 1);
-        dateRangeEnd = DateTime.utc(now.year, 7, 31);
+        dateRangeStart = DateTime.utc(now.year - 1, 8, 1).toISO();
+        dateRangeEnd = DateTime.utc(now.year, 7, 31).toISO();
       }
       break;
     case "weekly":
+      // Current period is from Monday to Friday, but can increase 5 to 7 to get Monday - Sunday.
+      (dateRangeStart = DateTime.utc().startOf("week").toISO()),
+        (dateRangeEnd = DateTime.utc()
+          .startOf("week")
+          .plus({ days: 5 })
+          .toISO());
+      console.log(dateRangeStart);
+      console.log(dateRangeEnd);
+      break;
+    case "days":
       (dateRangeStart = DateTime.utc()
         .startOf("day")
-        .minus({ days: 7 })
+        .minus({ days: days })
         .toISO()),
         (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      break;
+    case "months":
+      (dateRangeStart = DateTime.utc()
+        .startOf("day")
+        .minus({ months: months })
+        .toISO()),
+        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
+      break;
+    case "january":
+      dateRangeStart = dateHelper(1).dateRangeStart;
+      dateRangeEnd = dateHelper(1).dateRangeEnd;
+      break;
+    case "february":
+      dateRangeStart = dateHelper(2).dateRangeStart;
+      dateRangeEnd = dateHelper(2).dateRangeEnd;
+      break;
+    case "march":
+      dateRangeStart = dateHelper(3).dateRangeStart;
+      dateRangeEnd = dateHelper(3).dateRangeEnd;
+      break;
+    case "april":
+      dateRangeStart = dateHelper(4).dateRangeStart;
+      dateRangeEnd = dateHelper(4).dateRangeEnd;
+      break;
+    case "may":
+      dateRangeStart = dateHelper(5).dateRangeStart;
+      dateRangeEnd = dateHelper(5).dateRangeEnd;
+      break;
+    case "june":
+      dateRangeStart = dateHelper(6).dateRangeStart;
+      dateRangeEnd = dateHelper(6).dateRangeEnd;
+      break;
+    case "july":
+      dateRangeStart = dateHelper(7).dateRangeStart;
+      dateRangeEnd = dateHelper(7).dateRangeEnd;
+      break;
+    case "august":
+      dateRangeStart = dateHelper(8).dateRangeStart;
+      dateRangeEnd = dateHelper(8).dateRangeEnd;
+      break;
+    case "september":
+      dateRangeStart = dateHelper(9).dateRangeStart;
+      dateRangeEnd = dateHelper(9).dateRangeEnd;
+      break;
+    case "october":
+      dateRangeStart = dateHelper(10).dateRangeStart;
+      dateRangeEnd = dateHelper(10).dateRangeEnd;
+      break;
+    case "november":
+      dateRangeStart = dateHelper(11).dateRangeStart;
+      dateRangeEnd = dateHelper(11).dateRangeEnd;
+      break;
+    case "december":
+      // dont need to use dateHelper as this is the same regardless of when december occurs.
+      dateRangeStart = DateTime.utc(now.year - 1, 12, 1).toISO();
+      dateRangeEnd = DateTime.utc(now.year, 1, 1).minus({ days: 1 }).toISO();
       break;
     default:
       (dateRangeStart = DateTime.utc()
@@ -186,6 +263,27 @@ const getDateRanges = (period) => {
         (dateRangeEnd = DateTime.utc().endOf("day").toISO());
       break;
   }
+  return { dateRangeStart: dateRangeStart, dateRangeEnd: dateRangeEnd };
+};
+
+// This function takes a month, and returns the most recent month that has passed matching that month.
+// e.g. if the month is 5 (May) and it's January, we want the May from the year before. However, if it's June, we want the May from that year.
+const dateHelper = (month) => {
+  const now = DateTime.utc();
+  let dateRangeStart, dateRangeEnd;
+  if (now.month > month) {
+    dateRangeStart = DateTime.utc(now.year, month, 1).toISO();
+    dateRangeEnd = DateTime.utc(now.year, month + 1, 1)
+      .minus({ days: 1 })
+      .toISO();
+  } else {
+    dateRangeStart = DateTime.utc(now.year - 1, month, 1).toISO();
+    dateRangeEnd = DateTime.utc(now.year - 1, month + 1, 1)
+      .minus({ days: 1 })
+      .toISO();
+  }
+  // console.log(dateRangeStart);
+  // console.log(dateRangeEnd);
   return { dateRangeStart: dateRangeStart, dateRangeEnd: dateRangeEnd };
 };
 
@@ -241,7 +339,6 @@ module.exports = {
 
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
-      console.log(response);
       return {
         data: response.data,
         meta: {
@@ -289,13 +386,16 @@ module.exports = {
     };
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
-      console.log(response);
       return {
         data: {
           projectName: getProjectName(response.data.groupOne, id),
           allocation: formatProject(response.data.groupOne, id),
         },
         meta: {
+          period: {
+            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
+            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+          },
           pagination: {
             page: 1,
             pageSize: 100,
@@ -330,13 +430,16 @@ module.exports = {
 
     try {
       const response = await axios.post(`/detailed`, payload, reportConfig);
-      console.log(response.data);
       return {
         data: {
           userName: getUserName(response.data, id),
           projects: getProjects(response.data, id),
         },
         meta: {
+          period: {
+            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
+            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+          },
           pagination: {
             page: 1,
             pageSize: 100,
@@ -350,23 +453,13 @@ module.exports = {
     }
   },
 
-  async findAllocated() {
-    const now = DateTime.utc();
-    let dateRangeStart, dateRangeEnd;
-    // If it's later than July then the start should be 1st of August of this year and the end should be July 31st of next year.
-    if (now.month > 7) {
-      dateRangeStart = DateTime.utc(now.year, 8, 1);
-      dateRangeEnd = DateTime.utc(now.year + 1, 7, 31);
-      // If it's earlier than July then the start should be 1st of August of last year and the end should be July 31st of this year.
-    } else {
-      dateRangeStart = DateTime.utc(now.year - 1, 8, 1);
-      dateRangeEnd = DateTime.utc(now.year, 7, 31);
-    }
-
+  async findAllocatedTime(period) {
+    let dateRangeStart = getDateRanges(period).dateRangeStart;
+    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
     // This time range gets the entire fiscal annum
     const payload = {
-      dateRangeStart: dateRangeStart.toISO(),
-      dateRangeEnd: dateRangeEnd.toISO(),
+      dateRangeStart: dateRangeStart,
+      dateRangeEnd: dateRangeEnd,
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
       summaryFilter: {
         groups: ["USER", "PROJECT"],
@@ -374,13 +467,15 @@ module.exports = {
     };
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
-      console.log(response);
-      // not currently giving a response for some reason.
       return {
         data: {
-          totalALlocatedDays: getTotalAllocatedDays(response.data.groupOne),
+          totalAllocatedDays: getTotalAllocatedDays(response.data.groupOne),
         },
         meta: {
+          period: {
+            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
+            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+          },
           pagination: {
             page: 1,
             pageSize: 100,
