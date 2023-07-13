@@ -153,7 +153,7 @@ const getUserName = (data) => {
 const getDateRanges = (period) => {
   period = period.toLowerCase();
   const now = DateTime.utc();
-  let dateRangeStart, dateRangeEnd, days, months;
+  let dateRangeStart, dateRangeEnd, days, months, year;
   // Can say last30days or last6months, cant say years becase we don't have permissiosn to see reports for date ranges longer than a year.
   if (period.indexOf("last") == 0) {
     days = period.slice(4, period.indexOf("days"));
@@ -164,6 +164,12 @@ const getDateRanges = (period) => {
     if (months < 0) months = 0;
     period = days && "days";
     period = months && "months";
+  }
+
+  // If it's a year such as 2023 then set the period to year for the switch statement and extract the year
+  if (period.indexOf("20") == 0) {
+    year = period.slice(0, 4);
+    period = year && "year";
   }
 
   // Switch statement to work out time periods.
@@ -181,6 +187,10 @@ const getDateRanges = (period) => {
         dateRangeStart = DateTime.utc(now.year - 1, 8, 1).toISO();
         dateRangeEnd = DateTime.utc(now.year, 7, 31).toISO();
       }
+      break;
+    case "year":
+      dateRangeStart = DateTime.utc(Number(year), 8, 1).toISO();
+      dateRangeEnd = DateTime.utc(Number(year) + 1, 7, 31).toISO();
       break;
     case "weekly":
       // Current period is from Monday to Friday, but can increase 5 to 7 to get Monday - Sunday.
