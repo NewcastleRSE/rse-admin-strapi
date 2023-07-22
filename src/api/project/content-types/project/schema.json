@@ -25,6 +25,12 @@
       "type": "biginteger",
       "required": true,
       "unique": true
+    },
+    "invoices": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::invoice.invoice",
+      "mappedBy": "project"
     }
   }
 }

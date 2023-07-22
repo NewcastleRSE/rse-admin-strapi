@@ -4,7 +4,8 @@
   "info": {
     "singularName": "invoice",
     "pluralName": "invoices",
-    "displayName": "Invoice"
+    "displayName": "Invoice",
+    "description": ""
   },
   "options": {
     "draftAndPublish": false
@@ -13,8 +14,9 @@
   "attributes": {
     "project": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::project.project"
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "invoices"
     },
     "generated": {
       "type": "date",
