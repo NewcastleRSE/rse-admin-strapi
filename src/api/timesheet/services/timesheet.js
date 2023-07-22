@@ -111,30 +111,29 @@ const calculateTime = (time) => {
 // Gets the projects names and time allocation to each project
 const getProjects = (data) => {
   // loop through all of the timeentries, find the unique project names.
-  const projectNames = [];
-  const projects = [];
-  data.timeentries.map((project) => {
-    if (!projectNames.includes(project.projectName)) {
-      projectNames.push(project.projectName);
-    }
-  });
-  // Loop through the projectNames then loop through the timeentries.
-  projectNames.map((projectName) => {
-    // Track amount of time spent on each project
-    let allocatedTime = 0;
-    data.timeentries.map((timeentry) => {
-      // If the project is billable then increase time but the duration spent on the project
-      if ((timeentry.projectName = projectName && timeentry.billable)) {
-        allocatedTime += timeentry.timeInterval.duration;
-      }
-    });
+
+  const response = []
+
+  // Group time entries by project name
+  const projects = data.timeentries.reduce(function (r, a) {
+      r[a.projectName] = r[a.projectName] || [];
+      r[a.projectName].push(a);
+      return r;
+  }, Object.create(null))
+
+  console.log(projects)
+
+  // Loop through projects
+  Object.keys(projects).forEach(name => {
+
+    // Reduce all project time entry durations to single number
+    const allocatedTime = projects[name].reduce((duration, timeentry) => duration + timeentry.timeInterval.duration, 0)
 
     // Calculate days, hours, minutes and seconds // change so its 7.4 hours per day.
-    let formattedTime = calculateTime(allocatedTime);
-
-    // Create an object and push it to projects that has a projectname and time allocation in days, hours, minutes and seconds.
-    projects.push({
-      project: projectName,
+    const formattedTime = calculateTime(allocatedTime);
+    
+    response.push({
+      project: name,
       timeAllocation: {
         days: formattedTime.days,
         hours: formattedTime.hours,
@@ -142,8 +141,9 @@ const getProjects = (data) => {
         seconds: formattedTime.seconds,
       },
     });
-  });
-  return projects;
+  })
+
+  return response;
 };
 
 const getUserName = (data) => {
@@ -420,6 +420,9 @@ module.exports = {
   },
 
   async findUser(id, period) {
+
+    const user = await strapi.entityService.findOne('api::rse.rse', id)
+
     let dateRangeStart = getDateRanges(period).dateRangeStart;
     let dateRangeEnd = getDateRanges(period).dateRangeEnd;
 
@@ -432,7 +435,7 @@ module.exports = {
         pageSize: 100,
       },
       users: {
-        ids: [id],
+        ids: [user.clockifyID],
         contains: "CONTAINS",
         status: "ALL",
       },
