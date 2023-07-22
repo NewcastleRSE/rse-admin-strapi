@@ -15,6 +15,7 @@ const hubspotClient = new Hubspot.Client({
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(","),
   contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(","),
   noteProperties = process.env.HUBSPOT_NOTE_PROPERTIES.split(","),
+  lineItemProperties = process.env.HUBSPOT_LINE_ITEM_PROPERTIES.split(","),
   stages = {
     meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
     bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
@@ -128,6 +129,11 @@ async function getAssociations(
         publicObjectSearchRequest
       );
       associationList = associationList.concat(hsAssociations.results);
+    } else if (association === "lineItems") {
+      hsAssociations = await hubspotClient.crm.lineItems.searchApi.doSearch(
+        publicObjectSearchRequest
+      );
+      associationList = associationList.concat(hsAssociations.results);
     } else {
       console.error("Invalid association type");
     }
@@ -157,8 +163,9 @@ function formatHubSpotObject(object) {
 
   object = { ...object, ...objectProperties };
   object.hubspotID = object.hs_object_id;
-  object.contacts = [];
-  object.notes = [];
+  // object.contacts = [];
+  // object.notes = [];
+  // object.lineItems = [];
 
   // Remove HubSpot properties - prefixed 'hs_'
   delete object.hs_lastmodifieddate;
@@ -175,6 +182,7 @@ function formatHubSpotObject(object) {
     // Set properties for associated contacts and notes
     object.contacts = [];
     object.notes = [];
+    object.lineItems = [];
   }
 
   return camelcaseKeys(object);
@@ -431,7 +439,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
       projectID = strapiProject?.results[0]?.hubspotID;
     // let response = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
     return hubspotClient.crm.deals.basicApi
-      .getById(projectID, dealProperties, null, ["contacts", "notes"])
+      .getById(projectID, dealProperties, null, ["contacts", "notes", "line_items"])
       .then(async (project) => {
         project = formatHubSpotObject(project);
 
@@ -472,6 +480,25 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
           );
           notes.forEach((note) => {
             project.notes.push(formatHubSpotObject(note));
+          });
+        }
+
+        // Add line items
+        if (project.associations['line items']) {
+          let lineItems = await getAssociations(
+            "lineItems",
+            0,
+            100,
+            lineItemProperties,
+            [
+              ...new Set(
+                project.associations['line items'].results.map((lineItem) => lineItem.id)
+              ),
+            ],
+            []
+          );
+          lineItems.forEach((lineItem) => {
+            project.lineItems.push(formatHubSpotObject(lineItem));
           });
         }
 

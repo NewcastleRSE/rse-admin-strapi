@@ -16,8 +16,6 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
         const project = await strapi.service("api::project.project").findOne(params.data.project)
 
-        console.log(project)
-
         params.data.project = [project.id]
         params.data.generated = DateTime.utc().toISODate()
 
@@ -64,17 +62,17 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const quantity = form.getTextField('Quantity')
         quantity.updateAppearances(fontBold)
-        quantity.setText(`100`)
+        quantity.setText(`${project.lineItems[0].quantity}`)
         quantity.enableReadOnly()
 
         const price = form.getTextField('Price')
         price.updateAppearances(fontBold)
-        price.setText(`${formatter.format(392.23)}`)
+        price.setText(`${formatter.format(project.lineItems[0].price)}`)
         price.enableReadOnly()
 
         const total = form.getTextField('Total')
         total.updateAppearances(fontBold)
-        total.setText(`${formatter.format(392.23 * 100)}`)
+        total.setText(`${formatter.format(project.lineItems[0].price * project.lineItems[0].quantity)}`)
         total.enableReadOnly()
 
         const account = form.getTextField('Account')
