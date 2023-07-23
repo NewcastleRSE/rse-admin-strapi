@@ -14,10 +14,18 @@ const { createCoreService } = require('@strapi/strapi').factories;
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
+
+        const date = new Date(params.data.year, params.data.month, 1);
+        const period = date.toLocaleString('default', { month: 'long' });
+
         const project = await strapi.service("api::project.project").findOne(params.data.project)
+        const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, period)
 
         params.data.project = [project.id]
         params.data.generated = DateTime.utc().toISODate()
+
+        // Convert seconds to hours, then 7.4 hours per day
+        const days = Math.round((timesheets.data.total / 3600) / 7.4)
 
         await super.create(params)
 
@@ -62,7 +70,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const quantity = form.getTextField('Quantity')
         quantity.updateAppearances(fontBold)
-        quantity.setText(`${project.lineItems[0].quantity}`)
+        quantity.setText(`${days}`)
         quantity.enableReadOnly()
 
         const price = form.getTextField('Price')
@@ -72,7 +80,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const total = form.getTextField('Total')
         total.updateAppearances(fontBold)
-        total.setText(`${formatter.format(project.lineItems[0].price * project.lineItems[0].quantity)}`)
+        total.setText(`${formatter.format(project.lineItems[0].price * days)}`)
         total.enableReadOnly()
 
         const account = form.getTextField('Account')

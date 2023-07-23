@@ -284,12 +284,10 @@ const dateHelper = (month) => {
   if (now.month > month) {
     dateRangeStart = DateTime.utc(now.year, month, 1).toISO();
     dateRangeEnd = DateTime.utc(now.year, month + 1, 1)
-      .minus({ days: 1 })
       .toISO();
   } else {
     dateRangeStart = DateTime.utc(now.year - 1, month, 1).toISO();
     dateRangeEnd = DateTime.utc(now.year - 1, month + 1, 1)
-      .minus({ days: 1 })
       .toISO();
   }
   // console.log(dateRangeStart);
@@ -382,29 +380,50 @@ module.exports = {
   //           },
   // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
   async findProject(id, period) {
-    let dateRangeStart = getDateRanges(period).dateRangeStart;
-    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
+
+    const dateRange = getDateRanges(period)
+
+    let dateRangeStart = dateRange.dateRangeStart;
+    let dateRangeEnd = dateRange.dateRangeEnd;
 
     // This time range gets the entire fiscal annum
     const payload = {
       dateRangeStart: dateRangeStart,
       dateRangeEnd: dateRangeEnd,
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
+      projects: {
+        contains: "CONTAINS",
+        ids: [id],
+      },
       summaryFilter: {
-        groups: ["USER", "PROJECT"],
+        groups: ["USER"],
       },
     };
+
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
+
+      const rses = []
+
+      response.data.groupOne.forEach(rse => {
+        rses.push({
+          name: rse.name,
+          totalTime: rse.duration,
+          amounts: rse.amount
+        })
+      })
+
       return {
         data: {
-          projectName: getProjectName(response.data.groupOne, id),
-          allocation: formatProject(response.data.groupOne, id),
+          total: response.data.totals[0].totalTime,
+          totalBillable: response.data.totals[0].totalBillableTime,
+          rses: rses
         },
         meta: {
           period: {
             start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
             end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+            entriesCount: response.data.totals[0].entriesCount
           },
           pagination: {
             page: 1,
