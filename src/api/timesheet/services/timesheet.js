@@ -121,8 +121,6 @@ const getProjects = (data) => {
       return r;
   }, Object.create(null))
 
-  console.log(projects)
-
   // Loop through projects
   Object.keys(projects).forEach(name => {
 
@@ -199,8 +197,6 @@ const getDateRanges = (period) => {
           .startOf("week")
           .plus({ days: 5 })
           .toISO());
-      console.log(dateRangeStart);
-      console.log(dateRangeEnd);
       break;
     case "days":
       (dateRangeStart = DateTime.utc()
@@ -329,7 +325,6 @@ module.exports = {
       const team = []
 
       response.data.groupOne.forEach(rse => {
-        console.log(rse)
         let rseGroup = {
           name: rse.name,
           days: Math.round((rse.duration / 3600) / 7.4),
