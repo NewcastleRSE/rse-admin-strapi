@@ -9,7 +9,7 @@ const service = require("../services/timesheet");
 module.exports = {
   find: async (ctx, next) => {
     try {
-      ctx.body = await service.findAll();
+      ctx.body = await service.find();
     } catch (err) {
       ctx.body = err;
       console.error(err);

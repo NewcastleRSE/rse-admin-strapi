@@ -297,21 +297,66 @@ const dateHelper = (month) => {
 
 // Creates and returns a report for all users in the workspace.
 module.exports = {
-  async findAll(...args) {
+  async find(...args) {
+
+    const currentDate = DateTime.utc()
+
+    let startDate = DateTime.utc(currentDate.year, 8),
+        endDate = startDate.plus({ year: 1 })
+
+    if(currentDate.month < 8) {
+      startDate = startDate.minus({ year: 1 }),
+      endDate = endDate.minus({ year: 1 })
+    }
+
     const payload = {
-      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
-      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      dateRangeStart: startDate.toISO(),
+      dateRangeEnd: endDate.toISO(),
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
       summaryFilter: {
-        groups: ["USER", "PROJECT", "TASK"],
+        groups: ["USER", "MONTH", "PROJECT",],
       },
     };
+
     try {
       const response = await axios.post(`/summary`, payload, reportConfig);
+
+      const totals = {
+        days: Math.round((response.data.totals[0].totalTime / 3600) / 7.4),
+        entries: response.data.totals[0].entriesCount
+      }
+
+      const team = []
+
+      response.data.groupOne.forEach(rse => {
+        console.log(rse)
+        let rseGroup = {
+          name: rse.name,
+          days: Math.round((rse.duration / 3600) / 7.4),
+          months: []
+        }
+        rse.children.forEach(month => {
+          let monthGroup = {
+            days: Math.round((month.duration / 3600) / 7.4),
+            name: month.name,
+            projects: []
+          }
+          month.children.forEach(project => {
+            monthGroup.projects.push({
+              days: Math.round((project.duration / 3600) / 7.4),
+              name: project.name,
+              client: project.clientName
+            })
+          })
+          rseGroup.months.push(monthGroup)
+        })
+        team.push(rseGroup)
+      })
+
       return {
         data: {
-          totals: response.data.totals,
-          team: response.data.groupOne,
+          totals: totals,
+          team: team,
         },
         meta: {
           pagination: {
