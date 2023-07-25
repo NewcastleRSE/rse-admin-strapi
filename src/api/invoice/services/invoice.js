@@ -15,15 +15,11 @@ const { createCoreService } = require('@strapi/strapi').factories;
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
 
-        const date = new Date(params.data.year, params.data.month, 1);
-        const period = date.toLocaleString('default', { month: 'long' });
-
         const project = await strapi.service("api::project.project").findOne(params.data.project)
-        const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, period)
+        const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, params.data.month)
 
         params.data.project = [project.id]
         params.data.generated = DateTime.utc().toISODate()
-        params.data.period = DateTime.utc(params.data.year, params.data.month + 1).toISO()
 
         // Convert seconds to hours, then 7.4 hours per day
         const days = Math.round((timesheets.data.total / 3600) / 7.4)
@@ -46,7 +42,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const sapDocument = form.getTextField('SAP Document')
         sapDocument.updateAppearances(fontBold)
-        sapDocument.setText(`${project.hubspotId}-${params.data.year}-${params.data.month}`)
+        sapDocument.setText(`${project.hubspotId}-${params.data.month}-${params.data.year}`)
         sapDocument.enableReadOnly()
 
         const refNumber = form.getTextField('REF Number')

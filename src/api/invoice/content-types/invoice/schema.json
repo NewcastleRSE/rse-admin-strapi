@@ -33,12 +33,26 @@
       "relation": "oneToOne",
       "target": "api::transaction.transaction"
     },
-    "periodStart": {
-      "type": "date",
+    "year": {
+      "type": "integer",
       "required": true
     },
-    "periodEnd": {
-      "type": "date",
+    "month": {
+      "type": "enumeration",
+      "enum": [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december"
+      ],
       "required": true
     }
   }

@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-07-25T08:25:48.912Z"
+    "x-generation-date": "2023-07-25T10:21:24.537Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -696,13 +696,25 @@
                                                                   }
                                                                 }
                                                               },
-                                                              "periodStart": {
-                                                                "type": "string",
-                                                                "format": "date"
+                                                              "year": {
+                                                                "type": "integer"
                                                               },
-                                                              "periodEnd": {
+                                                              "month": {
                                                                 "type": "string",
-                                                                "format": "date"
+                                                                "enum": [
+                                                                  "january",
+                                                                  "february",
+                                                                  "march",
+                                                                  "april",
+                                                                  "may",
+                                                                  "june",
+                                                                  "july",
+                                                                  "august",
+                                                                  "september",
+                                                                  "october",
+                                                                  "november",
+                                                                  "december"
+                                                                ]
                                                               },
                                                               "createdAt": {
                                                                 "type": "string",
@@ -1697,13 +1709,25 @@
                                                                   }
                                                                 }
                                                               },
-                                                              "periodStart": {
-                                                                "type": "string",
-                                                                "format": "date"
+                                                              "year": {
+                                                                "type": "integer"
                                                               },
-                                                              "periodEnd": {
+                                                              "month": {
                                                                 "type": "string",
-                                                                "format": "date"
+                                                                "enum": [
+                                                                  "january",
+                                                                  "february",
+                                                                  "march",
+                                                                  "april",
+                                                                  "may",
+                                                                  "june",
+                                                                  "july",
+                                                                  "august",
+                                                                  "september",
+                                                                  "october",
+                                                                  "november",
+                                                                  "december"
+                                                                ]
                                                               },
                                                               "createdAt": {
                                                                 "type": "string",
@@ -2512,8 +2536,8 @@
           "data": {
             "required": [
               "generated",
-              "periodStart",
-              "periodEnd"
+              "year",
+              "month"
             ],
             "type": "object",
             "properties": {
@@ -2551,13 +2575,25 @@
                 ],
                 "example": "string or id"
               },
-              "periodStart": {
-                "type": "string",
-                "format": "date"
+              "year": {
+                "type": "integer"
               },
-              "periodEnd": {
+              "month": {
                 "type": "string",
-                "format": "date"
+                "enum": [
+                  "january",
+                  "february",
+                  "march",
+                  "april",
+                  "may",
+                  "june",
+                  "july",
+                  "august",
+                  "september",
+                  "october",
+                  "november",
+                  "december"
+                ]
               }
             }
           }
@@ -2613,8 +2649,8 @@
         "type": "object",
         "required": [
           "generated",
-          "periodStart",
-          "periodEnd"
+          "year",
+          "month"
         ],
         "properties": {
           "project": {
@@ -3037,13 +3073,25 @@
                                         }
                                       }
                                     },
-                                    "periodStart": {
-                                      "type": "string",
-                                      "format": "date"
+                                    "year": {
+                                      "type": "integer"
                                     },
-                                    "periodEnd": {
+                                    "month": {
                                       "type": "string",
-                                      "format": "date"
+                                      "enum": [
+                                        "january",
+                                        "february",
+                                        "march",
+                                        "april",
+                                        "may",
+                                        "june",
+                                        "july",
+                                        "august",
+                                        "september",
+                                        "october",
+                                        "november",
+                                        "december"
+                                      ]
                                     },
                                     "createdAt": {
                                       "type": "string",
@@ -3171,13 +3219,25 @@
               }
             }
           },
-          "periodStart": {
-            "type": "string",
-            "format": "date"
+          "year": {
+            "type": "integer"
           },
-          "periodEnd": {
+          "month": {
             "type": "string",
-            "format": "date"
+            "enum": [
+              "january",
+              "february",
+              "march",
+              "april",
+              "may",
+              "june",
+              "july",
+              "august",
+              "september",
+              "october",
+              "november",
+              "december"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -3824,13 +3884,25 @@
                             }
                           }
                         },
-                        "periodStart": {
-                          "type": "string",
-                          "format": "date"
+                        "year": {
+                          "type": "integer"
                         },
-                        "periodEnd": {
+                        "month": {
                           "type": "string",
-                          "format": "date"
+                          "enum": [
+                            "january",
+                            "february",
+                            "march",
+                            "april",
+                            "may",
+                            "june",
+                            "july",
+                            "august",
+                            "september",
+                            "october",
+                            "november",
+                            "december"
+                          ]
                         },
                         "createdAt": {
                           "type": "string",
@@ -4776,13 +4848,25 @@
                                                       }
                                                     }
                                                   },
-                                                  "periodStart": {
-                                                    "type": "string",
-                                                    "format": "date"
+                                                  "year": {
+                                                    "type": "integer"
                                                   },
-                                                  "periodEnd": {
+                                                  "month": {
                                                     "type": "string",
-                                                    "format": "date"
+                                                    "enum": [
+                                                      "january",
+                                                      "february",
+                                                      "march",
+                                                      "april",
+                                                      "may",
+                                                      "june",
+                                                      "july",
+                                                      "august",
+                                                      "september",
+                                                      "october",
+                                                      "november",
+                                                      "december"
+                                                    ]
                                                   },
                                                   "createdAt": {
                                                     "type": "string",
