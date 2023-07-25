@@ -18,13 +18,30 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const project = await strapi.service("api::project.project").findOne(params.data.project)
         const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, params.data.month)
 
-        params.data.project = [project.id]
-        params.data.generated = DateTime.utc().toISODate()
+        const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
 
         // Convert seconds to hours, then 7.4 hours per day
         const days = Math.round((timesheets.data.total / 3600) / 7.4)
 
-        await super.create(params)
+        const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
+            filters: {
+                documentNumber: documentNumber
+            },
+        })
+
+        params.data.project = [project.id]
+        params.data.generated = DateTime.utc().toISODate()
+        params.data.documentNumber = documentNumber
+        params.data.price = project.lineItems[0].price
+        params.data.units = days
+
+        if(invoices.length) {
+            params.data.id = invoices[0].id
+            await super.update(params.data.id, params)
+        }
+        else {
+            await super.create(params)
+        }
 
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
@@ -42,7 +59,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const sapDocument = form.getTextField('SAP Document')
         sapDocument.updateAppearances(fontBold)
-        sapDocument.setText(`${project.hubspotId}-${params.data.month}-${params.data.year}`)
+        sapDocument.setText(documentNumber)
         sapDocument.enableReadOnly()
 
         const refNumber = form.getTextField('REF Number')
@@ -85,6 +102,6 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         account.setText(`${project.accountCode}`)
         account.enableReadOnly()
         
-        return Buffer.from(await pdfDoc.save())
+        return Buffer.from(await pdfDoc.save()).toString('base64')
     }
 }))

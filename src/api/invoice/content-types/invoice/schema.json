@@ -54,6 +54,22 @@
         "december"
       ],
       "required": true
+    },
+    "processed": {
+      "type": "date"
+    },
+    "documentNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "price": {
+      "type": "decimal",
+      "required": true
+    },
+    "units": {
+      "type": "integer",
+      "required": true
     }
   }
 }
