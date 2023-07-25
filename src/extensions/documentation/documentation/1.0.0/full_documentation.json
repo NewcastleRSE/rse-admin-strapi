@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-07-23T13:29:56.671Z"
+    "x-generation-date": "2023-07-25T08:25:48.912Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -695,6 +695,14 @@
                                                                     }
                                                                   }
                                                                 }
+                                                              },
+                                                              "periodStart": {
+                                                                "type": "string",
+                                                                "format": "date"
+                                                              },
+                                                              "periodEnd": {
+                                                                "type": "string",
+                                                                "format": "date"
                                                               },
                                                               "createdAt": {
                                                                 "type": "string",
@@ -1689,6 +1697,14 @@
                                                                   }
                                                                 }
                                                               },
+                                                              "periodStart": {
+                                                                "type": "string",
+                                                                "format": "date"
+                                                              },
+                                                              "periodEnd": {
+                                                                "type": "string",
+                                                                "format": "date"
+                                                              },
                                                               "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -2495,7 +2511,9 @@
         "properties": {
           "data": {
             "required": [
-              "generated"
+              "generated",
+              "periodStart",
+              "periodEnd"
             ],
             "type": "object",
             "properties": {
@@ -2532,6 +2550,14 @@
                   }
                 ],
                 "example": "string or id"
+              },
+              "periodStart": {
+                "type": "string",
+                "format": "date"
+              },
+              "periodEnd": {
+                "type": "string",
+                "format": "date"
               }
             }
           }
@@ -2586,7 +2612,9 @@
       "Invoice": {
         "type": "object",
         "required": [
-          "generated"
+          "generated",
+          "periodStart",
+          "periodEnd"
         ],
         "properties": {
           "project": {
@@ -3009,6 +3037,14 @@
                                         }
                                       }
                                     },
+                                    "periodStart": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "periodEnd": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -3134,6 +3170,14 @@
                 }
               }
             }
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date"
           },
           "createdAt": {
             "type": "string",
@@ -3779,6 +3823,14 @@
                               }
                             }
                           }
+                        },
+                        "periodStart": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "periodEnd": {
+                          "type": "string",
+                          "format": "date"
                         },
                         "createdAt": {
                           "type": "string",
@@ -4723,6 +4775,14 @@
                                                         }
                                                       }
                                                     }
+                                                  },
+                                                  "periodStart": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                  },
+                                                  "periodEnd": {
+                                                    "type": "string",
+                                                    "format": "date"
                                                   },
                                                   "createdAt": {
                                                     "type": "string",

@@ -23,6 +23,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         params.data.project = [project.id]
         params.data.generated = DateTime.utc().toISODate()
+        params.data.period = DateTime.utc(params.data.year, params.data.month + 1).toISO()
 
         // Convert seconds to hours, then 7.4 hours per day
         const days = Math.round((timesheets.data.total / 3600) / 7.4)

@@ -18,7 +18,7 @@ module.exports = createCoreController('api::invoice.invoice', ({ strapi }) =>  (
         ctx.body = pdfData
         ctx.type = 'application/pdf'
         ctx.set('Content-Type', 'application/pdf')
-        ctx.set('Content-disposition', `attachment;filename=${projectId}-${year}-${month}.pdf`)
+        ctx.set('Content-disposition', `attachment;filename=${projectId}-${year}-${month + 1}.pdf`)
       } catch (err) {
         console.error(err)
         ctx.body = err;

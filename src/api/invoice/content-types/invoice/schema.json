@@ -32,6 +32,14 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::transaction.transaction"
+    },
+    "periodStart": {
+      "type": "date",
+      "required": true
+    },
+    "periodEnd": {
+      "type": "date",
+      "required": true
     }
   }
 }
