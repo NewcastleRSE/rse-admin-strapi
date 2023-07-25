@@ -62,7 +62,6 @@ function sliceArrayIntoChunks(arr, chunkSize) {
 
 // Recursively fetch all HubSpot deals
 async function getDeals(after, limit, stageFilter, projectList) {
-  console.log('deals')
   try {
     // Stages are null or empty
     if (!stageFilter || !stageFilter.length) {
@@ -110,7 +109,6 @@ async function getAssociations(
   ids,
   associationList
 ) {
-  console.log(association)
   try {
     const publicObjectSearchRequest = {
       filterGroups: [
@@ -225,7 +223,6 @@ function createStrapiProject(hubspotProject) {
           },
         })
         .then((strapiProject) => {
-          console.log(strapiProject);
           return strapiProject;
         })
         .catch((error) => {
@@ -615,8 +612,6 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         else {
           console.error("More than two projects found - impossible!");
         }
-
-        console.log(strapiProject)
 
         project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
         project.invoices = strapiProject ? strapiProject.invoices : null;
