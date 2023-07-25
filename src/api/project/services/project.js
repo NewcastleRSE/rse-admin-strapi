@@ -13,24 +13,30 @@ const hubspotClient = new Hubspot.Client({
   accessToken: process.env.HUBSPOT_ACCESS_TOKEN,
 });
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(","),
-  contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(","),
-  noteProperties = process.env.HUBSPOT_NOTE_PROPERTIES.split(","),
-  lineItemProperties = process.env.HUBSPOT_LINE_ITEM_PROPERTIES.split(","),
-  stages = {
-    meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
-    bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
-    grantWriting: process.env.HUBSPOT_DEAL_GRANT_WRITING,
-    submittedToFunder: process.env.HUBSPOT_DEAL_SUBMITTED_TO_FUNDER,
-    awaitingAllocation: process.env.HUBSPOT_DEAL_FUNDED_AWAITING_ALLOCATION,
-    notFunded: process.env.HUBSPOT_DEAL_NOT_FUNDED,
-    allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
-    completed: process.env.HUBSPOT_DEAL_COMPLETED,
-  };
+      contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(","),
+      noteProperties = process.env.HUBSPOT_NOTE_PROPERTIES.split(","),
+      lineItemProperties = process.env.HUBSPOT_LINE_ITEM_PROPERTIES.split(","),
+      stages = {
+        meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
+        bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
+        grantWriting: process.env.HUBSPOT_DEAL_GRANT_WRITING,
+        submittedToFunder: process.env.HUBSPOT_DEAL_SUBMITTED_TO_FUNDER,
+        awaitingAllocation: process.env.HUBSPOT_DEAL_FUNDED_AWAITING_ALLOCATION,
+        notFunded: process.env.HUBSPOT_DEAL_NOT_FUNDED,
+        allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
+        completed: process.env.HUBSPOT_DEAL_COMPLETED,
+      };
 
 // Invert stages to key by HubSpot stage names
 const invert = (obj) =>
   Object.fromEntries(Object.entries(obj).map((a) => a.reverse()));
 const hsStages = invert(stages);
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function formatDealStage(stage) {
   if (stage && hsStages[stage]) {
@@ -56,6 +62,7 @@ function sliceArrayIntoChunks(arr, chunkSize) {
 
 // Recursively fetch all HubSpot deals
 async function getDeals(after, limit, stageFilter, projectList) {
+  console.log('deals')
   try {
     // Stages are null or empty
     if (!stageFilter || !stageFilter.length) {
@@ -103,6 +110,7 @@ async function getAssociations(
   ids,
   associationList
 ) {
+  console.log(association)
   try {
     const publicObjectSearchRequest = {
       filterGroups: [
@@ -151,7 +159,20 @@ async function getAssociations(
       return associationList;
     }
   } catch (e) {
-    console.error(e);
+    if(e.code === 429) {
+      await sleep(10000)
+      return getAssociations(
+        association,
+        after,
+        limit,
+        properties,
+        ids,
+        associationList
+      )
+    }
+    else {
+      console.error(e)
+    }
   }
 }
 
@@ -256,6 +277,10 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
       await hubspotClient.crm.associations.batchApi.read("deal", "contact", {
         inputs: projectIDs,
       });
+    let lineItemAssociationsResponse =
+      await hubspotClient.crm.associations.batchApi.read("deal", "line_item", {
+        inputs: projectIDs,
+      });
     let noteAssociationsResponse =
       await hubspotClient.crm.associations.batchApi.read(
         "deal",
@@ -281,6 +306,27 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
     });
 
     const contacts = await Promise.all(getContacts).then((response) => {
+      return response.flat(1);
+    });
+
+    // Use the contact associations to get an array of all contact objects
+    const lineItemAssociations = lineItemAssociationsResponse.results
+      .map((association) => association.to)
+      .flat(1);
+    const lineItemIDs = sliceArrayIntoChunks(
+      [...new Set(lineItemAssociations.map((lineItem) => lineItem.id))],
+      100
+    );
+
+    let getLineItems = [];
+
+    lineItemIDs.forEach((batch) => {
+      getLineItems.push(
+        getAssociations("lineItems", 0, 100, lineItemProperties, batch, [])
+      );
+    });
+
+    const lineItems = await Promise.all(getLineItems).then((response) => {
       return response.flat(1);
     });
 
@@ -344,6 +390,41 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
       // Add array of contacts to project object
       project.contacts = projectContacts;
 
+      // Get line item IDs associated with this project
+      let lineItemAssociation = lineItemAssociationsResponse.results.filter(
+        (association) => {
+          return association._from.id === project.id;
+        }
+      );
+
+      let projectLineItems = [];
+
+      // If project has associated line items
+      if (lineItemAssociation.length) {
+        let lineItemIDs = lineItemAssociation[0].to.map(
+          (association) => association.id
+        );
+
+        // Filter the global line item list for just those associated with the project
+        lineItems
+          .filter((lineItem) => {
+            return lineItemIDs.includes(lineItem.id);
+          })
+          .forEach((lineItem) => {
+            let lineItemProperties = lineItem.properties;
+            lineItem = { ...lineItem, ...lineItemProperties };
+            delete lineItem.properties;
+            delete lineItem.hs_object_id;
+            delete lineItem.createdate;
+            delete lineItem.lastmodifieddate;
+
+            projectLineItems.push(lineItem);
+          });
+      }
+
+      // Add array of line items to project object
+      project.lineItems = projectLineItems;
+
       // Get note IDs associated with this project
       let noteAssociation = noteAssociationsResponse.results.filter(
         (association) => {
@@ -381,7 +462,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
       // Fetch existing Strapi project
       projectPromises.push(
         super
-          .find({ filters: { hubspotID: project.id } })
+          .find({ filters: { hubspotID: project.id }, populate: '*' })
           .then(async (strapiProjects) => {
             let strapiProject;
 
@@ -409,9 +490,8 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
               console.error("More than two projects found - impossible!");
             }
 
-            project.clockifyID = strapiProject
-              ? strapiProject.clockifyID
-              : null;
+            project.invoices = strapiProject ? strapiProject.invoices : null;
+            project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
             project.id = strapiProject ? strapiProject.id : null;
           })
       );
@@ -431,7 +511,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
   async findOne(projectID) {
     // Look for a clockifyID first, these have vastly different formats so if it cant find a clockifyID then we can continue and look for a hubspot project with the ID.
     let strapiProject = await super.find({
-      filters: { clockifyID: projectID },
+      filters: { clockifyID: projectID }
     });
 
     // The project will return as a normal strapi project which lacks the hubspot extra fields, so we can set the projectID to equal the hubspotID of that project which we do have in strapi and then continue as normal
@@ -507,6 +587,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         // Fetch existing Strapi project
         let strapiProjects = await super.find({
             filters: { hubspotID: project.id },
+            populate: '*'
           }),
           strapiProject = null;
 
@@ -535,7 +616,10 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
           console.error("More than two projects found - impossible!");
         }
 
+        console.log(strapiProject)
+
         project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
+        project.invoices = strapiProject ? strapiProject.invoices : null;
         project.id = strapiProject ? strapiProject.id : null;
 
         return project;
