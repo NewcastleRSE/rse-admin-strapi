@@ -487,9 +487,13 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
               console.error("More than two projects found - impossible!");
             }
 
-            project.invoices = strapiProject ? strapiProject.invoices : null;
+            project.invoices = strapiProject ? strapiProject.invoices : [];
             project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
             project.id = strapiProject ? strapiProject.id : null;
+
+            if(project.invoices.length) {
+              console.log(project.invoices)
+            }
           })
       );
     });
@@ -510,7 +514,6 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
     let strapiProject = await super.find({
       filters: { clockifyID: projectID }
     });
-
     // The project will return as a normal strapi project which lacks the hubspot extra fields, so we can set the projectID to equal the hubspotID of that project which we do have in strapi and then continue as normal
     if (strapiProject.results.length > 0)
       projectID = strapiProject?.results[0]?.hubspotID;

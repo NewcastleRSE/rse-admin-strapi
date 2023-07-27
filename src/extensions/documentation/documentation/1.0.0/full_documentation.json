@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-07-25T10:33:50.660Z"
+    "x-generation-date": "2023-07-27T07:27:02.524Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -715,6 +715,20 @@
                                                                   "november",
                                                                   "december"
                                                                 ]
+                                                              },
+                                                              "processed": {
+                                                                "type": "string",
+                                                                "format": "date"
+                                                              },
+                                                              "documentNumber": {
+                                                                "type": "string"
+                                                              },
+                                                              "price": {
+                                                                "type": "number",
+                                                                "format": "float"
+                                                              },
+                                                              "units": {
+                                                                "type": "integer"
                                                               },
                                                               "createdAt": {
                                                                 "type": "string",
@@ -1729,6 +1743,20 @@
                                                                   "december"
                                                                 ]
                                                               },
+                                                              "processed": {
+                                                                "type": "string",
+                                                                "format": "date"
+                                                              },
+                                                              "documentNumber": {
+                                                                "type": "string"
+                                                              },
+                                                              "price": {
+                                                                "type": "number",
+                                                                "format": "float"
+                                                              },
+                                                              "units": {
+                                                                "type": "integer"
+                                                              },
                                                               "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -2537,7 +2565,10 @@
             "required": [
               "generated",
               "year",
-              "month"
+              "month",
+              "documentNumber",
+              "price",
+              "units"
             ],
             "type": "object",
             "properties": {
@@ -2594,6 +2625,20 @@
                   "november",
                   "december"
                 ]
+              },
+              "processed": {
+                "type": "string",
+                "format": "date"
+              },
+              "documentNumber": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number",
+                "format": "float"
+              },
+              "units": {
+                "type": "integer"
               }
             }
           }
@@ -2650,7 +2695,10 @@
         "required": [
           "generated",
           "year",
-          "month"
+          "month",
+          "documentNumber",
+          "price",
+          "units"
         ],
         "properties": {
           "project": {
@@ -3093,6 +3141,20 @@
                                         "december"
                                       ]
                                     },
+                                    "processed": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "documentNumber": {
+                                      "type": "string"
+                                    },
+                                    "price": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "units": {
+                                      "type": "integer"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -3238,6 +3300,20 @@
               "november",
               "december"
             ]
+          },
+          "processed": {
+            "type": "string",
+            "format": "date"
+          },
+          "documentNumber": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "float"
+          },
+          "units": {
+            "type": "integer"
           },
           "createdAt": {
             "type": "string",
@@ -3903,6 +3979,20 @@
                             "november",
                             "december"
                           ]
+                        },
+                        "processed": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "documentNumber": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "number",
+                          "format": "float"
+                        },
+                        "units": {
+                          "type": "integer"
                         },
                         "createdAt": {
                           "type": "string",
@@ -4867,6 +4957,20 @@
                                                       "november",
                                                       "december"
                                                     ]
+                                                  },
+                                                  "processed": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                  },
+                                                  "documentNumber": {
+                                                    "type": "string"
+                                                  },
+                                                  "price": {
+                                                    "type": "number",
+                                                    "format": "float"
+                                                  },
+                                                  "units": {
+                                                    "type": "integer"
                                                   },
                                                   "createdAt": {
                                                     "type": "string",

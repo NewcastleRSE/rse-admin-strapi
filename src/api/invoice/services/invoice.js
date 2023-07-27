@@ -35,13 +35,17 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         params.data.price = project.lineItems[0].price
         params.data.units = days
 
+        let invoice = null
+
         if(invoices.length) {
             params.data.id = invoices[0].id
             await super.update(params.data.id, params)
         }
         else {
-            await super.create(params)
+            invoice = await super.create(params)
         }
+
+        invoice.project = await strapi.entityService.findOne('api::project.project', project.id)
 
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
@@ -101,7 +105,9 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         account.updateAppearances(fontBold)
         account.setText(`${project.accountCode}`)
         account.enableReadOnly()
+
+        invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
         
-        return Buffer.from(await pdfDoc.save()).toString('base64')
+        return invoice
     }
 }))
