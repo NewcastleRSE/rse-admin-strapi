@@ -31,6 +31,15 @@
       "relation": "oneToMany",
       "target": "api::invoice.invoice",
       "mappedBy": "project"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "red",
+        "amber",
+        "green"
+      ],
+      "default": "green"
     }
   }
 }

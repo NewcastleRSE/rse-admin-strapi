@@ -30,11 +30,6 @@
       "required": true,
       "default": "2019-04-01"
     },
-    "contractEnd": {
-      "type": "date",
-      "default": "2025-03-31",
-      "required": false
-    },
     "personnelNumber": {
       "type": "biginteger",
       "required": true,

@@ -4,7 +4,8 @@
   "info": {
     "singularName": "facility",
     "pluralName": "facilities",
-    "displayName": "Facility"
+    "displayName": "Facility",
+    "description": ""
   },
   "options": {
     "draftAndPublish": false
@@ -16,10 +17,6 @@
       "required": true,
       "unique": true
     },
-    "salaryCosts": {
-      "type": "integer",
-      "required": true
-    },
     "nonSalaryCosts": {
       "type": "integer",
       "required": true
@@ -28,16 +25,14 @@
       "type": "integer",
       "required": true
     },
-    "annualCapacity": {
-      "type": "integer",
-      "required": true
-    },
-    "annualUseage": {
-      "type": "integer",
-      "required": true
-    },
     "dayRate": {
       "type": "decimal",
+      "required": true
+    },
+    "utilisationRate": {
+      "type": "decimal",
+      "min": 0,
+      "max": 1,
       "required": true
     }
   }
