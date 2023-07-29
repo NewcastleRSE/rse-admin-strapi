@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-07-27T07:27:02.524Z"
+    "x-generation-date": "2023-07-29T13:16:39.904Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -214,10 +214,6 @@
                         "format": "email"
                       },
                       "contractStart": {
-                        "type": "string",
-                        "format": "date"
-                      },
-                      "contractEnd": {
                         "type": "string",
                         "format": "date"
                       },
@@ -778,6 +774,14 @@
                                                       }
                                                     }
                                                   }
+                                                },
+                                                "status": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "red",
+                                                    "amber",
+                                                    "green"
+                                                  ]
                                                 },
                                                 "createdAt": {
                                                   "type": "string",
@@ -1244,10 +1248,6 @@
                         "type": "string",
                         "format": "date"
                       },
-                      "contractEnd": {
-                        "type": "string",
-                        "format": "date"
-                      },
                       "personnelNumber": {
                         "type": "string",
                         "pattern": "^\\d*$",
@@ -1806,6 +1806,14 @@
                                                     }
                                                   }
                                                 },
+                                                "status": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "red",
+                                                    "amber",
+                                                    "green"
+                                                  ]
+                                                },
                                                 "createdAt": {
                                                   "type": "string",
                                                   "format": "date-time"
@@ -2123,19 +2131,14 @@
           "data": {
             "required": [
               "year",
-              "salaryCosts",
               "nonSalaryCosts",
               "estatesCosts",
-              "annualCapacity",
-              "annualUseage",
-              "dayRate"
+              "dayRate",
+              "utilisationRate"
             ],
             "type": "object",
             "properties": {
               "year": {
-                "type": "integer"
-              },
-              "salaryCosts": {
                 "type": "integer"
               },
               "nonSalaryCosts": {
@@ -2144,13 +2147,11 @@
               "estatesCosts": {
                 "type": "integer"
               },
-              "annualCapacity": {
-                "type": "integer"
-              },
-              "annualUseage": {
-                "type": "integer"
-              },
               "dayRate": {
+                "type": "number",
+                "format": "float"
+              },
+              "utilisationRate": {
                 "type": "number",
                 "format": "float"
               }
@@ -2208,18 +2209,13 @@
         "type": "object",
         "required": [
           "year",
-          "salaryCosts",
           "nonSalaryCosts",
           "estatesCosts",
-          "annualCapacity",
-          "annualUseage",
-          "dayRate"
+          "dayRate",
+          "utilisationRate"
         ],
         "properties": {
           "year": {
-            "type": "integer"
-          },
-          "salaryCosts": {
             "type": "integer"
           },
           "nonSalaryCosts": {
@@ -2228,13 +2224,11 @@
           "estatesCosts": {
             "type": "integer"
           },
-          "annualCapacity": {
-            "type": "integer"
-          },
-          "annualUseage": {
-            "type": "integer"
-          },
           "dayRate": {
+            "type": "number",
+            "format": "float"
+          },
+          "utilisationRate": {
             "type": "number",
             "format": "float"
           },
@@ -3204,6 +3198,14 @@
                           }
                         }
                       },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "red",
+                          "amber",
+                          "green"
+                        ]
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -3419,6 +3421,14 @@
                   ],
                   "example": "string or id"
                 }
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "red",
+                  "amber",
+                  "green"
+                ]
               }
             }
           }
@@ -3545,6 +3555,14 @@
                                           }
                                         }
                                       }
+                                    },
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "red",
+                                        "amber",
+                                        "green"
+                                      ]
                                     },
                                     "createdAt": {
                                       "type": "string",
@@ -4043,6 +4061,14 @@
               }
             }
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "red",
+              "amber",
+              "green"
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -4138,10 +4164,6 @@
                 "format": "email"
               },
               "contractStart": {
-                "type": "string",
-                "format": "date"
-              },
-              "contractEnd": {
                 "type": "string",
                 "format": "date"
               },
@@ -4268,10 +4290,6 @@
             "type": "string",
             "format": "date"
           },
-          "contractEnd": {
-            "type": "string",
-            "format": "date"
-          },
           "personnelNumber": {
             "type": "string",
             "pattern": "^\\d*$",
@@ -4322,10 +4340,6 @@
                                       "format": "email"
                                     },
                                     "contractStart": {
-                                      "type": "string",
-                                      "format": "date"
-                                    },
-                                    "contractEnd": {
                                       "type": "string",
                                       "format": "date"
                                     },
@@ -5020,6 +5034,14 @@
                                           }
                                         }
                                       }
+                                    },
+                                    "status": {
+                                      "type": "string",
+                                      "enum": [
+                                        "red",
+                                        "amber",
+                                        "green"
+                                      ]
                                     },
                                     "createdAt": {
                                       "type": "string",

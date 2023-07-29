@@ -309,8 +309,12 @@ module.exports = {
       dateRangeStart: startDate.toISO(),
       dateRangeEnd: endDate.toISO(),
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
+      tasks: { 
+        contains: 'DOES_NOT_CONTAIN',
+        ids: [ '61f7e1d7ba97e77c50bedfe1', '620f68f6ac46e3525d17c0fa', '6270d983736b43623af4c932', '61fd34562ea4bf0a6f564c4f' ]
+      },
       summaryFilter: {
-        groups: ["USER", "MONTH", "PROJECT",],
+        groups: ['USER', 'MONTH', 'PROJECT',],
       },
     };
 
