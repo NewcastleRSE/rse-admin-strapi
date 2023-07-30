@@ -617,6 +617,7 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         }
 
         project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
+        project.status = strapiProject ? strapiProject.status : null;
         project.invoices = strapiProject ? strapiProject.invoices : null;
         project.id = strapiProject ? strapiProject.id : null;
 
