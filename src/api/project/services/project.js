@@ -487,13 +487,10 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
               console.error("More than two projects found - impossible!");
             }
 
-            project.invoices = strapiProject ? strapiProject.invoices : [];
             project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
+            project.status = strapiProject ? strapiProject.status : null;
+            project.invoices = strapiProject ? strapiProject.invoices : null;
             project.id = strapiProject ? strapiProject.id : null;
-
-            if(project.invoices.length) {
-              console.log(project.invoices)
-            }
           })
       );
     });
@@ -616,10 +613,15 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
           console.error("More than two projects found - impossible!");
         }
 
+        console.log(project.dealname + ' ' + strapiProject.status)
+
         project.clockifyID = strapiProject ? strapiProject.clockifyID : null;
         project.status = strapiProject ? strapiProject.status : null;
         project.invoices = strapiProject ? strapiProject.invoices : null;
         project.id = strapiProject ? strapiProject.id : null;
+
+        console.log(project.dealname + ' ' + project.status)
+        console.log(' ')
 
         return project;
       })
