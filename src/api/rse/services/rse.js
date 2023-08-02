@@ -110,12 +110,18 @@ function getAvailability(rse, assignments, capacities) {
       let month = year === start.year ? start.month : 1;
       let endMonth = year === end.year ? end.month : 12;
       while (month <= endMonth) {
-        // Subtract assignment FTE from that months availability
-        let maxAvailability = availability[year][month - 1],
-          currentAvailability = maxAvailability - assignment.fte;
-        availability[year][month - 1] =
-          currentAvailability < 0 ? 0 : currentAvailability;
+        try {
+          // Subtract assignment FTE from that months availability
+          let maxAvailability = availability[year][month - 1],
+              currentAvailability = maxAvailability - assignment.fte
 
+          availability[year][month - 1] = currentAvailability < 0 ? 0 : currentAvailability
+        }
+        catch(ex){
+          console.log(rse)
+          console.log(year)
+          console.log(month)
+        }
         month++;
       }
       year++;
