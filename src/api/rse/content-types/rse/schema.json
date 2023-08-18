@@ -64,6 +64,9 @@
     "clockifyID": {
       "type": "string",
       "unique": true
+    },
+    "github": {
+      "type": "string"
     }
   }
 }

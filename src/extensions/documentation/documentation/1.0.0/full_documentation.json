@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-08-02T13:23:28.989Z"
+    "x-generation-date": "2023-08-18T09:01:20.098Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -975,6 +975,9 @@
                         "type": "boolean"
                       },
                       "clockifyID": {
+                        "type": "string"
+                      },
+                      "github": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -2006,6 +2009,9 @@
                         "type": "boolean"
                       },
                       "clockifyID": {
+                        "type": "string"
+                      },
+                      "github": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -4213,6 +4219,9 @@
               },
               "clockifyID": {
                 "type": "string"
+              },
+              "github": {
+                "type": "string"
               }
             }
           }
@@ -4724,6 +4733,9 @@
                                     "clockifyID": {
                                       "type": "string"
                                     },
+                                    "github": {
+                                      "type": "string"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -5164,6 +5176,9 @@
             "type": "boolean"
           },
           "clockifyID": {
+            "type": "string"
+          },
+          "github": {
             "type": "string"
           },
           "createdAt": {
