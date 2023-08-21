@@ -1,0 +1,75 @@
+{
+  "kind": "collectionType",
+  "collectionName": "invoices",
+  "info": {
+    "singularName": "invoice",
+    "pluralName": "invoices",
+    "displayName": "Invoice",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project",
+      "inversedBy": "invoices"
+    },
+    "generated": {
+      "type": "date",
+      "required": true
+    },
+    "sent": {
+      "type": "date"
+    },
+    "paid": {
+      "type": "date"
+    },
+    "transaction": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::transaction.transaction"
+    },
+    "year": {
+      "type": "integer",
+      "required": true
+    },
+    "month": {
+      "type": "enumeration",
+      "enum": [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december"
+      ],
+      "required": true
+    },
+    "processed": {
+      "type": "date"
+    },
+    "documentNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "price": {
+      "type": "decimal",
+      "required": true
+    },
+    "units": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}
