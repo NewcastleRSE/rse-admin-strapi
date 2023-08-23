@@ -25,10 +25,8 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
 
-        console.log(timesheets)
-
-        // Convert seconds to hours, then 7.4 hours per day
-        const days = Math.round((timesheets.data.total / 3600) / 7.4)
+        // Convert seconds to hours, then 7.24 hours per day
+        const days = Math.round((timesheets.data.total / 3600) / 7.24)
 
         const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
             filters: {

@@ -457,10 +457,12 @@ module.exports = {
         })
       })
 
+      const totals = response.data.totals[0] ? response.data.totals[0] : { totalTime: 0, totalBillableTime: 0}
+
       return {
         data: {
-          total: response.data.totals[0].totalTime,
-          totalBillable: response.data.totals[0].totalBillableTime,
+          total: totals.totalTime,
+          totalBillable: totals.totalBillableTime,
           rses: rses
         },
         meta: {
