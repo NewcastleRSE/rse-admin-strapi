@@ -425,15 +425,13 @@ module.exports = {
   // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
   async findProject(id, period) {
 
-    const dateRange = getDateRanges(period)
-
-    let dateRangeStart = dateRange.dateRangeStart;
-    let dateRangeEnd = dateRange.dateRangeEnd;
+    console.log(period)
+    const date = DateTime.fromFormat(`${period.month} ${period.year}`, 'LLLL yyyy')
 
     // This time range gets the entire fiscal annum
     const payload = {
-      dateRangeStart: dateRangeStart,
-      dateRangeEnd: dateRangeEnd,
+      dateRangeStart: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
+      dateRangeEnd: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
       projects: {
         contains: "CONTAINS",
@@ -442,10 +440,12 @@ module.exports = {
       summaryFilter: {
         groups: ["USER"],
       },
-    };
+    }
+
+    let response = null
 
     try {
-      const response = await axios.post(`/summary`, payload, reportConfig);
+      response = await axios.post(`/summary`, payload, reportConfig);
 
       const rses = []
 
@@ -465,8 +465,8 @@ module.exports = {
         },
         meta: {
           period: {
-            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
-            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+            start: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
+            end: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
             entriesCount: response.data.totals[0].entriesCount
           },
           pagination: {
@@ -478,7 +478,7 @@ module.exports = {
         },
       };
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
   },
 

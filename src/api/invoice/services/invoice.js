@@ -15,10 +15,17 @@ const { createCoreService } = require('@strapi/strapi').factories;
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
 
+        const period = {
+            year: params.data.year,
+            month: params.data.month
+        }
+
         const project = await strapi.service("api::project.project").findOne(params.data.project)
-        const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, params.data.month)
+        const timesheets = await strapi.service("api::timesheet.timesheet").findProject(project.clockifyID, period)
 
         const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
+
+        console.log(timesheets)
 
         // Convert seconds to hours, then 7.4 hours per day
         const days = Math.round((timesheets.data.total / 3600) / 7.4)
