@@ -36,6 +36,13 @@ const reportConfig = {
   },
 };
 
+const leaveConfig = {
+  baseURL: 'https://sageapps.ncl.ac.uk/public/',
+  headers: {
+    Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
+  }
+}
+
 const getTotalAllocatedDays = (data) => {
   return data;
 };
@@ -528,6 +535,16 @@ module.exports = {
       };
     } catch (error) {
       console.error(error);
+    }
+  },
+
+  async findLeave() {
+    try {
+      let response = await axios.get(`/turner`, leaveConfig)
+      return response.data
+    }
+    catch(ex) {
+      console.error(ex)
     }
   },
 

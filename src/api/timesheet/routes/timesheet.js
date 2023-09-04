@@ -11,6 +11,15 @@ module.exports = {
     },
     {
       method: "GET",
+      path: "/timesheets/leave",
+      handler: "timesheet.leave",
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: "GET",
       path: "/timesheets/allocated",
       handler: "timesheet.allocated",
       config: {
@@ -45,6 +54,6 @@ module.exports = {
         policies: [],
         middlewares: [],
       },
-    },
+    }
   ],
 };
