@@ -541,7 +541,7 @@ module.exports = {
   async findLeave() {
     try {
       let response = await axios.get(`/turner`, leaveConfig)
-      return response.data
+      return { data: response.data }
     }
     catch(ex) {
       console.error(ex)
