@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-09-06T13:18:24.934Z"
+    "x-generation-date": "2023-09-14T13:36:48.841Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -978,6 +978,9 @@
                         "type": "string"
                       },
                       "github": {
+                        "type": "string"
+                      },
+                      "username": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -2012,6 +2015,9 @@
                         "type": "string"
                       },
                       "github": {
+                        "type": "string"
+                      },
+                      "username": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -4155,7 +4161,8 @@
               "contractStart",
               "personnelNumber",
               "team",
-              "active"
+              "active",
+              "username"
             ],
             "type": "object",
             "properties": {
@@ -4222,6 +4229,9 @@
               },
               "github": {
                 "type": "string"
+              },
+              "username": {
+                "type": "string"
               }
             }
           }
@@ -4282,7 +4292,8 @@
           "contractStart",
           "personnelNumber",
           "team",
-          "active"
+          "active",
+          "username"
         ],
         "properties": {
           "firstname": {
@@ -4736,6 +4747,9 @@
                                     "github": {
                                       "type": "string"
                                     },
+                                    "username": {
+                                      "type": "string"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -5179,6 +5193,9 @@
             "type": "string"
           },
           "github": {
+            "type": "string"
+          },
+          "username": {
             "type": "string"
           },
           "createdAt": {
