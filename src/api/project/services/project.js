@@ -632,28 +632,5 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         console.error(err);
         return null;
       });
-  },
-
-  async update(...args) {
-    // add error handling
-    const id = args.id;
-    const status = args.status;
-
-    // add check if status is equal to Red, Amber or Green
-    const prj = {
-      id: id,
-      properties: {
-        status: status,
-      },
-    };
-
-    await hubspotClient.crm.deals.batchApi
-      .update({ inputs: [prj] })
-      .then((results) => {
-        return { results };
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  },
+  }
 }));
