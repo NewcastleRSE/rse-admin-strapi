@@ -378,39 +378,64 @@ module.exports = {
     }
   },
 
-  // Can look through by userID and check if a user is working on two projects as much as the other.
-  // Creates and returns a report for a specified user in the workspace.
   async findOne(userID) {
+
+    const currentDate = DateTime.utc()
+
+    let startDate = DateTime.utc(currentDate.year, 8),
+        endDate = startDate.plus({ year: 1 })
+
+    if(currentDate.month < 8) {
+      startDate = startDate.minus({ year: 1 }),
+      endDate = endDate.minus({ year: 1 })
+    }
+
     const payload = {
-      // Generates a report from the last 30 days.
-      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
-      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      dateRangeStart: startDate.toISO(),
+      dateRangeEnd: endDate.toISO(),
       detailedFilter: {
         page: 1,
-        pageSize: 100,
+        pageSize: 1000,
       },
       users: {
         ids: [userID],
         contains: "CONTAINS",
         status: "ALL",
       },
-    };
+    }
 
     try {
-      const response = await axios.post(`/detailed`, payload, reportConfig);
+      const response = await axios.post(`/detailed`, payload, reportConfig)
+
+      const data = {
+        totals: response.data.totals,
+        dates: {}
+      }
+
+      response.data.timeentries.forEach(entry => {
+
+        const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
+
+        if(!(key in data.dates)) {
+          data.dates[key] = []
+        }
+        
+        data.dates[key].push(entry)
+      })
+
       return {
-        data: response.data,
+        data: data,
         meta: {
           pagination: {
             page: 1,
-            pageSize: 100,
+            pageSize: 1000,
             pageCount: 1,
             total: response.data.timeentries.length,
           },
         },
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
   },
 
