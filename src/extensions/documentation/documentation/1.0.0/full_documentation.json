@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-09-25T20:56:09.628Z"
+    "x-generation-date": "2023-09-30T12:32:43.907Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -2146,7 +2146,8 @@
               "nonSalaryCosts",
               "estatesCosts",
               "dayRate",
-              "utilisationRate"
+              "utilisationRate",
+              "incomeTarget"
             ],
             "type": "object",
             "properties": {
@@ -2166,6 +2167,9 @@
               "utilisationRate": {
                 "type": "number",
                 "format": "float"
+              },
+              "incomeTarget": {
+                "type": "integer"
               }
             }
           }
@@ -2224,7 +2228,8 @@
           "nonSalaryCosts",
           "estatesCosts",
           "dayRate",
-          "utilisationRate"
+          "utilisationRate",
+          "incomeTarget"
         ],
         "properties": {
           "year": {
@@ -2243,6 +2248,9 @@
           "utilisationRate": {
             "type": "number",
             "format": "float"
+          },
+          "incomeTarget": {
+            "type": "integer"
           },
           "createdAt": {
             "type": "string",

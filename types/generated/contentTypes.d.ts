@@ -793,6 +793,7 @@ export interface ApiFacilityFacility extends Schema.CollectionType {
         min: 0;
         max: 1;
       }>;
+    incomeTarget: Attribute.Integer & Attribute.Required;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<

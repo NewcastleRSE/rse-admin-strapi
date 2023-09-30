@@ -6,14 +6,14 @@
 const { DateTime } = require('luxon')
 const { createCoreService } = require('@strapi/strapi').factories;
 const ExcelJS = require('exceljs')
-const WorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
+const TransactionsWorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
 const HeaderRow = process.env.TRANSACTIONS_HEADER.replace(/_/g, ' ').split(',')
 
 module.exports = createCoreService('api::transaction.transaction', ({ strapi }) =>  ({
     async upload(file) {
         const workbook = new ExcelJS.Workbook()
         await workbook.xlsx.readFile(file.path)
-        const worksheet = workbook.getWorksheet(WorksheetName)
+        const transactionSheet = workbook.getWorksheet(TransactionsWorksheetName)
 
         let transactions = []
 
@@ -26,7 +26,7 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             },
         });
 
-        worksheet.eachRow(async function(row, rowNumber) {
+        transactionSheet.eachRow(async function(row, rowNumber) {
             if(rowNumber === 1) {
 
                 // Is the first row the same as we're expecting, if not bail out
