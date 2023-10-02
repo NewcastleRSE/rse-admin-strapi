@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-09-30T12:32:43.907Z"
+    "x-generation-date": "2023-10-02T18:58:26.640Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -392,6 +392,9 @@
                                                                           },
                                                                           "fiscalPeriod": {
                                                                             "type": "integer"
+                                                                          },
+                                                                          "internalCategory": {
+                                                                            "type": "string"
                                                                           },
                                                                           "createdAt": {
                                                                             "type": "string",
@@ -1429,6 +1432,9 @@
                                                                           },
                                                                           "fiscalPeriod": {
                                                                             "type": "integer"
+                                                                          },
+                                                                          "internalCategory": {
+                                                                            "type": "string"
                                                                           },
                                                                           "createdAt": {
                                                                             "type": "string",
@@ -2836,6 +2842,9 @@
                                                 "fiscalPeriod": {
                                                   "type": "integer"
                                                 },
+                                                "internalCategory": {
+                                                  "type": "string"
+                                                },
                                                 "createdAt": {
                                                   "type": "string",
                                                   "format": "date-time"
@@ -3950,6 +3959,9 @@
                                     "fiscalPeriod": {
                                       "type": "integer"
                                     },
+                                    "internalCategory": {
+                                      "type": "string"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -4938,6 +4950,9 @@
                                                               "fiscalPeriod": {
                                                                 "type": "integer"
                                                               },
+                                                              "internalCategory": {
+                                                                "type": "string"
+                                                              },
                                                               "createdAt": {
                                                                 "type": "string",
                                                                 "format": "date-time"
@@ -5335,6 +5350,9 @@
               },
               "fiscalPeriod": {
                 "type": "integer"
+              },
+              "internalCategory": {
+                "type": "string"
               }
             }
           }
@@ -5443,6 +5461,9 @@
           },
           "fiscalPeriod": {
             "type": "integer"
+          },
+          "internalCategory": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",

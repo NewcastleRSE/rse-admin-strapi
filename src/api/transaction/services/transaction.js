@@ -48,7 +48,8 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     // SAP gets the debit and credit wrong way around, times -1 to fix
                     value: parseFloat(row.values[12]) * -1,
                     bwCategory: row.values[13].hasOwnProperty('result') ? row.values[13].result : row.values[13], 	
-                    ieCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14]
+                    ieCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14],
+                    internalCategory: row.values[15]
                 })
             }
         })

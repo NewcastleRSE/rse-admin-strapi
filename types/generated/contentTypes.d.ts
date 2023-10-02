@@ -984,6 +984,7 @@ export interface ApiTransactionTransaction extends Schema.CollectionType {
     ieCategory: Attribute.String & Attribute.Required;
     fiscalYear: Attribute.Integer & Attribute.Required;
     fiscalPeriod: Attribute.Integer & Attribute.Required;
+    internalCategory: Attribute.String;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
