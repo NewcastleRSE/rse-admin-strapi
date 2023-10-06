@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-10-02T18:58:26.640Z"
+    "x-generation-date": "2023-10-06T07:33:28.325Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -331,10 +331,6 @@
                                                                 "format": "date"
                                                               },
                                                               "sent": {
-                                                                "type": "string",
-                                                                "format": "date"
-                                                              },
-                                                              "paid": {
                                                                 "type": "string",
                                                                 "format": "date"
                                                               },
@@ -1371,10 +1367,6 @@
                                                                 "format": "date"
                                                               },
                                                               "sent": {
-                                                                "type": "string",
-                                                                "format": "date"
-                                                              },
-                                                              "paid": {
                                                                 "type": "string",
                                                                 "format": "date"
                                                               },
@@ -2611,10 +2603,6 @@
                 "type": "string",
                 "format": "date"
               },
-              "paid": {
-                "type": "string",
-                "format": "date"
-              },
               "transaction": {
                 "oneOf": [
                   {
@@ -2780,10 +2768,6 @@
                                       "format": "date"
                                     },
                                     "sent": {
-                                      "type": "string",
-                                      "format": "date"
-                                    },
-                                    "paid": {
                                       "type": "string",
                                       "format": "date"
                                     },
@@ -3288,10 +3272,6 @@
             "format": "date"
           },
           "sent": {
-            "type": "string",
-            "format": "date"
-          },
-          "paid": {
             "type": "string",
             "format": "date"
           },
@@ -3897,10 +3877,6 @@
                           "format": "date"
                         },
                         "sent": {
-                          "type": "string",
-                          "format": "date"
-                        },
-                        "paid": {
                           "type": "string",
                           "format": "date"
                         },
@@ -4888,10 +4864,6 @@
                                                     "format": "date"
                                                   },
                                                   "sent": {
-                                                    "type": "string",
-                                                    "format": "date"
-                                                  },
-                                                  "paid": {
                                                     "type": "string",
                                                     "format": "date"
                                                   },

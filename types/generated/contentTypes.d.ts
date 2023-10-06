@@ -830,7 +830,6 @@ export interface ApiInvoiceInvoice extends Schema.CollectionType {
     >;
     generated: Attribute.Date & Attribute.Required;
     sent: Attribute.Date;
-    paid: Attribute.Date;
     transaction: Attribute.Relation<
       'api::invoice.invoice',
       'oneToOne',
