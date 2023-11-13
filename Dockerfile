@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:18
 
 # Create directory for source code and set as working directory
 RUN mkdir -p /usr/local/src
