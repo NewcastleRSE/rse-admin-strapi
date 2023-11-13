@@ -57,6 +57,9 @@
     "fiscalPeriod": {
       "type": "integer",
       "required": true
+    },
+    "internalCategory": {
+      "type": "string"
     }
   }
 }

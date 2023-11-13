@@ -36,6 +36,13 @@ const reportConfig = {
   },
 };
 
+const leaveConfig = {
+  baseURL: 'https://sageapps.ncl.ac.uk/public/',
+  headers: {
+    Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
+  }
+}
+
 const getTotalAllocatedDays = (data) => {
   return data;
 };
@@ -371,39 +378,64 @@ module.exports = {
     }
   },
 
-  // Can look through by userID and check if a user is working on two projects as much as the other.
-  // Creates and returns a report for a specified user in the workspace.
   async findOne(userID) {
+
+    const currentDate = DateTime.utc()
+
+    let startDate = DateTime.utc(currentDate.year, 8),
+        endDate = startDate.plus({ year: 1 })
+
+    if(currentDate.month < 8) {
+      startDate = startDate.minus({ year: 1 }),
+      endDate = endDate.minus({ year: 1 })
+    }
+
     const payload = {
-      // Generates a report from the last 30 days.
-      dateRangeStart: DateTime.utc().startOf("day").minus({ days: 30 }).toISO(),
-      dateRangeEnd: DateTime.utc().endOf("day").toISO(),
+      dateRangeStart: startDate.toISO(),
+      dateRangeEnd: endDate.toISO(),
       detailedFilter: {
         page: 1,
-        pageSize: 100,
+        pageSize: 1000,
       },
       users: {
         ids: [userID],
         contains: "CONTAINS",
         status: "ALL",
       },
-    };
+    }
 
     try {
-      const response = await axios.post(`/detailed`, payload, reportConfig);
+      const response = await axios.post(`/detailed`, payload, reportConfig)
+
+      const data = {
+        totals: response.data.totals,
+        dates: {}
+      }
+
+      response.data.timeentries.forEach(entry => {
+
+        const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
+
+        if(!(key in data.dates)) {
+          data.dates[key] = []
+        }
+        
+        data.dates[key].push(entry)
+      })
+
       return {
-        data: response.data,
+        data: data,
         meta: {
           pagination: {
             page: 1,
-            pageSize: 100,
+            pageSize: 1000,
             pageCount: 1,
             total: response.data.timeentries.length,
           },
         },
-      };
+      }
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
   },
 
@@ -425,15 +457,13 @@ module.exports = {
   // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
   async findProject(id, period) {
 
-    const dateRange = getDateRanges(period)
-
-    let dateRangeStart = dateRange.dateRangeStart;
-    let dateRangeEnd = dateRange.dateRangeEnd;
+    console.log(period)
+    const date = DateTime.fromFormat(`${period.month} ${period.year}`, 'LLLL yyyy')
 
     // This time range gets the entire fiscal annum
     const payload = {
-      dateRangeStart: dateRangeStart,
-      dateRangeEnd: dateRangeEnd,
+      dateRangeStart: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
+      dateRangeEnd: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
       // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
       projects: {
         contains: "CONTAINS",
@@ -442,10 +472,12 @@ module.exports = {
       summaryFilter: {
         groups: ["USER"],
       },
-    };
+    }
+
+    let response = null
 
     try {
-      const response = await axios.post(`/summary`, payload, reportConfig);
+      response = await axios.post(`/summary`, payload, reportConfig);
 
       const rses = []
 
@@ -457,16 +489,18 @@ module.exports = {
         })
       })
 
+      const totals = response.data.totals[0] ? response.data.totals[0] : { totalTime: 0, totalBillableTime: 0}
+
       return {
         data: {
-          total: response.data.totals[0].totalTime,
-          totalBillable: response.data.totals[0].totalBillableTime,
+          total: totals.totalTime,
+          totalBillable: totals.totalBillableTime,
           rses: rses
         },
         meta: {
           period: {
-            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
-            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
+            start: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
+            end: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
             entriesCount: response.data.totals[0].entriesCount
           },
           pagination: {
@@ -478,7 +512,7 @@ module.exports = {
         },
       };
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
   },
 
@@ -526,6 +560,16 @@ module.exports = {
       };
     } catch (error) {
       console.error(error);
+    }
+  },
+
+  async findLeave() {
+    try {
+      let response = await axios.get(`/turner`, leaveConfig)
+      return { data: response.data }
+    }
+    catch(ex) {
+      console.error(ex)
     }
   },
 

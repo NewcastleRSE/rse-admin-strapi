@@ -25,9 +25,6 @@
     "sent": {
       "type": "date"
     },
-    "paid": {
-      "type": "date"
-    },
     "transaction": {
       "type": "relation",
       "relation": "oneToOne",

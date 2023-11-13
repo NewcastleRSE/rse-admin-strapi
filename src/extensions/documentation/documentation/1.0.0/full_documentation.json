@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-08-18T09:01:20.098Z"
+    "x-generation-date": "2023-10-26T08:31:18.006Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -334,10 +334,6 @@
                                                                 "type": "string",
                                                                 "format": "date"
                                                               },
-                                                              "paid": {
-                                                                "type": "string",
-                                                                "format": "date"
-                                                              },
                                                               "transaction": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -392,6 +388,9 @@
                                                                           },
                                                                           "fiscalPeriod": {
                                                                             "type": "integer"
+                                                                          },
+                                                                          "internalCategory": {
+                                                                            "type": "string"
                                                                           },
                                                                           "createdAt": {
                                                                             "type": "string",
@@ -978,6 +977,9 @@
                         "type": "string"
                       },
                       "github": {
+                        "type": "string"
+                      },
+                      "username": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -1368,10 +1370,6 @@
                                                                 "type": "string",
                                                                 "format": "date"
                                                               },
-                                                              "paid": {
-                                                                "type": "string",
-                                                                "format": "date"
-                                                              },
                                                               "transaction": {
                                                                 "type": "object",
                                                                 "properties": {
@@ -1426,6 +1424,9 @@
                                                                           },
                                                                           "fiscalPeriod": {
                                                                             "type": "integer"
+                                                                          },
+                                                                          "internalCategory": {
+                                                                            "type": "string"
                                                                           },
                                                                           "createdAt": {
                                                                             "type": "string",
@@ -2014,6 +2015,9 @@
                       "github": {
                         "type": "string"
                       },
+                      "username": {
+                        "type": "string"
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -2140,7 +2144,8 @@
               "nonSalaryCosts",
               "estatesCosts",
               "dayRate",
-              "utilisationRate"
+              "utilisationRate",
+              "incomeTarget"
             ],
             "type": "object",
             "properties": {
@@ -2160,6 +2165,9 @@
               "utilisationRate": {
                 "type": "number",
                 "format": "float"
+              },
+              "incomeTarget": {
+                "type": "integer"
               }
             }
           }
@@ -2218,7 +2226,8 @@
           "nonSalaryCosts",
           "estatesCosts",
           "dayRate",
-          "utilisationRate"
+          "utilisationRate",
+          "incomeTarget"
         ],
         "properties": {
           "year": {
@@ -2237,6 +2246,9 @@
           "utilisationRate": {
             "type": "number",
             "format": "float"
+          },
+          "incomeTarget": {
+            "type": "integer"
           },
           "createdAt": {
             "type": "string",
@@ -2591,10 +2603,6 @@
                 "type": "string",
                 "format": "date"
               },
-              "paid": {
-                "type": "string",
-                "format": "date"
-              },
               "transaction": {
                 "oneOf": [
                   {
@@ -2763,10 +2771,6 @@
                                       "type": "string",
                                       "format": "date"
                                     },
-                                    "paid": {
-                                      "type": "string",
-                                      "format": "date"
-                                    },
                                     "transaction": {
                                       "type": "object",
                                       "properties": {
@@ -2821,6 +2825,9 @@
                                                 },
                                                 "fiscalPeriod": {
                                                   "type": "integer"
+                                                },
+                                                "internalCategory": {
+                                                  "type": "string"
                                                 },
                                                 "createdAt": {
                                                   "type": "string",
@@ -3265,10 +3272,6 @@
             "format": "date"
           },
           "sent": {
-            "type": "string",
-            "format": "date"
-          },
-          "paid": {
             "type": "string",
             "format": "date"
           },
@@ -3877,10 +3880,6 @@
                           "type": "string",
                           "format": "date"
                         },
-                        "paid": {
-                          "type": "string",
-                          "format": "date"
-                        },
                         "transaction": {
                           "type": "object",
                           "properties": {
@@ -3935,6 +3934,9 @@
                                     },
                                     "fiscalPeriod": {
                                       "type": "integer"
+                                    },
+                                    "internalCategory": {
+                                      "type": "string"
                                     },
                                     "createdAt": {
                                       "type": "string",
@@ -4155,7 +4157,8 @@
               "contractStart",
               "personnelNumber",
               "team",
-              "active"
+              "active",
+              "username"
             ],
             "type": "object",
             "properties": {
@@ -4222,6 +4225,9 @@
               },
               "github": {
                 "type": "string"
+              },
+              "username": {
+                "type": "string"
               }
             }
           }
@@ -4282,7 +4288,8 @@
           "contractStart",
           "personnelNumber",
           "team",
-          "active"
+          "active",
+          "username"
         ],
         "properties": {
           "firstname": {
@@ -4736,6 +4743,9 @@
                                     "github": {
                                       "type": "string"
                                     },
+                                    "username": {
+                                      "type": "string"
+                                    },
                                     "createdAt": {
                                       "type": "string",
                                       "format": "date-time"
@@ -4857,10 +4867,6 @@
                                                     "type": "string",
                                                     "format": "date"
                                                   },
-                                                  "paid": {
-                                                    "type": "string",
-                                                    "format": "date"
-                                                  },
                                                   "transaction": {
                                                     "type": "object",
                                                     "properties": {
@@ -4915,6 +4921,9 @@
                                                               },
                                                               "fiscalPeriod": {
                                                                 "type": "integer"
+                                                              },
+                                                              "internalCategory": {
+                                                                "type": "string"
                                                               },
                                                               "createdAt": {
                                                                 "type": "string",
@@ -5181,6 +5190,9 @@
           "github": {
             "type": "string"
           },
+          "username": {
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -5310,6 +5322,9 @@
               },
               "fiscalPeriod": {
                 "type": "integer"
+              },
+              "internalCategory": {
+                "type": "string"
               }
             }
           }
@@ -5418,6 +5433,9 @@
           },
           "fiscalPeriod": {
             "type": "integer"
+          },
+          "internalCategory": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -9895,7 +9913,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successfull registration",
+            "description": "Successful registration",
             "content": {
               "application/json": {
                 "schema": {

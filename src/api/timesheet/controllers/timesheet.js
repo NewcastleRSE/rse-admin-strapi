@@ -41,6 +41,14 @@ module.exports = {
       console.error(err);
     }
   },
+  leave: async (ctx, next) => {
+    try {
+      ctx.body = await service.findLeave();
+    } catch (err) {
+      ctx.body = err;
+      console.error(err);
+    }
+  },
   user: async (ctx, next) => {
     try {
       let period = ctx.request.headers["period"];
