@@ -25,8 +25,12 @@
     "luxon": "^3.3.0",
     "mysql": "^2.18.1",
     "pdf-lib": "^1.17.1",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^5.2.0",
     "strapi-plugin-import-export-entries": "^1.21.0",
-    "strapi-plugin-transformer": "^3.1.0"
+    "strapi-plugin-transformer": "^3.1.0",
+    "styled-components": "^5.2.1"
   },
   "author": {
     "name": "Mark Turner"

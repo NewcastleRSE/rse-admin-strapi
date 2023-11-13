@@ -23,6 +23,7 @@ export interface AdminPermission extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 1;
       }>;
+    actionParameters: Attribute.JSON & Attribute.DefaultTo<{}>;
     subject: Attribute.String &
       Attribute.SetMinMaxLength<{
         minLength: 1;
@@ -1001,7 +1002,7 @@ export interface ApiTransactionTransaction extends Schema.CollectionType {
   };
 }
 
-declare module '@strapi/strapi' {
+declare module '@strapi/types' {
   export module Shared {
     export interface ContentTypes {
       'admin::permission': AdminPermission;
