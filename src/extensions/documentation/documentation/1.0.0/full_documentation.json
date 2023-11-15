@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2023-10-26T08:31:18.006Z"
+    "x-generation-date": "2023-11-15T19:37:50.451Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -494,6 +494,7 @@
                                                                                                                   "action": {
                                                                                                                     "type": "string"
                                                                                                                   },
+                                                                                                                  "actionParameters": {},
                                                                                                                   "subject": {
                                                                                                                     "type": "string"
                                                                                                                   },
@@ -1530,6 +1531,7 @@
                                                                                                                   "action": {
                                                                                                                     "type": "string"
                                                                                                                   },
+                                                                                                                  "actionParameters": {},
                                                                                                                   "subject": {
                                                                                                                     "type": "string"
                                                                                                                   },
@@ -2352,6 +2354,7 @@
                                                   "action": {
                                                     "type": "string"
                                                   },
+                                                  "actionParameters": {},
                                                   "subject": {
                                                     "type": "string"
                                                   },
@@ -2931,6 +2934,7 @@
                                                                                         "action": {
                                                                                           "type": "string"
                                                                                         },
+                                                                                        "actionParameters": {},
                                                                                         "subject": {
                                                                                           "type": "string"
                                                                                         },
@@ -3675,6 +3679,7 @@
                                                                             "action": {
                                                                               "type": "string"
                                                                             },
+                                                                            "actionParameters": {},
                                                                             "subject": {
                                                                               "type": "string"
                                                                             },
@@ -4536,6 +4541,7 @@
                                                                                           "action": {
                                                                                             "type": "string"
                                                                                           },
+                                                                                          "actionParameters": {},
                                                                                           "subject": {
                                                                                             "type": "string"
                                                                                           },
@@ -5539,6 +5545,7 @@
                                                   "action": {
                                                     "type": "string"
                                                   },
+                                                  "actionParameters": {},
                                                   "subject": {
                                                     "type": "string"
                                                   },
@@ -8485,6 +8492,88 @@
           }
         ],
         "operationId": "delete/projects/{id}"
+      }
+    },
+    "/projects/hubspot/{id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Project"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/projects/hubspot/{id}"
       }
     },
     "/rses": {
