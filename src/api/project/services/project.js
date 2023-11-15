@@ -632,5 +632,21 @@ module.exports = createCoreService("api::project.project", ({ strapi }) => ({
         console.error(err);
         return null;
       });
-  }
-}));
+  },
+
+  async byHubSpotID(id) {
+    const { results } = await super.find({
+      filters: { hubspotID: id }
+    })
+
+    if(results.length === 0) {
+      return null
+    }
+    else if(results.length > 1) {
+      console.error(`More than one project found with HubSpot ID ${id}`)
+      return null
+    }
+    else {
+      return { data: results[0] }
+    }
+}}));
