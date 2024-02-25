@@ -40,6 +40,81 @@
         "green"
       ],
       "default": "green"
+    },
+    "stage": {
+      "type": "enumeration",
+      "enum": [
+        "Meeting Scheduled",
+        "Bid Preparation",
+        "Grant Writing",
+        "Submitted to Funder",
+        "Not Funded",
+        "Awaiting Allocation",
+        "Funded & Awaiting Allocated",
+        "Completed"
+      ],
+      "required": true
+    },
+    "costModel": {
+      "type": "enumeration",
+      "enum": [
+        "Facility",
+        "Directly Incurred",
+        "JobsOC",
+        "Voluntary"
+      ],
+      "required": true,
+      "default": "Facility"
+    },
+    "awardStage": {
+      "type": "enumeration",
+      "enum": [
+        "Pre-Award",
+        "Post-Award",
+        "Underwrite",
+        "Centrally Awarded"
+      ],
+      "default": "Pre-Award",
+      "required": true
+    },
+    "startDate": {
+      "type": "date"
+    },
+    "endDate": {
+      "type": "date"
+    },
+    "funder": {
+      "type": "string"
+    },
+    "school": {
+      "type": "string"
+    },
+    "faculty": {
+      "type": "enumeration",
+      "enum": [
+        "SAgE",
+        "FMS",
+        "Hass",
+        "Central"
+      ],
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "min": 0
+    },
+    "value": {
+      "type": "decimal",
+      "min": 0
+    },
+    "financeContact": {
+      "type": "string"
+    },
+    "account": {
+      "type": "string"
+    },
+    "nuProjects": {
+      "type": "string"
     }
   }
 }

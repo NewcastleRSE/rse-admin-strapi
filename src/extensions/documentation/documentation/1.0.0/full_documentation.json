@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2024-01-12T15:15:15.602Z"
+    "x-generation-date": "2024-02-25T21:28:47.232Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -782,6 +782,77 @@
                                                     "amber",
                                                     "green"
                                                   ]
+                                                },
+                                                "stage": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Meeting Scheduled",
+                                                    "Bid Preparation",
+                                                    "Grant Writing",
+                                                    "Submitted to Funder",
+                                                    "Not Funded",
+                                                    "Awaiting Allocation",
+                                                    "Funded & Awaiting Allocated",
+                                                    "Completed"
+                                                  ]
+                                                },
+                                                "costModel": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Facility",
+                                                    "Directly Incurred",
+                                                    "JobsOC",
+                                                    "Voluntary"
+                                                  ]
+                                                },
+                                                "awardStage": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Pre-Award",
+                                                    "Post-Award",
+                                                    "Underwrite",
+                                                    "Centrally Awarded"
+                                                  ]
+                                                },
+                                                "startDate": {
+                                                  "type": "string",
+                                                  "format": "date"
+                                                },
+                                                "endDate": {
+                                                  "type": "string",
+                                                  "format": "date"
+                                                },
+                                                "funder": {
+                                                  "type": "string"
+                                                },
+                                                "school": {
+                                                  "type": "string"
+                                                },
+                                                "faculty": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "SAgE",
+                                                    "FMS",
+                                                    "Hass",
+                                                    "Central"
+                                                  ]
+                                                },
+                                                "amount": {
+                                                  "type": "number",
+                                                  "format": "float"
+                                                },
+                                                "value": {
+                                                  "type": "number",
+                                                  "format": "float"
+                                                },
+                                                "financeContact": {
+                                                  "type": "string"
+                                                },
+                                                "account": {
+                                                  "type": "string"
+                                                },
+                                                "nuProjects": {
+                                                  "type": "string"
                                                 },
                                                 "createdAt": {
                                                   "type": "string",
@@ -1819,6 +1890,77 @@
                                                     "amber",
                                                     "green"
                                                   ]
+                                                },
+                                                "stage": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Meeting Scheduled",
+                                                    "Bid Preparation",
+                                                    "Grant Writing",
+                                                    "Submitted to Funder",
+                                                    "Not Funded",
+                                                    "Awaiting Allocation",
+                                                    "Funded & Awaiting Allocated",
+                                                    "Completed"
+                                                  ]
+                                                },
+                                                "costModel": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Facility",
+                                                    "Directly Incurred",
+                                                    "JobsOC",
+                                                    "Voluntary"
+                                                  ]
+                                                },
+                                                "awardStage": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "Pre-Award",
+                                                    "Post-Award",
+                                                    "Underwrite",
+                                                    "Centrally Awarded"
+                                                  ]
+                                                },
+                                                "startDate": {
+                                                  "type": "string",
+                                                  "format": "date"
+                                                },
+                                                "endDate": {
+                                                  "type": "string",
+                                                  "format": "date"
+                                                },
+                                                "funder": {
+                                                  "type": "string"
+                                                },
+                                                "school": {
+                                                  "type": "string"
+                                                },
+                                                "faculty": {
+                                                  "type": "string",
+                                                  "enum": [
+                                                    "SAgE",
+                                                    "FMS",
+                                                    "Hass",
+                                                    "Central"
+                                                  ]
+                                                },
+                                                "amount": {
+                                                  "type": "number",
+                                                  "format": "float"
+                                                },
+                                                "value": {
+                                                  "type": "number",
+                                                  "format": "float"
+                                                },
+                                                "financeContact": {
+                                                  "type": "string"
+                                                },
+                                                "account": {
+                                                  "type": "string"
+                                                },
+                                                "nuProjects": {
+                                                  "type": "string"
                                                 },
                                                 "createdAt": {
                                                   "type": "string",
@@ -3223,6 +3365,77 @@
                           "green"
                         ]
                       },
+                      "stage": {
+                        "type": "string",
+                        "enum": [
+                          "Meeting Scheduled",
+                          "Bid Preparation",
+                          "Grant Writing",
+                          "Submitted to Funder",
+                          "Not Funded",
+                          "Awaiting Allocation",
+                          "Funded & Awaiting Allocated",
+                          "Completed"
+                        ]
+                      },
+                      "costModel": {
+                        "type": "string",
+                        "enum": [
+                          "Facility",
+                          "Directly Incurred",
+                          "JobsOC",
+                          "Voluntary"
+                        ]
+                      },
+                      "awardStage": {
+                        "type": "string",
+                        "enum": [
+                          "Pre-Award",
+                          "Post-Award",
+                          "Underwrite",
+                          "Centrally Awarded"
+                        ]
+                      },
+                      "startDate": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "endDate": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "funder": {
+                        "type": "string"
+                      },
+                      "school": {
+                        "type": "string"
+                      },
+                      "faculty": {
+                        "type": "string",
+                        "enum": [
+                          "SAgE",
+                          "FMS",
+                          "Hass",
+                          "Central"
+                        ]
+                      },
+                      "amount": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "value": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "financeContact": {
+                        "type": "string"
+                      },
+                      "account": {
+                        "type": "string"
+                      },
+                      "nuProjects": {
+                        "type": "string"
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -3406,7 +3619,11 @@
             "required": [
               "clockifyID",
               "name",
-              "hubspotID"
+              "hubspotID",
+              "stage",
+              "costModel",
+              "awardStage",
+              "faculty"
             ],
             "type": "object",
             "properties": {
@@ -3442,6 +3659,77 @@
                   "amber",
                   "green"
                 ]
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "Meeting Scheduled",
+                  "Bid Preparation",
+                  "Grant Writing",
+                  "Submitted to Funder",
+                  "Not Funded",
+                  "Awaiting Allocation",
+                  "Funded & Awaiting Allocated",
+                  "Completed"
+                ]
+              },
+              "costModel": {
+                "type": "string",
+                "enum": [
+                  "Facility",
+                  "Directly Incurred",
+                  "JobsOC",
+                  "Voluntary"
+                ]
+              },
+              "awardStage": {
+                "type": "string",
+                "enum": [
+                  "Pre-Award",
+                  "Post-Award",
+                  "Underwrite",
+                  "Centrally Awarded"
+                ]
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "endDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "funder": {
+                "type": "string"
+              },
+              "school": {
+                "type": "string"
+              },
+              "faculty": {
+                "type": "string",
+                "enum": [
+                  "SAgE",
+                  "FMS",
+                  "Hass",
+                  "Central"
+                ]
+              },
+              "amount": {
+                "type": "number",
+                "format": "float"
+              },
+              "value": {
+                "type": "number",
+                "format": "float"
+              },
+              "financeContact": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              },
+              "nuProjects": {
+                "type": "string"
               }
             }
           }
@@ -3498,7 +3786,11 @@
         "required": [
           "clockifyID",
           "name",
-          "hubspotID"
+          "hubspotID",
+          "stage",
+          "costModel",
+          "awardStage",
+          "faculty"
         ],
         "properties": {
           "clockifyID": {
@@ -3576,6 +3868,77 @@
                                         "amber",
                                         "green"
                                       ]
+                                    },
+                                    "stage": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Meeting Scheduled",
+                                        "Bid Preparation",
+                                        "Grant Writing",
+                                        "Submitted to Funder",
+                                        "Not Funded",
+                                        "Awaiting Allocation",
+                                        "Funded & Awaiting Allocated",
+                                        "Completed"
+                                      ]
+                                    },
+                                    "costModel": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Facility",
+                                        "Directly Incurred",
+                                        "JobsOC",
+                                        "Voluntary"
+                                      ]
+                                    },
+                                    "awardStage": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Pre-Award",
+                                        "Post-Award",
+                                        "Underwrite",
+                                        "Centrally Awarded"
+                                      ]
+                                    },
+                                    "startDate": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "endDate": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "funder": {
+                                      "type": "string"
+                                    },
+                                    "school": {
+                                      "type": "string"
+                                    },
+                                    "faculty": {
+                                      "type": "string",
+                                      "enum": [
+                                        "SAgE",
+                                        "FMS",
+                                        "Hass",
+                                        "Central"
+                                      ]
+                                    },
+                                    "amount": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "value": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "financeContact": {
+                                      "type": "string"
+                                    },
+                                    "account": {
+                                      "type": "string"
+                                    },
+                                    "nuProjects": {
+                                      "type": "string"
                                     },
                                     "createdAt": {
                                       "type": "string",
@@ -4081,6 +4444,77 @@
               "amber",
               "green"
             ]
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "Meeting Scheduled",
+              "Bid Preparation",
+              "Grant Writing",
+              "Submitted to Funder",
+              "Not Funded",
+              "Awaiting Allocation",
+              "Funded & Awaiting Allocated",
+              "Completed"
+            ]
+          },
+          "costModel": {
+            "type": "string",
+            "enum": [
+              "Facility",
+              "Directly Incurred",
+              "JobsOC",
+              "Voluntary"
+            ]
+          },
+          "awardStage": {
+            "type": "string",
+            "enum": [
+              "Pre-Award",
+              "Post-Award",
+              "Underwrite",
+              "Centrally Awarded"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "funder": {
+            "type": "string"
+          },
+          "school": {
+            "type": "string"
+          },
+          "faculty": {
+            "type": "string",
+            "enum": [
+              "SAgE",
+              "FMS",
+              "Hass",
+              "Central"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "format": "float"
+          },
+          "value": {
+            "type": "number",
+            "format": "float"
+          },
+          "financeContact": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string"
+          },
+          "nuProjects": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -5069,6 +5503,77 @@
                                         "amber",
                                         "green"
                                       ]
+                                    },
+                                    "stage": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Meeting Scheduled",
+                                        "Bid Preparation",
+                                        "Grant Writing",
+                                        "Submitted to Funder",
+                                        "Not Funded",
+                                        "Awaiting Allocation",
+                                        "Funded & Awaiting Allocated",
+                                        "Completed"
+                                      ]
+                                    },
+                                    "costModel": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Facility",
+                                        "Directly Incurred",
+                                        "JobsOC",
+                                        "Voluntary"
+                                      ]
+                                    },
+                                    "awardStage": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Pre-Award",
+                                        "Post-Award",
+                                        "Underwrite",
+                                        "Centrally Awarded"
+                                      ]
+                                    },
+                                    "startDate": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "endDate": {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    "funder": {
+                                      "type": "string"
+                                    },
+                                    "school": {
+                                      "type": "string"
+                                    },
+                                    "faculty": {
+                                      "type": "string",
+                                      "enum": [
+                                        "SAgE",
+                                        "FMS",
+                                        "Hass",
+                                        "Central"
+                                      ]
+                                    },
+                                    "amount": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "value": {
+                                      "type": "number",
+                                      "format": "float"
+                                    },
+                                    "financeContact": {
+                                      "type": "string"
+                                    },
+                                    "account": {
+                                      "type": "string"
+                                    },
+                                    "nuProjects": {
+                                      "type": "string"
                                     },
                                     "createdAt": {
                                       "type": "string",
