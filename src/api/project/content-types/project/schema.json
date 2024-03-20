@@ -51,6 +51,7 @@
         "Not Funded",
         "Awaiting Allocation",
         "Funded & Awaiting Allocated",
+        "Allocated",
         "Completed"
       ],
       "required": true
@@ -92,9 +93,9 @@
     "faculty": {
       "type": "enumeration",
       "enum": [
-        "SAgE",
-        "FMS",
-        "Hass",
+        "Science, Agriculture & Engineering",
+        "Medical Sciences",
+        "Humanities & Social Sciences",
         "Central"
       ],
       "required": true

@@ -514,6 +514,10 @@ export interface PluginContentReleasesRelease extends Schema.CollectionType {
     releasedAt: Attribute.DateTime;
     scheduledAt: Attribute.DateTime;
     timezone: Attribute.String;
+    status: Attribute.Enumeration<
+      ['ready', 'blocked', 'failed', 'done', 'empty']
+    > &
+      Attribute.Required;
     actions: Attribute.Relation<
       'plugin::content-releases.release',
       'oneToMany',
@@ -568,6 +572,7 @@ export interface PluginContentReleasesReleaseAction
       'manyToOne',
       'plugin::content-releases.release'
     >;
+    isEntryValid: Attribute.Boolean;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -1021,6 +1026,7 @@ export interface ApiProjectProject extends Schema.CollectionType {
         'Not Funded',
         'Awaiting Allocation',
         'Funded & Awaiting Allocated',
+        'Allocated',
         'Completed'
       ]
     > &
@@ -1039,7 +1045,14 @@ export interface ApiProjectProject extends Schema.CollectionType {
     endDate: Attribute.Date;
     funder: Attribute.String;
     school: Attribute.String;
-    faculty: Attribute.Enumeration<['SAgE', 'FMS', 'Hass', 'Central']> &
+    faculty: Attribute.Enumeration<
+      [
+        'Science, Agriculture & Engineering',
+        'Medical Sciences',
+        'Humanities & Social Sciences',
+        'Central'
+      ]
+    > &
       Attribute.Required;
     amount: Attribute.Decimal &
       Attribute.SetMinMax<
