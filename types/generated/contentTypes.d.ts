@@ -823,7 +823,7 @@ export interface ApiAssignmentAssignment extends Schema.CollectionType {
       Attribute.DefaultTo<50>;
     project: Attribute.Relation<
       'api::assignment.assignment',
-      'oneToOne',
+      'manyToOne',
       'api::project.project'
     >;
     createdAt: Attribute.DateTime;
@@ -882,6 +882,47 @@ export interface ApiCapacityCapacity extends Schema.CollectionType {
       Attribute.Private;
     updatedBy: Attribute.Relation<
       'api::capacity.capacity',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiContactContact extends Schema.CollectionType {
+  collectionName: 'contacts';
+  info: {
+    singularName: 'contact';
+    pluralName: 'contacts';
+    displayName: 'Contact';
+    description: '';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    firstname: Attribute.String & Attribute.Required;
+    email: Attribute.Email & Attribute.Required & Attribute.Unique;
+    jobTitle: Attribute.String;
+    organisation: Attribute.String;
+    department: Attribute.String;
+    lastname: Attribute.String & Attribute.Required;
+    displayName: Attribute.String & Attribute.Required;
+    projects: Attribute.Relation<
+      'api::contact.contact',
+      'manyToMany',
+      'api::project.project'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::contact.contact',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::contact.contact',
       'oneToOne',
       'admin::user'
     > &
@@ -1071,6 +1112,16 @@ export interface ApiProjectProject extends Schema.CollectionType {
     financeContact: Attribute.String;
     account: Attribute.String;
     nuProjects: Attribute.String;
+    contacts: Attribute.Relation<
+      'api::project.project',
+      'manyToMany',
+      'api::contact.contact'
+    >;
+    assignments: Attribute.Relation<
+      'api::project.project',
+      'oneToMany',
+      'api::assignment.assignment'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -1125,6 +1176,7 @@ export interface ApiRseRse extends Schema.CollectionType {
     clockifyID: Attribute.String & Attribute.Unique;
     github: Attribute.String;
     username: Attribute.String & Attribute.Required;
+    displayName: Attribute.String & Attribute.Required;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<'api::rse.rse', 'oneToOne', 'admin::user'> &
@@ -1196,6 +1248,7 @@ declare module '@strapi/types' {
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'api::assignment.assignment': ApiAssignmentAssignment;
       'api::capacity.capacity': ApiCapacityCapacity;
+      'api::contact.contact': ApiContactContact;
       'api::facility.facility': ApiFacilityFacility;
       'api::invoice.invoice': ApiInvoiceInvoice;
       'api::project.project': ApiProjectProject;
