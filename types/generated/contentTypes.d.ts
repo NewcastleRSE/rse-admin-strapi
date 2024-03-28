@@ -403,9 +403,12 @@ export interface PluginUploadFile extends Schema.CollectionType {
     folderPath: Attribute.String &
       Attribute.Required &
       Attribute.Private &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -441,9 +444,12 @@ export interface PluginUploadFolder extends Schema.CollectionType {
   attributes: {
     name: Attribute.String &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     pathId: Attribute.Integer & Attribute.Required & Attribute.Unique;
     parent: Attribute.Relation<
       'plugin::upload.folder',
@@ -462,9 +468,12 @@ export interface PluginUploadFolder extends Schema.CollectionType {
     >;
     path: Attribute.String &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -475,6 +484,105 @@ export interface PluginUploadFolder extends Schema.CollectionType {
       Attribute.Private;
     updatedBy: Attribute.Relation<
       'plugin::upload.folder',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface PluginContentReleasesRelease extends Schema.CollectionType {
+  collectionName: 'strapi_releases';
+  info: {
+    singularName: 'release';
+    pluralName: 'releases';
+    displayName: 'Release';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    name: Attribute.String & Attribute.Required;
+    releasedAt: Attribute.DateTime;
+    scheduledAt: Attribute.DateTime;
+    timezone: Attribute.String;
+    status: Attribute.Enumeration<
+      ['ready', 'blocked', 'failed', 'done', 'empty']
+    > &
+      Attribute.Required;
+    actions: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToMany',
+      'plugin::content-releases.release-action'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface PluginContentReleasesReleaseAction
+  extends Schema.CollectionType {
+  collectionName: 'strapi_release_actions';
+  info: {
+    singularName: 'release-action';
+    pluralName: 'release-actions';
+    displayName: 'Release Action';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    type: Attribute.Enumeration<['publish', 'unpublish']> & Attribute.Required;
+    entry: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'morphToOne'
+    >;
+    contentType: Attribute.String & Attribute.Required;
+    locale: Attribute.String;
+    release: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'manyToOne',
+      'plugin::content-releases.release'
+    >;
+    isEntryValid: Attribute.Boolean;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'plugin::content-releases.release-action',
       'oneToOne',
       'admin::user'
     > &
@@ -504,10 +612,13 @@ export interface PluginI18NLocale extends Schema.CollectionType {
   };
   attributes: {
     name: Attribute.String &
-      Attribute.SetMinMax<{
-        min: 1;
-        max: 50;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+          max: 50;
+        },
+        number
+      >;
     code: Attribute.String & Attribute.Unique;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -702,14 +813,17 @@ export interface ApiAssignmentAssignment extends Schema.CollectionType {
       Attribute.DefaultTo<'2025-01-01'>;
     fte: Attribute.Integer &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 0;
-        max: 100;
-      }> &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+          max: 100;
+        },
+        number
+      > &
       Attribute.DefaultTo<50>;
     project: Attribute.Relation<
       'api::assignment.assignment',
-      'oneToOne',
+      'manyToOne',
       'api::project.project'
     >;
     createdAt: Attribute.DateTime;
@@ -743,10 +857,13 @@ export interface ApiCapacityCapacity extends Schema.CollectionType {
   attributes: {
     capacity: Attribute.Integer &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 0;
-        max: 100;
-      }> &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+          max: 100;
+        },
+        number
+      > &
       Attribute.DefaultTo<100>;
     start: Attribute.Date & Attribute.Required;
     end: Attribute.Date;
@@ -772,6 +889,47 @@ export interface ApiCapacityCapacity extends Schema.CollectionType {
   };
 }
 
+export interface ApiContactContact extends Schema.CollectionType {
+  collectionName: 'contacts';
+  info: {
+    singularName: 'contact';
+    pluralName: 'contacts';
+    displayName: 'Contact';
+    description: '';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    firstname: Attribute.String & Attribute.Required;
+    email: Attribute.Email & Attribute.Required & Attribute.Unique;
+    jobTitle: Attribute.String;
+    organisation: Attribute.String;
+    department: Attribute.String;
+    lastname: Attribute.String & Attribute.Required;
+    displayName: Attribute.String & Attribute.Required;
+    projects: Attribute.Relation<
+      'api::contact.contact',
+      'manyToMany',
+      'api::project.project'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::contact.contact',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::contact.contact',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiFacilityFacility extends Schema.CollectionType {
   collectionName: 'facilities';
   info: {
@@ -790,10 +948,13 @@ export interface ApiFacilityFacility extends Schema.CollectionType {
     dayRate: Attribute.Decimal & Attribute.Required;
     utilisationRate: Attribute.Decimal &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 0;
-        max: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 0;
+          max: 1;
+        },
+        number
+      >;
     incomeTarget: Attribute.Integer & Attribute.Required;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -897,6 +1058,70 @@ export interface ApiProjectProject extends Schema.CollectionType {
     >;
     status: Attribute.Enumeration<['red', 'amber', 'green']> &
       Attribute.DefaultTo<'green'>;
+    stage: Attribute.Enumeration<
+      [
+        'Meeting Scheduled',
+        'Bid Preparation',
+        'Grant Writing',
+        'Submitted to Funder',
+        'Not Funded',
+        'Awaiting Allocation',
+        'Funded & Awaiting Allocated',
+        'Allocated',
+        'Completed'
+      ]
+    > &
+      Attribute.Required;
+    costModel: Attribute.Enumeration<
+      ['Facility', 'Directly Incurred', 'JobsOC', 'Voluntary']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'Facility'>;
+    awardStage: Attribute.Enumeration<
+      ['Pre-Award', 'Post-Award', 'Underwrite', 'Centrally Awarded']
+    > &
+      Attribute.Required &
+      Attribute.DefaultTo<'Pre-Award'>;
+    startDate: Attribute.Date;
+    endDate: Attribute.Date;
+    funder: Attribute.String;
+    school: Attribute.String;
+    faculty: Attribute.Enumeration<
+      [
+        'Science, Agriculture & Engineering',
+        'Medical Sciences',
+        'Humanities & Social Sciences',
+        'Central'
+      ]
+    > &
+      Attribute.Required;
+    amount: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    value: Attribute.Decimal &
+      Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    financeContact: Attribute.String;
+    account: Attribute.String;
+    nuProjects: Attribute.String;
+    contacts: Attribute.Relation<
+      'api::project.project',
+      'manyToMany',
+      'api::contact.contact'
+    >;
+    assignments: Attribute.Relation<
+      'api::project.project',
+      'oneToMany',
+      'api::assignment.assignment'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -951,6 +1176,7 @@ export interface ApiRseRse extends Schema.CollectionType {
     clockifyID: Attribute.String & Attribute.Unique;
     github: Attribute.String;
     username: Attribute.String & Attribute.Required;
+    displayName: Attribute.String & Attribute.Required;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<'api::rse.rse', 'oneToOne', 'admin::user'> &
@@ -1014,12 +1240,15 @@ declare module '@strapi/types' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'plugin::upload.file': PluginUploadFile;
       'plugin::upload.folder': PluginUploadFolder;
+      'plugin::content-releases.release': PluginContentReleasesRelease;
+      'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
       'plugin::users-permissions.permission': PluginUsersPermissionsPermission;
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'api::assignment.assignment': ApiAssignmentAssignment;
       'api::capacity.capacity': ApiCapacityCapacity;
+      'api::contact.contact': ApiContactContact;
       'api::facility.facility': ApiFacilityFacility;
       'api::invoice.invoice': ApiInvoiceInvoice;
       'api::project.project': ApiProjectProject;
