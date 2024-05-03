@@ -15,7 +15,8 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
         await workbook.xlsx.readFile(file.path)
         const transactionSheet = workbook.getWorksheet(TransactionsWorksheetName)
 
-        let transactions = []
+        let transactions = [], 
+            errorCount = 0
 
         // clear all previous transactions; ID is always not null
         await strapi.db.query('api::transaction.transaction').deleteMany({
@@ -42,14 +43,14 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     documentNumber: Number(row.values[5]),
                     documentHeader: row.values[6],
                     name: row.values[7],
-                    fiscalYear: Number(row.values[8]),
-                    fiscalPeriod: Number(row.values[9]),
-                    documentDate: DateTime.fromJSDate(new Date(row.values[10])).toISODate(), 	
-                    postedDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(),
+                    fiscalYear: Number(row.values[9]),
+                    fiscalPeriod: Number(row.values[10]),
+                    documentDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(), 	
+                    postedDate: DateTime.fromJSDate(new Date(row.values[12])).toISODate(),
                     // SAP gets the debit and credit wrong way around, times -1 to fix
-                    value: (row.values[12].hasOwnProperty('result') ? parseFloat(row.values[12].result) : parseFloat(row.values[12])) * -1,
-                    bwCategory: row.values[13].hasOwnProperty('result') ? row.values[13].result : row.values[13], 	
-                    ieCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14],
+                    value: (row.values[13].hasOwnProperty('result') ? parseFloat(row.values[13].result) : parseFloat(row.values[13])) * -1,
+                    bwCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14], 	
+                    ieCategory: row.values[15].hasOwnProperty('result') ? row.values[15].result : row.values[15],
                     internalCategory: null
                 }
 
@@ -61,6 +62,7 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     isNaN(transaction.fiscalPeriod) ||
                     isNaN(transaction.value)
                 ) {
+                    errorCount++
                     console.error(transaction)
                 }
 
@@ -129,9 +131,13 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             }
         })
 
-        let count = await strapi.db.query('api::transaction.transaction').createMany({ data: transactions })
-
-        return { message: 'Successfully uploaded transaction data', count }
-        
+        try {
+            await strapi.db.query('api::transaction.transaction').createMany({ data: transactions })
+            return { message: 'Successfully uploaded transaction data' }
+        }
+        catch (error) {
+            console.error(`Failed to add ${transactions.length} transactions to the database. Encountered ${errorCount} errors.`)
+            console.error(error)
+        }
       },
 }))
