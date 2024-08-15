@@ -40,7 +40,8 @@
       "enum": [
         "WebMobile",
         "Middleware",
-        "DataScience"
+        "DataScience",
+        "HPC"
       ],
       "required": true
     },
