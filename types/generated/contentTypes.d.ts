@@ -1160,7 +1160,9 @@ export interface ApiRseRse extends Schema.CollectionType {
     personnelNumber: Attribute.BigInteger &
       Attribute.Required &
       Attribute.Unique;
-    team: Attribute.Enumeration<['WebMobile', 'Middleware', 'DataScience']> &
+    team: Attribute.Enumeration<
+      ['WebMobile', 'Middleware', 'DataScience', 'HPC']
+    > &
       Attribute.Required;
     assignments: Attribute.Relation<
       'api::rse.rse',
