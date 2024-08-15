@@ -3,7 +3,8 @@ module.exports = ({ env }) => ({
       enabled: true,
       config: {
         responseTransforms: {
-          removeAttributesKey: true
+          removeAttributesKey: true,
+          removeDataKey: true
         }
       }
     },
