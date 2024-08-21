@@ -118,9 +118,10 @@ function getAvailability(rse, assignments, capacities) {
           availability[year][month - 1] = currentAvailability < 0 ? 0 : currentAvailability
         }
         catch(ex){
-          console.log(rse)
-          console.log(year)
-          console.log(month)
+          // console.log(ex)
+          // console.log(rse)
+          // console.log(year)
+          // console.log(month)
         }
         month++;
       }
