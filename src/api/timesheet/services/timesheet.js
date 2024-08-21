@@ -1,6 +1,6 @@
 "use strict";
 
-const { DateTime } = require("luxon");
+const { DateTime, Interval } = require("luxon");
 
 /**
  * timesheet service.
@@ -302,15 +302,27 @@ const dateHelper = (month) => {
 module.exports = {
   async find(...args) {
 
+    const query = args[0]
+
     const currentDate = DateTime.utc()
 
-    let startDate = DateTime.utc(currentDate.year, 8),
-        endDate = startDate.plus({ year: 1 })
+    let startDate,
+        endDate
 
-    if(currentDate.month < 8) {
-      startDate = startDate.minus({ year: 1 }),
-      endDate = endDate.minus({ year: 1 })
+    // Load timesheets of provided year
+    if(query.filters.year.$eq) {
+      startDate = DateTime.utc(Number(query.filters.year.$eq), 8)
     }
+    // Is after december of the current financial year
+    else if(currentDate.month < 8) {
+      startDate = DateTime.utc(currentDate.year - 1, 8)
+    }
+    // Is before december of the current financial year
+    else {
+      startDate = DateTime.utc(currentDate.year, 8)
+    }
+
+    endDate = startDate.plus({ year: 1 })
 
     const payload = {
       dateRangeStart: startDate.toISO(),
@@ -378,17 +390,29 @@ module.exports = {
     }
   },
 
-  async findOne(userID) {
+  async findOne(userID, ...args) {
+
+    const query = args[0]
 
     const currentDate = DateTime.utc()
 
-    let startDate = DateTime.utc(currentDate.year, 8),
-        endDate = startDate.plus({ year: 1 })
+    let startDate,
+        endDate
 
-    if(currentDate.month < 8) {
-      startDate = startDate.minus({ year: 1 }),
-      endDate = endDate.minus({ year: 1 })
+    // Load timesheets of provided year
+    if(query.filters.year.$eq) {
+      startDate = DateTime.utc(Number(query.filters.year.$eq), 8)
     }
+    // Is after december of the current financial year
+    else if(currentDate.month < 8) {
+      startDate = DateTime.utc(currentDate.year - 1, 8)
+    }
+    // Is before december of the current financial year
+    else {
+      startDate = DateTime.utc(currentDate.year, 8)
+    }
+
+    endDate = startDate.plus({ year: 1 })
 
     const payload = {
       dateRangeStart: startDate.toISO(),
@@ -563,10 +587,54 @@ module.exports = {
     }
   },
 
-  async findLeave() {
+  async findLeave(...args) {
+
+    const query = args[0]
+
+    const currentDate = DateTime.utc()
+
+    let startDate,
+        endDate
+
+    // Load leave of provided year
+    if(query.filters.year.$eq) {
+      startDate = DateTime.utc(Number(query.filters.year.$eq), 8)
+    }
+    // Is after december of the current financial year
+    else if(currentDate.month < 8) {
+      startDate = DateTime.utc(currentDate.year - 1, 8)
+    }
+    // Is before december of the current financial year
+    else {
+      startDate = DateTime.utc(currentDate.year, 8)
+    }
+
+    endDate = startDate.plus({ year: 1 })
+
+    const period = Interval.fromDateTimes(startDate.startOf('day'), endDate.endOf('day'))
+
     try {
-      let response = await axios.get(`/turner`, leaveConfig)
-      return { data: response.data }
+
+      // Due to the FY not being the same as the leave year, get the previous year too and combine the two
+      const [response1, response2] = await Promise.all([
+        axios.get(`/turner?YEAR=${startDate.year}-${endDate.year}`, leaveConfig),
+        axios.get(`/turner?YEAR=${(startDate.year-1)}-${(endDate.year -1)}`, leaveConfig)
+      ])
+
+      const response = [...response1.data, ...response2.data]
+
+      const FYleave = []
+
+      // Include the leave that is within the FY period
+      response.forEach(leave => {
+        if (period.contains(DateTime.fromISO(leave.DATE))) {
+          FYleave.push(leave)
+        }
+      })
+
+      return {
+        data: FYleave
+      }
     }
     catch(ex) {
       console.error(ex)
