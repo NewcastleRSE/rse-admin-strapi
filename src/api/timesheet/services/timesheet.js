@@ -591,8 +591,6 @@ module.exports = {
 
     const query = args[0]
 
-    console.log(query)
-
     let username
 
     if(query.filters.username.$eq) {

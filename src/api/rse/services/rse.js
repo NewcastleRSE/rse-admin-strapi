@@ -132,6 +132,55 @@ function getAvailability(rse, assignments, capacities) {
   return availability;
 }
 
+async function fetchBankHolidays(year) {
+  const ukBankHolidays = await fetch('https://www.gov.uk/bank-holidays.json').then((response) => response.json())
+        
+  let bankHolidays = ukBankHolidays['england-and-wales'].events,
+        closures = []
+
+  if(year) {
+    const startDate = DateTime.fromISO(`${year}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(year)+1)}-07-31`)
+
+    bankHolidays = bankHolidays.filter(holiday => {
+      const holidayDate = DateTime.fromISO(holiday.date)
+      return holidayDate >= startDate && holidayDate <= endDate
+    })
+  }
+
+  const christmases = bankHolidays.filter(holiday => holiday.title === 'Christmas Day')
+
+  christmases.forEach(christmas => {
+      const christmasBankHoliday = DateTime.fromISO(christmas.date)
+      const christmasEve = DateTime.fromISO(`${christmasBankHoliday.year}-12-24`)
+
+      for(let i=0; i<=7; i++) {
+          let closureDate = christmasEve.plus({days: i})
+          
+          if(closureDate.toISODate() !== christmasBankHoliday.toISODate()) {
+              closures.push({
+                  title: 'University Closure',
+                  date: closureDate.toISODate(),
+                  notes: '',
+                  bunting: false
+              })
+          } 
+      }
+
+      // If Christmas Eve is a Tuesday, the closure will start the day before
+      if(christmasEve.weekday === 2) {
+          closures.push({
+              title: 'University Closure',
+              date: christmasEve.minus({days: 1}).toISODate(),
+              notes: '',
+              bunting: false
+          })
+      }
+  })
+
+  return [...closures, ...bankHolidays]
+}
+
 module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
   async find(...args) {
     let { results, pagination } = await super.find(...args);
@@ -278,4 +327,69 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
 
     return result;
   },
+  async calendar(entryId, ...args) {
+
+    const year = args[0].filters.year.$eq
+
+    const startDate = DateTime.fromISO(`${year}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(year)+1)}-07-31`)
+
+    let rse = await this.findOne(entryId, ...args)
+
+    args[0].filters.username = { $eq: rse.username }
+
+    const filters = {
+      filters: {
+        rse: {
+          id: {
+            $eq: entryId
+          }
+        },
+        username: {
+          $eq: rse.username
+        },
+        year: {
+          $eq: year
+        }
+      }
+    }
+
+    let leave = await strapi.service("api::timesheet.timesheet").findLeave(filters),
+        assignments = await strapi.service("api::assignment.assignment").find(filters),
+        holidays = await fetchBankHolidays(year)
+
+    const calendar = []
+
+    let date = startDate
+
+    while(date <= endDate) {
+
+      const holiday = holidays.find(holiday => holiday.date === date.toISODate()),
+            leaveDay = leave.data.find(leave => leave.DATE === date.toISODate()),
+            assignmentCount = assignments.results.filter(assignment => {
+              const start = DateTime.fromISO(assignment.start),
+                    end = DateTime.fromISO(assignment.end)
+
+              return date >= start && date <= end
+            }).length
+
+      let day = {
+        date: date.toISODate(),
+        day: date.day,
+        month: date.month,
+        year: date.year,
+        dayOfWeek: date.weekday,
+        isWeekend: date.weekday > 5,
+        holiday: holiday ? holiday : null,
+        leave: leaveDay ? { type: leaveDay.TYPE, duration: leaveDay.DURATION, status: leaveDay.STATUS } : null,
+        assignments: assignmentCount
+      }
+
+      calendar.push(day)
+
+      date = date.plus({days: 1})
+    }
+
+    return calendar
+  }
 }));
