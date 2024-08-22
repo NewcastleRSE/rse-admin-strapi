@@ -591,6 +591,14 @@ module.exports = {
 
     const query = args[0]
 
+    console.log(query)
+
+    let username
+
+    if(query.filters.username.$eq) {
+      username = query.filters.username.$eq
+    }
+
     const currentDate = DateTime.utc()
 
     let startDate,
@@ -628,6 +636,7 @@ module.exports = {
       // Include the leave that is within the FY period
       response.forEach(leave => {
         if (period.contains(DateTime.fromISO(leave.DATE))) {
+          if(username && leave.ID !== username) return
           FYleave.push(leave)
         }
       })
