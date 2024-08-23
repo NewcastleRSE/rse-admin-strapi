@@ -4,7 +4,7 @@
  * rse service.
  */
 
-const { DateTime } = require("luxon");
+const { DateTime, Interval } = require("luxon");
 const { createCoreService } = require("@strapi/strapi").factories;
 
 function getAvailability(rse, assignments, capacities) {
@@ -336,26 +336,69 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
 
     let rse = await this.findOne(entryId, ...args)
 
-    args[0].filters.username = { $eq: rse.username }
-
-    const filters = {
+    // Find leave for RSE in the year
+    const leaveFilter = {
       filters: {
-        rse: {
-          id: {
-            $eq: entryId
-          }
-        },
-        username: {
-          $eq: rse.username
-        },
-        year: {
-          $eq: year
-        }
+        username: { $eq: rse.username },
+        year: { $eq: year }
       }
     }
 
-    let leave = await strapi.service("api::timesheet.timesheet").findLeave(filters),
-        assignments = await strapi.service("api::assignment.assignment").find(filters),
+    // Find assignments for RSE where assignment period overlaps with the year
+    const assignmentFilter = {
+      populate: {
+        project: {
+          fields: ['name']
+        }
+      },
+      filters: {
+        rse: { $eq: entryId },
+        $or: [
+          { 
+            start: {
+              $between: [startDate.toISODate(), endDate.toISODate() ]
+            }
+          },
+          {
+            end: { 
+              $between: [startDate.toISODate(), endDate.toISODate() ]
+            }
+          }
+        ]
+      }
+    }
+
+    // Find capacity for RSE where capacity period overlaps with the year
+    const capacityFilter = {
+      filters: {
+        rse: { $eq: entryId },
+        $or: [
+          { 
+            start: {
+              $between: [startDate.toISODate(), endDate.toISODate() ]
+            }
+          },
+          {
+            $or: [
+              {
+                end: { 
+                  $between: [startDate.toISODate(), endDate.toISODate() ]
+                },
+              },
+              { 
+                end: {
+                  $eq: null }
+
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+    let leave = await strapi.service("api::timesheet.timesheet").findLeave(leaveFilter),
+        assignments = await strapi.service("api::assignment.assignment").find(assignmentFilter),
+        capacities = await strapi.service("api::capacity.capacity").find(capacityFilter),
         holidays = await fetchBankHolidays(year)
 
     const calendar = []
@@ -365,13 +408,28 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
     while(date <= endDate) {
 
       const holiday = holidays.find(holiday => holiday.date === date.toISODate()),
-            leaveDay = leave.data.find(leave => leave.DATE === date.toISODate()),
-            assignmentCount = assignments.results.filter(assignment => {
-              const start = DateTime.fromISO(assignment.start),
-                    end = DateTime.fromISO(assignment.end)
+            leaveDay = leave.data.find(leave => leave.DATE === date.toISODate())
+            // assignments = assignments.results.filter(assignment => {
+            //   const start = DateTime.fromISO(assignment.start),
+            //         end = DateTime.fromISO(assignment.end)
 
-              return date >= start && date <= end
-            }).length
+            //   return date >= start && date <= end
+            // })
+
+      let dateCapacity = 0
+        
+      capacities.results.forEach(capacity => {
+
+          capacity.end = capacity.end ? capacity.end : endDate.toISODate()
+
+          // Build interval for capacity period
+          const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start), DateTime.fromISO(capacity.end))
+
+          // Is current date in loop within the capacity period
+          if(period.contains(date)) {
+            dateCapacity = capacity.capacity
+          }
+      })
 
       let day = {
         date: date.toISODate(),
@@ -380,9 +438,10 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
         year: date.year,
         dayOfWeek: date.weekday,
         isWeekend: date.weekday > 5,
+        capacity: dateCapacity,
         holiday: holiday ? holiday : null,
         leave: leaveDay ? { type: leaveDay.TYPE, duration: leaveDay.DURATION, status: leaveDay.STATUS } : null,
-        assignments: assignmentCount
+        assignments: assignments.results
       }
 
       calendar.push(day)
