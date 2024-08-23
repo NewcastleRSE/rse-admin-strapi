@@ -5,6 +5,7 @@
  */
 
 const { DateTime, Interval } = require("luxon");
+const timesheet = require("../../timesheet/services/timesheet");
 const { createCoreService } = require("@strapi/strapi").factories;
 
 function getAvailability(rse, assignments, capacities) {
@@ -336,14 +337,6 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
 
     let rse = await this.findOne(entryId, ...args)
 
-    // Find leave for RSE in the year
-    const leaveFilter = {
-      filters: {
-        username: { $eq: rse.username },
-        year: { $eq: year }
-      }
-    }
-
     // Find assignments for RSE where assignment period overlaps with the year
     const assignmentFilter = {
       populate: {
@@ -396,10 +389,26 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
       }
     }
 
-    let leave = await strapi.service("api::timesheet.timesheet").findLeave(leaveFilter),
-        assignments = await strapi.service("api::assignment.assignment").find(assignmentFilter),
+    // Find timesheets for RSE in the year
+    const timesheetFilter = {
+      filters: {
+        year: { $eq: year }
+      }
+    }
+
+    // Find leave for RSE in the year
+    const leaveFilter = {
+      filters: {
+        username: { $eq: rse.username },
+        year: { $eq: year }
+      }
+    }
+
+    let assignments = await strapi.service("api::assignment.assignment").find(assignmentFilter),
         capacities = await strapi.service("api::capacity.capacity").find(capacityFilter),
-        holidays = await fetchBankHolidays(year)
+        holidays = await fetchBankHolidays(year),
+        leave = await strapi.service("api::timesheet.timesheet").findLeave(leaveFilter),
+        timesheets = await strapi.service("api::timesheet.timesheet").findOne(rse.clockifyID, timesheetFilter)
 
     const calendar = []
 
@@ -408,13 +417,12 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
     while(date <= endDate) {
 
       const holiday = holidays.find(holiday => holiday.date === date.toISODate()),
-            leaveDay = leave.data.find(leave => leave.DATE === date.toISODate())
-            // assignments = assignments.results.filter(assignment => {
-            //   const start = DateTime.fromISO(assignment.start),
-            //         end = DateTime.fromISO(assignment.end)
-
-            //   return date >= start && date <= end
-            // })
+            leaveDay = leave.data.find(leave => leave.DATE === date.toISODate()),
+            currentAssignments = assignments.results.filter(assignment => {
+              const start = DateTime.fromISO(assignment.start),
+                    end = DateTime.fromISO(assignment.end)
+              return date >= start && date <= end
+            })
 
       let dateCapacity = 0
         
@@ -431,6 +439,21 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
           }
       })
 
+      const timesheetReport = timesheets.data.dates[date.toISODate()],
+            timesheetSummary = []
+
+      if(timesheetReport) {
+        timesheetReport.forEach(timesheet => {
+          timesheetSummary.push({
+            start: timesheet.timeInterval.start,
+            end: timesheet.timeInterval.end,
+            duration: timesheet.timeInterval.duration,
+            billable: timesheet.billable,
+            project: timesheet.projectName,
+          })
+        })
+      }
+
       let day = {
         date: date.toISODate(),
         day: date.day,
@@ -441,7 +464,8 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
         capacity: dateCapacity,
         holiday: holiday ? holiday : null,
         leave: leaveDay ? { type: leaveDay.TYPE, duration: leaveDay.DURATION, status: leaveDay.STATUS } : null,
-        assignments: assignments.results
+        assignments: currentAssignments,
+        timesheet: timesheetSummary
       }
 
       calendar.push(day)
