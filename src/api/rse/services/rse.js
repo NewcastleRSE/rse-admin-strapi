@@ -356,6 +356,14 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
             end: { 
               $between: [startDate.toISODate(), endDate.toISODate() ]
             }
+          },
+          {
+            start: { 
+              $lt: startDate.toISODate()
+            },
+            end: {
+              $gt: endDate.toISODate()
+            }
           }
         ]
       }
@@ -456,12 +464,22 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
 
       let day = {
         date: date.toISODate(),
-        day: date.day,
-        month: date.month,
-        year: date.year,
-        dayOfWeek: date.weekday,
-        isWeekend: date.weekday > 5,
-        capacity: dateCapacity,
+        metadata: {
+          day: date.day,
+          month: date.month,
+          year: date.year,
+          dayOfWeek: date.weekday,
+          isWeekend: date.weekday > 5
+        },
+        utilisation: {
+          capacity: dateCapacity,
+          allocated: currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+          unallocated: dateCapacity - currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+          recorded: {
+            billable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? timesheet.duration : 0), 0),
+            nonBillable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? 0 : timesheet.duration), 0)
+          }
+        },
         holiday: holiday ? holiday : null,
         leave: leaveDay ? { type: leaveDay.TYPE, duration: leaveDay.DURATION, status: leaveDay.STATUS } : null,
         assignments: currentAssignments,
