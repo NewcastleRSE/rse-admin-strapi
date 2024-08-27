@@ -81,8 +81,8 @@ module.exports = {
       const query = args[0]
 
       const year = query ? Number(query.filters.year.$eq) : null,
-            userIDs = query ? query.filters.userIDs.$in : null,
-            projectIDs = query ? query.filters.projectIDs.$in : null
+            userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
+            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
 
       const response = await fetchDetailedReport(year, userIDs, projectIDs)
 
@@ -150,7 +150,6 @@ module.exports = {
     const period = Interval.fromDateTimes(startDate.startOf('day'), endDate.endOf('day'))
 
     try {
-
       // Due to the FY not being the same as the leave year, get the previous year too and combine the two
       const [response1, response2] = await Promise.all([
         axios.get(`/turner?YEAR=${startDate.year}-${endDate.year}`, leaveConfig),
