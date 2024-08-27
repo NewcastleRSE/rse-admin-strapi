@@ -19,7 +19,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
           currentAssignments = assignments.filter(assignment => {
             const start = DateTime.fromISO(assignment.start),
                   end = DateTime.fromISO(assignment.end)
-            return date >= start && date <= end && assignment.rse === rse.id
+            return date >= start && date <= end && assignment.rse.id === rse.id
           })
 
     let dateCapacity = 0
@@ -78,7 +78,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
         duration: leaveDay.DURATION === 'Y' ? 7.4 : 3.7,
         status: leaveDay.STATUS
       } : null,
-      assignments: currentAssignments,
+      assignments: currentAssignments.map(({ rse, ...assignment }) => assignment),
       timesheet: timesheetSummary
     }
 
@@ -304,7 +304,7 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
       year: { $eq: year }
     }
 
-    let assignments = await strapi.service("api::assignment.assignment").find({filters: dateRangeFilter, populate: { project: { fields: ['name'] } } }),
+    let assignments = await strapi.service("api::assignment.assignment").find({filters: dateRangeFilter, populate: { rse: { fields: ['id'] }, project: { fields: ['name'] } } }),
         capacities = await strapi.service("api::capacity.capacity").find({filters: dateRangeFilter}),
         holidays = await fetchBankHolidays(year),
         leave = await strapi.service("api::timesheet.timesheet").findLeave({filters: yearFilter}),
