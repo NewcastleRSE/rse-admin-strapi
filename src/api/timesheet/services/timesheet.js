@@ -14,6 +14,7 @@ const clockifyConfig = {
   headers: {
     "X-Api-Key": process.env.CLOCKIFY_KEY,
   },
+  id: 'clockify',
   cache: {
     // one hour
     maxAge: 60 * 60 * 1000
@@ -25,6 +26,7 @@ const leaveConfig = {
   headers: {
     Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
   },
+  id: 'leave',
   cache: {
     // one hour
     maxAge: 60 * 60 * 1000
@@ -89,7 +91,15 @@ module.exports = {
 
       const year = query ? Number(query.filters.year.$eq) : null,
             userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
-            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
+            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null,
+            clearCache = query.clearCache && query.clearCache === 'true' ? true : false
+
+      console.log('clearCache:', clearCache)
+
+      if (clearCache) {
+        await axios.storage.remove('clockify')
+        await axios.storage.remove('leave')
+      }
 
       const response = await fetchDetailedReport(year, userIDs, projectIDs)
 
