@@ -1,26 +1,33 @@
 "use strict"
 
 const { DateTime, Interval } = require("luxon")
-const axios = require("axios")
+const { setupCache } = require('axios-cache-interceptor')
+let axios = require("axios")
 
-const apiConfig = {
-  baseURL: `https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`,
-  headers: {
-    "X-Api-Key": process.env.CLOCKIFY_KEY,
-  },
-}
+const instance = axios.create()
+axios = setupCache(instance, {
+  methods: ['get', 'post'] 
+})
 
-const reportConfig = {
+const clockifyConfig = {
   baseURL: `https://reports.api.clockify.me/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}/reports`,
   headers: {
     "X-Api-Key": process.env.CLOCKIFY_KEY,
   },
+  cache: {
+    // one hour
+    maxAge: 60 * 60 * 1000
+  }
 }
 
 const leaveConfig = {
   baseURL: 'https://sageapps.ncl.ac.uk/public/',
   headers: {
     Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
+  },
+  cache: {
+    // one hour
+    maxAge: 60 * 60 * 1000
   }
 }
 
@@ -56,7 +63,7 @@ async function fetchDetailedReport(year = new Date().getFullYear(), userIDs, pro
       }
     }
 
-    const response = await axios.post(`/detailed`, payload, reportConfig)
+    const response = await axios.post(`/detailed`, payload, clockifyConfig)
 
     timeEntries = timeEntries.concat(response.data.timeentries)
 

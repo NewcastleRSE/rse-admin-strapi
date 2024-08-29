@@ -198,6 +198,6 @@ module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
       results.push(rse)
     }
 
-    return { results, pagination }
+    return { data: results, meta: pagination }
   }
 }))
