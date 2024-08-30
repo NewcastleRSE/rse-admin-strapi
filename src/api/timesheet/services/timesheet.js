@@ -16,8 +16,15 @@ const clockifyConfig = {
   },
   id: 'clockify',
   cache: {
-    // one hour
     maxAge: 60 * 60 * 1000
+  }
+}
+
+const bankHolidaysConfig = {
+  baseURL: 'https://www.gov.uk',
+  id: 'bankHolidays',
+  cache: {
+    maxAge: 24 * 60 * 60 * 1000
   }
 }
 
@@ -28,14 +35,66 @@ const leaveConfig = {
   },
   id: 'leave',
   cache: {
-    // one hour
     maxAge: 60 * 60 * 1000
   }
 }
 
-async function fetchDetailedReport(year = new Date().getFullYear(), userIDs, projectIDs, page = 1, timeEntries = []) {
+async function fetchBankHolidays(year) {
+  const ukBankHolidays = await axios.get('/bank-holidays.json').then((response) => response.json())
+        
+  let bankHolidays = ukBankHolidays['england-and-wales'].events,
+        closures = []
+
+  if(year) {
+    const startDate = DateTime.fromISO(`${year}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(year)+1)}-07-31`)
+
+    bankHolidays = bankHolidays.filter(holiday => {
+      const holidayDate = DateTime.fromISO(holiday.date)
+      return holidayDate >= startDate && holidayDate <= endDate
+    })
+  }
+
+  const christmases = bankHolidays.filter(holiday => holiday.title === 'Christmas Day')
+
+  christmases.forEach(christmas => {
+      const christmasBankHoliday = DateTime.fromISO(christmas.date)
+      const christmasEve = DateTime.fromISO(`${christmasBankHoliday.year}-12-24`)
+
+      for(let i=0; i<=7; i++) {
+          let closureDate = christmasEve.plus({days: i})
+          
+          if(closureDate.toISODate() !== christmasBankHoliday.toISODate()) {
+              closures.push({
+                  title: 'University Closure',
+                  date: closureDate.toISODate(),
+                  notes: '',
+                  bunting: false
+              })
+          } 
+      }
+
+      // If Christmas Eve is a Tuesday, the closure will start the day before
+      if(christmasEve.weekday === 2) {
+          closures.push({
+              title: 'University Closure',
+              date: christmasEve.minus({days: 1}).toISODate(),
+              notes: '',
+              bunting: false
+          })
+      }
+  })
+
+  return [...closures, ...bankHolidays]
+}
+
+async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntries = []) {
     let startDate = DateTime.utc(year, 8),
-        endDate = startDate.plus({ year: 1 })
+        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+
+        console.log('startDate:', startDate.toISO())
+        console.log('endDate:', endDate.toISO())
+        console.log('page:', page)
 
     let payload = {
       dateRangeStart: startDate.toISO(),
@@ -43,9 +102,6 @@ async function fetchDetailedReport(year = new Date().getFullYear(), userIDs, pro
       detailedFilter: {
         page: page,
         pageSize: 1000,
-      },
-      summaryFilter: {
-        groups: ["USER"],
       }
     }
 
@@ -67,14 +123,101 @@ async function fetchDetailedReport(year = new Date().getFullYear(), userIDs, pro
 
     const response = await axios.post(`/detailed`, payload, clockifyConfig)
 
+    console.log('entries:', response.data.totals[0].entriesCount)
+    console.log(' ')
+
     timeEntries = timeEntries.concat(response.data.timeentries)
 
     if(timeEntries.length < response.data.totals[0].entriesCount) {
       return fetchDetailedReport(year, userIDs, projectIDs, page + 1, timeEntries)
     }
     else {
+      console.log(timeEntries[6999])
       return timeEntries
     }
+}
+
+function createCalendar(rse, holidays, leave, assignments, capacities, timesheets, startDate, endDate) {
+  const dates = []
+
+  let date = startDate
+
+  while(date <= endDate) {
+
+    const holiday = holidays.find(holiday => holiday.date === date.toISODate()),
+          leaveDay = leave.find(leave => leave.DATE === date.toISODate() && leave.ID === rse.username),
+          currentAssignments = assignments.filter(assignment => {
+            const start = DateTime.fromISO(assignment.start),
+                  end = DateTime.fromISO(assignment.end)
+            return date >= start && date <= end && assignment.rse.id === rse.id
+          })
+
+    let dateCapacity = 0
+      
+    capacities.forEach(capacity => {
+
+        capacity.end = capacity.end ? capacity.end : endDate.toISODate()
+
+        // Build interval for capacity period
+        const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start), DateTime.fromISO(capacity.end))
+
+        // Is current date in loop within the capacity period
+        if(period.contains(date)) {
+          dateCapacity = capacity.capacity
+        }
+    })
+
+    const timesheetReport = timesheets.dates[date.toISODate()],
+          timesheetSummary = []
+
+    if(timesheetReport) {
+      timesheetReport.filter(timesheet => timesheet.userId === rse.clockifyID).forEach(timesheet => {
+        timesheetSummary.push({
+          start: timesheet.timeInterval.start,
+          end: timesheet.timeInterval.end,
+          duration: timesheet.timeInterval.duration,
+          billable: timesheet.billable,
+          project: timesheet.projectName,
+        })
+      })
+    }
+
+    let day = {
+      date: date.toISODate(),
+      metadata: {
+        day: date.day,
+        month: date.month,
+        year: date.year,
+        dayOfWeek: date.weekday,
+        isWeekend: date.weekday > 5,
+        isWorkingDay: date.weekday < 6 && !holiday
+      },
+      utilisation: {
+        capacity: dateCapacity,
+        allocated: currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+        unallocated: dateCapacity - currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+        recorded: {
+          billable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? timesheet.duration : 0), 0),
+          nonBillable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? 0 : timesheet.duration), 0)
+        }
+      },
+      holiday: holiday ? holiday : null,
+      leave: leaveDay ? { 
+        type: leaveDay.TYPE,
+        durationCode: leaveDay.DURATION,
+        duration: leaveDay.DURATION === 'Y' ? 7.4 : 3.7,
+        status: leaveDay.STATUS
+      } : null,
+      assignments: currentAssignments.map(({ rse, ...assignment }) => assignment),
+      timesheet: timesheetSummary
+    }
+
+    dates.push(day)
+
+    date = date.plus({days: 1})
+  }
+
+  return dates
 }
 
 // Creates and returns a report for all users in the workspace.
@@ -89,15 +232,18 @@ module.exports = {
 
       const query = args[0]
 
-      const year = query ? Number(query.filters.year.$eq) : null,
-            userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
+      // Year is always present due to middleware
+      const year = Number(query.filters.year.$eq)
+         
+      // Optional query parameters
+      const userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
             projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null,
             clearCache = query.clearCache && query.clearCache === 'true' ? true : false
 
-      console.log('clearCache:', clearCache)
-
       if (clearCache) {
+        console.log('Clearing cache')
         await axios.storage.remove('clockify')
+        await axios.storage.remove('bankHolidays')
         await axios.storage.remove('leave')
       }
 
@@ -107,25 +253,25 @@ module.exports = {
         dates: {}
       }
 
-      response.forEach(entry => {
+      // response.forEach(entry => {
 
-        const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
+      //   const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
 
-        if(!(key in data.dates)) {
-          data.dates[key] = []
-        }
+      //   if(!(key in data.dates)) {
+      //     data.dates[key] = []
+      //   }
         
-        data.dates[key].push(entry)
-      })
+      //   data.dates[key].push(entry)
+      // })
 
       return {
-        data: data,
+        data: response,
         meta: {
           pagination: {
             page: 1,
-            pageSize: 1000,
+            pageSize: response.length,
             pageCount: 1,
-            total: data.length
+            total: response.length
           }
         }
       }
@@ -134,7 +280,9 @@ module.exports = {
     }
   },
 
-  async findLeave(...args) {
+  async leave(...args) {
+
+    console.log('args:', args)
 
     const query = args[0]
 
@@ -146,25 +294,12 @@ module.exports = {
 
     const currentDate = DateTime.utc()
 
-    let startDate,
-        endDate
-
-    // Load leave of provided year
-    if(query.filters.year.$eq) {
-      startDate = DateTime.utc(Number(query.filters.year.$eq), 8)
-    }
-    // Is after december of the current financial year
-    else if(currentDate.month < 8) {
-      startDate = DateTime.utc(currentDate.year - 1, 8)
-    }
-    // Is before december of the current financial year
-    else {
-      startDate = DateTime.utc(currentDate.year, 8)
-    }
-
-    endDate = startDate.plus({ year: 1 })
+    let startDate = DateTime.utc(Number(query.filters.year.$eq), 8),
+        endDate = startDate.plus({ year: 1 })
 
     const period = Interval.fromDateTimes(startDate.startOf('day'), endDate.endOf('day'))
+
+    console.log('startDate:', startDate)
 
     try {
       // Due to the FY not being the same as the leave year, get the previous year too and combine the two
@@ -192,5 +327,14 @@ module.exports = {
     catch(ex) {
       console.error(ex)
     }
+  },
+
+  async calendar() {
+    return { data: [] }
+  },
+
+  async summary() {
+    return { data: [] }
   }
+
 }

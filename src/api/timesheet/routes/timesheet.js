@@ -6,7 +6,7 @@ module.exports = {
       handler: "timesheet.find",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     },
     {
@@ -15,7 +15,25 @@ module.exports = {
       handler: "timesheet.leave",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
+      },
+    },
+    {
+      method: "GET",
+      path: "/timesheets/calendar",
+      handler: "timesheet.calendar",
+      config: {
+        policies: [],
+        middlewares: ['api::timesheet.financial-year'],
+      },
+    },
+    {
+      method: "GET",
+      path: "/timesheets/summary",
+      handler: "timesheet.summary",
+      config: {
+        policies: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     }
   ],

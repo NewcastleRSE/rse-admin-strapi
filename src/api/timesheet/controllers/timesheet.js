@@ -7,7 +7,7 @@
 const service = require('../services/timesheet')
 
 module.exports = {
-  find: async (ctx, next) => {
+  find: async (ctx) => {
     try {
       ctx.body = await service.find(ctx.request.query)
     } catch (err) {
@@ -15,9 +15,25 @@ module.exports = {
       console.error(err)
     }
   },
-  leave: async (ctx, next) => {
+  leave: async (ctx) => {
     try {
-      ctx.body = await service.findLeave(ctx.request.query)
+      ctx.body = await service.leave(ctx.request.query)
+    } catch (err) {
+      ctx.body = err
+      console.error(err)
+    }
+  },
+  calendar: async (ctx) => {
+    try {
+      ctx.body = await service.calendar(ctx.request.query)
+    } catch (err) {
+      ctx.body = err
+      console.error(err)
+    }
+  },
+  summary: async (ctx) => {
+    try {
+      ctx.body = await service.summary(ctx.request.query)
     } catch (err) {
       ctx.body = err
       console.error(err)
