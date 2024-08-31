@@ -4,39 +4,39 @@
  * A set of functions called 'actions' for `timesheet`
  */
 
-const service = require('../services/timesheet')
+const { createCoreController } = require('@strapi/strapi').factories
 
-module.exports = {
-  find: async (ctx) => {
+module.exports = createCoreController('api::timesheet.timesheet', ({ strapi }) =>  ({
+  async find(ctx) {
     try {
-      ctx.body = await service.find(ctx.request.query)
+      ctx.body = await strapi.service("api::timesheet.timesheet").find(ctx.request.query)
     } catch (err) {
       ctx.body = err
       console.error(err)
     }
   },
-  leave: async (ctx) => {
+  async leave(ctx) {
     try {
-      ctx.body = await service.leave(ctx.request.query)
+      ctx.body = await strapi.service("api::timesheet.timesheet").leave(ctx.request.query)
     } catch (err) {
       ctx.body = err
       console.error(err)
     }
   },
-  calendar: async (ctx) => {
+  async calendar(ctx) {
     try {
-      ctx.body = await service.calendar(ctx.request.query)
+      ctx.body = await strapi.service("api::timesheet.timesheet").calendar(ctx.request.query)
     } catch (err) {
       ctx.body = err
       console.error(err)
     }
   },
-  summary: async (ctx) => {
+  async summary(ctx) {
     try {
-      ctx.body = await service.summary(ctx.request.query)
+      ctx.body = await strapi.service("api::timesheet.timesheet").summary(ctx.request.query)
     } catch (err) {
       ctx.body = err
       console.error(err)
     }
   }
-}
+}))

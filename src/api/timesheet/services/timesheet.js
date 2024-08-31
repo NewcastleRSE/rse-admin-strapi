@@ -1,12 +1,13 @@
 "use strict"
 
+const { createCoreService } = require('@strapi/strapi').factories
 const { DateTime, Interval } = require("luxon")
 const { setupCache } = require('axios-cache-interceptor')
 let axios = require("axios")
 
 const instance = axios.create()
 axios = setupCache(instance, {
-  methods: ['get', 'post'] 
+  methods: ['get', 'post']
 })
 
 const clockifyConfig = {
@@ -14,7 +15,6 @@ const clockifyConfig = {
   headers: {
     "X-Api-Key": process.env.CLOCKIFY_KEY,
   },
-  id: 'clockify',
   cache: {
     maxAge: 60 * 60 * 1000
   }
@@ -22,7 +22,6 @@ const clockifyConfig = {
 
 const bankHolidaysConfig = {
   baseURL: 'https://www.gov.uk',
-  id: 'bankHolidays',
   cache: {
     maxAge: 24 * 60 * 60 * 1000
   }
@@ -33,7 +32,6 @@ const leaveConfig = {
   headers: {
     Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
   },
-  id: 'leave',
   cache: {
     maxAge: 60 * 60 * 1000
   }
@@ -92,10 +90,6 @@ async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntr
     let startDate = DateTime.utc(year, 8),
         endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
 
-        console.log('startDate:', startDate.toISO())
-        console.log('endDate:', endDate.toISO())
-        console.log('page:', page)
-
     let payload = {
       dateRangeStart: startDate.toISO(),
       dateRangeEnd: endDate.toISO(),
@@ -121,18 +115,14 @@ async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntr
       }
     }
 
-    const response = await axios.post(`/detailed`, payload, clockifyConfig)
+    const response = await axios.post('/detailed', payload, clockifyConfig)
 
-    console.log('entries:', response.data.totals[0].entriesCount)
-    console.log(' ')
-
-    timeEntries = timeEntries.concat(response.data.timeentries)
+    timeEntries = [...timeEntries, ...response.data.timeentries]
 
     if(timeEntries.length < response.data.totals[0].entriesCount) {
       return fetchDetailedReport(year, userIDs, projectIDs, page + 1, timeEntries)
     }
     else {
-      console.log(timeEntries[6999])
       return timeEntries
     }
 }
@@ -221,7 +211,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
 }
 
 // Creates and returns a report for all users in the workspace.
-module.exports = {
+module.exports = createCoreService('api::restaurant.restaurant', ({ strapi }) =>  ({
   /**
    * Promise to fetch all records.
    *
@@ -237,15 +227,9 @@ module.exports = {
          
       // Optional query parameters
       const userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
-            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null,
-            clearCache = query.clearCache && query.clearCache === 'true' ? true : false
+            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
 
-      if (clearCache) {
-        console.log('Clearing cache')
-        await axios.storage.remove('clockify')
-        await axios.storage.remove('bankHolidays')
-        await axios.storage.remove('leave')
-      }
+      clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
 
       const response = await fetchDetailedReport(year, userIDs, projectIDs)
 
@@ -253,25 +237,25 @@ module.exports = {
         dates: {}
       }
 
-      // response.forEach(entry => {
+      response.forEach(entry => {
 
-      //   const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
+        const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
 
-      //   if(!(key in data.dates)) {
-      //     data.dates[key] = []
-      //   }
+        if(!(key in data.dates)) {
+          data.dates[key] = []
+        }
         
-      //   data.dates[key].push(entry)
-      // })
+        data.dates[key].push(entry)
+      })
 
       return {
-        data: response,
+        data: data,
         meta: {
           pagination: {
             page: 1,
-            pageSize: response.length,
+            pageSize: 1000,
             pageCount: 1,
-            total: response.length
+            total: Object.keys(data.dates).length
           }
         }
       }
@@ -282,8 +266,6 @@ module.exports = {
 
   async leave(...args) {
 
-    console.log('args:', args)
-
     const query = args[0]
 
     let username
@@ -292,14 +274,14 @@ module.exports = {
       username = query.filters.username.$eq
     }
 
+    leaveConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
     const currentDate = DateTime.utc()
 
     let startDate = DateTime.utc(Number(query.filters.year.$eq), 8),
         endDate = startDate.plus({ year: 1 })
 
     const period = Interval.fromDateTimes(startDate.startOf('day'), endDate.endOf('day'))
-
-    console.log('startDate:', startDate)
 
     try {
       // Due to the FY not being the same as the leave year, get the previous year too and combine the two
@@ -329,12 +311,53 @@ module.exports = {
     }
   },
 
-  async calendar() {
-    return { data: [] }
+  async calendar(...args) {
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    // Filter for use when checking if an object with a date range overlaps with the year
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        {
+          end: { 
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        {
+          start: { 
+            $lt: startDate.toISODate()
+          },
+          end: {
+            $gt: endDate.toISODate()
+          }
+        }
+      ]
+    }
+
+    let rses = await strapi.services("api::rse.rse").find(...args)
+        assignments = await strapi.service("api::assignment.assignment").find({filters: dateRangeFilter, populate: { rse: { fields: ['id'] }, project: { fields: ['name'] } } }),
+        capacities = await strapi.service("api::capacity.capacity").find({filters: dateRangeFilter}),
+        holidays = await fetchBankHolidays(year),
+        leave = await strapi.service("api::timesheet.timesheet").leave(...args),
+        timesheets = await strapi.service("api::timesheet.timesheet").find(...args)
+
+    const results = []
+
+    for await (const rse of rses) {
+      results.push(createCalendar(rse, holidays, leave.data, assignments.results, capacities.results, timesheets.data, startDate, endDate))
+    }
+    
+    return { data: results, meta: { pagination: {}} }
   },
 
   async summary() {
     return { data: [] }
   }
 
-}
+}))
