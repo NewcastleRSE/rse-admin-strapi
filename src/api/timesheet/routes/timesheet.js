@@ -20,7 +20,7 @@ module.exports = {
     },
     {
       method: "GET",
-      path: "/timesheets/calendar",
+      path: "/rses/:id/calendar",
       handler: "timesheet.calendar",
       config: {
         policies: [],

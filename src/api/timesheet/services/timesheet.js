@@ -1,9 +1,9 @@
-"use strict"
+'use strict'
 
 const { createCoreService } = require('@strapi/strapi').factories
-const { DateTime, Interval } = require("luxon")
+const { DateTime, Interval } = require('luxon')
 const { setupCache } = require('axios-cache-interceptor')
-let axios = require("axios")
+let axios = require('axios')
 
 const instance = axios.create()
 axios = setupCache(instance, {
@@ -13,7 +13,7 @@ axios = setupCache(instance, {
 const clockifyConfig = {
   baseURL: `https://reports.api.clockify.me/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}/reports`,
   headers: {
-    "X-Api-Key": process.env.CLOCKIFY_KEY,
+    'X-Api-Key': process.env.CLOCKIFY_KEY,
   },
   cache: {
     maxAge: 60 * 60 * 1000
@@ -38,9 +38,9 @@ const leaveConfig = {
 }
 
 async function fetchBankHolidays(year) {
-  const ukBankHolidays = await axios.get('/bank-holidays.json').then((response) => response.json())
+  const response = await axios.get('/bank-holidays.json', bankHolidaysConfig)
         
-  let bankHolidays = ukBankHolidays['england-and-wales'].events,
+  let bankHolidays = response.data['england-and-wales'].events,
         closures = []
 
   if(year) {
@@ -102,16 +102,16 @@ async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntr
     if(userIDs) {
       payload.users = {
         ids: userIDs,
-        contains: "CONTAINS",
-        status: "ALL",
+        contains: 'CONTAINS',
+        status: 'ALL',
       }
     }
 
     if(projectIDs) {
       payload.projects = {
         ids: projectIDs,
-        contains: "CONTAINS",
-        status: "ALL",
+        contains: 'CONTAINS',
+        status: 'ALL',
       }
     }
 
@@ -139,7 +139,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
           currentAssignments = assignments.filter(assignment => {
             const start = DateTime.fromISO(assignment.start),
                   end = DateTime.fromISO(assignment.end)
-            return date >= start && date <= end && assignment.rse.id === rse.id
+            return date >= start && date <= end
           })
 
     let dateCapacity = 0
@@ -211,13 +211,13 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
 }
 
 // Creates and returns a report for all users in the workspace.
-module.exports = createCoreService('api::restaurant.restaurant', ({ strapi }) =>  ({
+module.exports = ({ strapi }) =>  ({
   /**
    * Promise to fetch all records.
    *
    * @return {Promise}
    */
-  async find(...args) {
+  find: async(...args) => {
     try {
 
       const query = args[0]
@@ -264,7 +264,7 @@ module.exports = createCoreService('api::restaurant.restaurant', ({ strapi }) =>
     }
   },
 
-  async leave(...args) {
+  leave: async(...args) => {
 
     const query = args[0]
 
@@ -311,7 +311,7 @@ module.exports = createCoreService('api::restaurant.restaurant', ({ strapi }) =>
     }
   },
 
-  async calendar(...args) {
+  calendar: async(rseId, ...args) => {
 
     const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
           endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
@@ -339,25 +339,36 @@ module.exports = createCoreService('api::restaurant.restaurant', ({ strapi }) =>
         }
       ]
     }
-
-    let rses = await strapi.services("api::rse.rse").find(...args)
-        assignments = await strapi.service("api::assignment.assignment").find({filters: dateRangeFilter, populate: { rse: { fields: ['id'] }, project: { fields: ['name'] } } }),
-        capacities = await strapi.service("api::capacity.capacity").find({filters: dateRangeFilter}),
-        holidays = await fetchBankHolidays(year),
-        leave = await strapi.service("api::timesheet.timesheet").leave(...args),
-        timesheets = await strapi.service("api::timesheet.timesheet").find(...args)
-
-    const results = []
-
-    for await (const rse of rses) {
-      results.push(createCalendar(rse, holidays, leave.data, assignments.results, capacities.results, timesheets.data, startDate, endDate))
+  
+    const rsePopulate = {
+      populate: {
+        assignments: {
+          populate: {
+            project: {
+              fields: ['name']
+            }
+          }
+        },
+        capacities: true
+      },
+      filters: {
+        assignments: dateRangeFilter,
+        capacities: dateRangeFilter
+      }
     }
+
+    let rse = await strapi.services['api::rse.rse'].findOne(rseId, rsePopulate),
+        holidays = await fetchBankHolidays(args[0].filters.year.$eq),
+        leave = await strapi.services['api::timesheet.timesheet'].leave(...args),
+        timesheets = await strapi.services['api::timesheet.timesheet'].find(...args)
+
+    const calendar = createCalendar(rse, holidays, leave.data, rse.assignments, rse.capacities, timesheets.data, startDate, endDate)
     
-    return { data: results, meta: { pagination: {}} }
+    return { data: calendar, meta: { pagination: {}} }
   },
 
-  async summary() {
+  summary: async(...args) => {
     return { data: [] }
   }
 
-}))
+})
