@@ -357,10 +357,11 @@ module.exports = ({ strapi }) =>  ({
       }
     }
 
-    let rse = await strapi.services['api::rse.rse'].findOne(rseId, rsePopulate),
-        holidays = await fetchBankHolidays(args[0].filters.year.$eq),
-        leave = await strapi.services['api::timesheet.timesheet'].leave(...args),
-        timesheets = await strapi.services['api::timesheet.timesheet'].find(...args)
+    const rse = await strapi.services['api::rse.rse'].findOne(rseId, rsePopulate)
+
+    const holidays = await fetchBankHolidays(args[0].filters.year.$eq),
+          leave = await strapi.services['api::timesheet.timesheet'].leave({ filters: {...args[0].filters, username: [rse.username]} }),
+          timesheets = await strapi.services['api::timesheet.timesheet'].find({ filters: {...args[0].filters, userIDs: [rse.clockifyID]} })
 
     const calendar = createCalendar(rse, holidays, leave.data, rse.assignments, rse.capacities, timesheets.data, startDate, endDate)
     
