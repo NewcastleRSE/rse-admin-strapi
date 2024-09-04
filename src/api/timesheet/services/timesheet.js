@@ -4,6 +4,7 @@ const { createCoreService } = require('@strapi/strapi').factories
 const { DateTime, Interval } = require('luxon')
 const { setupCache } = require('axios-cache-interceptor')
 let axios = require('axios')
+const { sum } = require('pdf-lib')
 
 const instance = axios.create()
 axios = setupCache(instance, {
@@ -369,7 +370,123 @@ module.exports = ({ strapi }) =>  ({
   },
 
   summary: async(...args) => {
-    return { data: [] }
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    // Filter for use when checking if an object with a date range overlaps with the year
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        {
+          end: { 
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        {
+          end: {
+            $null: true
+          }
+        }
+      ]
+    }
+
+    const timesheets = await strapi.services['api::timesheet.timesheet'].find(...args),
+          assignments = await strapi.services['api::assignment.assignment'].find({filters: dateRangeFilter}),
+          capacities = await strapi.services['api::capacity.capacity'].find({filters: dateRangeFilter}),
+          holidays = await fetchBankHolidays(args[0].filters.year.$eq),
+          annualLeave = await strapi.services['api::timesheet.timesheet'].leave({...args[0]})
+
+    const summary = {
+      totals: {
+        capacity: 0,
+        assigned: 0,
+        leave: 0,
+        sickness: 0,
+        recorded: 0,
+        billable: 0,
+        nonBillable: 0,
+        volunteered: 0,
+      },
+      days: {
+        capacity: [],
+        assigned: [],
+        leave: [],
+        sickness: [],
+        recorded: [],
+        billable: [],
+        nonBillable: [],
+        volunteered: [],
+      }
+    }
+
+    let date = startDate
+
+    while(date <= endDate) {
+
+      let holiday = holidays.find(holiday => holiday.date === date.toISODate()),
+          leave = annualLeave.data.filter(leave => leave.DATE === date.toISODate() && leave.TYPE === 'AL'),
+          sickness = annualLeave.data.filter(leave => leave.DATE === date.toISODate() && leave.TYPE === 'SICK')
+
+
+      // Is a working day
+      if(date.weekday < 6 && !holiday) {
+
+        let dailyAssignments = assignments.results.filter(assignment => {
+          // Build interval for assignment period
+          const period = Interval.fromDateTimes(DateTime.fromISO(assignment.start).startOf('day'), DateTime.fromISO(assignment.end).endOf('day'))
+          // Is current date in loop within the assignment period
+          return period.contains(date)
+        })
+
+        let dailyCapacities = capacities.results.filter(capacity => {
+            capacity.end = capacity.end ? capacity.end : endDate.toISODate()
+            // Build interval for capacity period
+            const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start).startOf('day'), DateTime.fromISO(capacity.end).endOf('day'))
+            // Is current date in loop within the capacity period
+            return period.contains(date)
+        })
+
+        let timeEntries = timesheets.data.dates[date.toISODate()] || []
+
+        let dailyTimesheetSummary = {
+          leave: leave.reduce((total, entry) => total + (entry.DURATION === 'Y' ? 1 : 0.5), 0),
+          sickness: sickness.reduce((total, entry) => total + (entry.DURATION === 'Y' ? 1 : 0.5), 0),
+          recorded: timeEntries,
+          billable: timeEntries.filter(entry => entry.billable),
+          nonBillable: timeEntries.filter(entry => !entry.billable),
+          volunteered: timeEntries.filter(entry => entry.projectName === 'Volunteering'),
+        }
+
+        // Reduce all timesheets down to a daily total in days
+        summary.days.capacity.push(dailyCapacities.reduce((total, capacity) => total + (capacity.capacity / 100), 0).toFixed(1))
+        summary.days.assigned.push(dailyAssignments.reduce((total, assignment) => total + (assignment.fte / 100), 0).toFixed(1))
+        summary.days.leave.push((dailyTimesheetSummary.leave).toFixed(1))
+        summary.days.sickness.push((dailyTimesheetSummary.sickness).toFixed(1))
+        summary.days.recorded.push((dailyTimesheetSummary.recorded.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
+        summary.days.billable.push((dailyTimesheetSummary.billable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
+        summary.days.nonBillable.push((dailyTimesheetSummary.nonBillable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
+        summary.days.volunteered.push((dailyTimesheetSummary.volunteered.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
+      }
+
+      date = date.plus({days: 1})
+    }
+
+    // Reduce daily totals to annual totals
+    summary.totals.capacity = (summary.days.capacity.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.assigned = (summary.days.assigned.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.leave = (summary.days.leave.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.sickness = (summary.days.sickness.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.recorded = (summary.days.recorded.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.billable = (summary.days.billable.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.nonBillable = (summary.days.nonBillable.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.volunteered = (summary.days.volunteered.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+
+    return { data: summary }
   }
 
 })
