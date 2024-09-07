@@ -388,16 +388,25 @@ module.exports = ({ strapi }) =>  ({
           }
         },
         {
-          end: {
-            $null: true
-          }
+          $and: [
+            {
+              start: { 
+                $lt: startDate.toISODate()
+              },
+            },
+            {
+              end: {
+                $gt: endDate.toISODate()
+              }
+            }
+          ]
         }
       ]
     }
 
     const timesheets = await strapi.services['api::timesheet.timesheet'].find(...args),
           assignments = await strapi.services['api::assignment.assignment'].find({filters: dateRangeFilter}),
-          capacities = await strapi.services['api::capacity.capacity'].find({filters: dateRangeFilter}),
+          capacities = await strapi.services['api::capacity.capacity'].find({filters: { $or: [...dateRangeFilter.$or, { end: { $null: true }} ]} }),
           holidays = await fetchBankHolidays(args[0].filters.year.$eq),
           annualLeave = await strapi.services['api::timesheet.timesheet'].leave({...args[0]})
 
