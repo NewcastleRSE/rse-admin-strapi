@@ -472,6 +472,16 @@ module.exports = ({ strapi }) =>  ({
         summary.days.nonBillable.push((dailyTimesheetSummary.nonBillable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
         summary.days.volunteered.push((dailyTimesheetSummary.volunteered.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
       }
+      else {
+        summary.days.capacity.push(null)
+        summary.days.assigned.push(null)
+        summary.days.leave.push(null)
+        summary.days.sickness.push(null)
+        summary.days.recorded.push(null)
+        summary.days.billable.push(null)
+        summary.days.nonBillable.push(null)
+        summary.days.volunteered.push(null)
+      }
 
       date = date.plus({days: 1})
     }
