@@ -196,7 +196,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
       leave: leaveDay ? { 
         type: leaveDay.TYPE,
         durationCode: leaveDay.DURATION,
-        duration: leaveDay.DURATION === 'Y' ? 7.4 : 3.7,
+        duration: leaveDay.DURATION === 'Y' ? 7.26 : 3.63,
         status: leaveDay.STATUS
       } : null,
       assignments: currentAssignments.map(({ rse, ...assignment }) => assignment),
@@ -476,10 +476,10 @@ module.exports = ({ strapi }) =>  ({
         summary.days.assigned.push(dailyAssignments.reduce((total, assignment) => total + (assignment.fte / 100), 0).toFixed(1))
         summary.days.leave.push((dailyTimesheetSummary.leave).toFixed(1))
         summary.days.sickness.push((dailyTimesheetSummary.sickness).toFixed(1))
-        summary.days.recorded.push((dailyTimesheetSummary.recorded.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
-        summary.days.billable.push((dailyTimesheetSummary.billable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
-        summary.days.nonBillable.push((dailyTimesheetSummary.nonBillable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
-        summary.days.volunteered.push((dailyTimesheetSummary.volunteered.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.4).toFixed(1))
+        summary.days.recorded.push((dailyTimesheetSummary.recorded.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.billable.push((dailyTimesheetSummary.billable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.nonBillable.push((dailyTimesheetSummary.nonBillable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.volunteered.push((dailyTimesheetSummary.volunteered.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
       }
       else {
         summary.days.capacity.push(null)
