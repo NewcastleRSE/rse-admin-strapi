@@ -35,6 +35,15 @@ module.exports = {
         policies: [],
         middlewares: ['api::timesheet.financial-year'],
       },
+    },
+    {
+      method: "GET",
+      path: "/timesheets/utilisation",
+      handler: "timesheet.utilisation",
+      config: {
+        policies: [],
+        middlewares: ['api::timesheet.financial-year'],
+      },
     }
   ],
 };

@@ -12,27 +12,26 @@ module.exports = createCoreService('api::rse.rse', () => ({
   async find(...args) {
 
     let populate = {
-      assignments: true,
-      capacities: true
+      assignments: false,
+      capacities: false
     }
 
-    // If populate is not set, populate assignments and capacities
-    if(args[0].populate && !args[0].populate.isArray && args[0].populate.assignments && args[0].populate.capacities) {
-      args[0].populate = ['assignments', 'capacities']
+    if(!args[0].populate || Array.isArray(args[0].populate)) {
+      args[0].populate = { assignments: true, capacities: true }
     }
     else {
-      if(!args[0] || !args[0].populate.isArray) {
-        args[0].populate = []
+      if(Object.keys(args[0].populate).includes('assignments')) {
+        populate.assignments = true
+      }
+      else {  
+        args[0].populate['assignments'] = true
       }
   
-      if(!args[0].populate.includes('assignments')) {
-        populate.assignments = false
-        args[0].populate.push('assignments')
+      if(Object.keys(args[0].populate).includes('capacities')) {
+        populate.capacities = true
       }
-  
-      if(!args[0].populate.includes('capacities')) {
-        populate.capacities = false
-        args[0].populate.push('capacities')
+      else {
+        args[0].populate['capacities'] = true
       }
     }
 

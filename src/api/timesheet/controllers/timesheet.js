@@ -34,5 +34,13 @@ module.exports = {
       ctx.body = err
       console.error(err)
     }
+  },
+  utilisation: async (ctx) => {
+    try {
+      ctx.body = await strapi.service('api::timesheet.timesheet').utilisation(ctx.request.query)
+    } catch (err) {
+      ctx.body = err
+      console.error(err)
+    }
   }
 }

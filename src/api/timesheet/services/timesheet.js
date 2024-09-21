@@ -87,6 +87,37 @@ async function fetchBankHolidays(year) {
   return [...closures, ...bankHolidays]
 }
 
+async function fetchSummaryReport(year, userIDs, projectIDs) {
+    let startDate = DateTime.utc(year, 8),
+        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+
+    let payload = {
+      dateRangeStart: startDate.toISO(),
+      dateRangeEnd: endDate.toISO(),
+      summaryFilter: {
+        groups: ['USER', 'MONTH', 'PROJECT']
+      }
+    }
+
+    if(userIDs) {
+      payload.users = {
+        ids: userIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
+
+    if(projectIDs) {
+      payload.projects = {
+        ids: projectIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
+
+    return await axios.post('/summary', payload, clockifyConfig)
+}
+
 async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntries = []) {
     let startDate = DateTime.utc(year, 8),
         endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
@@ -406,7 +437,7 @@ module.exports = ({ strapi }) =>  ({
 
     const timesheets = await strapi.services['api::timesheet.timesheet'].find(...args),
           assignments = await strapi.services['api::assignment.assignment'].find({filters: dateRangeFilter}),
-          capacities = await strapi.services['api::capacity.capacity'].find({filters: { $or: [...dateRangeFilter.$or, { end: { $null: true }} ]} }),
+          capacities = await strapi.services['api::capacity.capacity'].find({filters: { $or: [...dateRangeFilter, { end: { $null: true }} ]} }),
           holidays = await fetchBankHolidays(args[0].filters.year.$eq),
           annualLeave = await strapi.services['api::timesheet.timesheet'].leave({...args[0]})
 
@@ -506,6 +537,157 @@ module.exports = ({ strapi }) =>  ({
     summary.totals.volunteered = (summary.days.volunteered.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
 
     return { data: summary }
-  }
+  },
 
+  utilisation: async(...args) => {
+
+    const query = args[0]
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        { 
+          $or: [
+            {
+              end: {
+                $between: [startDate.toISODate(), endDate.toISODate() ]
+              }
+            },
+            {
+              end: {
+                $null: true
+              }
+            }
+          ]
+        },
+        {
+          $and: [
+            {
+              start: { 
+                $lt: startDate.toISODate()
+              },
+            },
+            {
+              end: {
+                $gt: endDate.toISODate()
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    // Year is always present due to middleware
+    const year = Number(query.filters.year.$eq)
+        
+    // Optional query parameters
+    const userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
+          projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
+
+    clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
+    const summary = await fetchSummaryReport(year, userIDs, projectIDs),
+          annuaLeave = await strapi.services['api::timesheet.timesheet'].leave(query),
+          holidays = await fetchBankHolidays(year),
+          rses = await strapi.services['api::rse.rse'].find({populate: { capacities: { filters: dateRangeFilter } }, filters: { active: true } })
+
+
+    const holidayDates = holidays.map(holiday => DateTime.fromISO(holiday.date).toISODate())
+
+    let data = {
+      total: {
+        billable: summary.data.totals[0].totalBillableTime,
+        nonBillable: summary.data.totals[0].totalTime - summary.data.totals[0].totalBillableTime,
+        recorded: summary.data.totals[0].totalTime
+      },
+      months: {},
+      rses: {}
+    }
+
+    summary.data.groupOne.forEach(rse => {
+
+      let profile = rses.results.find(r => r.clockifyID === rse._id)
+
+      const rseLeave = annuaLeave.data.filter(leave => leave.ID === profile.username)
+
+      let months = []
+
+      rse.children.forEach(month => {
+
+        let billableTime = month.children.reduce((total, project) => project.amount > 0 ? total + project.duration : 0, 0)
+
+        const start = DateTime.fromFormat(month.name, 'MMM yyyy').startOf('month'),
+              end = start.month === DateTime.now().month ? DateTime.now() : start.endOf('month')
+
+        let date = start
+
+        let monthlyCapacity = 0
+    
+        // calculate seconds available in the month
+        while(date < end) {
+          if(!date.isWeekend && !holidayDates.includes(date.toISODate())) {
+
+            let leaveDay = rseLeave.find(leave => leave.DATE === date.toISODate())
+
+            if(leaveDay) {
+              // add 3.7 hours for half day leave
+              monthlyCapacity += leaveDay.DURATION === 'Y' ? 0 : 3.7 * 60 * 60
+            }
+            else {
+              monthlyCapacity += 7.4 * 60 * 60
+            }
+          }
+          date = date.plus({days: 1})
+        }
+
+        // pro-rata based on rse capacity
+        monthlyCapacity = monthlyCapacity * (profile.capacities[0].capacity / 100)
+
+        months.push({
+          month: start.month,
+          year: start.year,
+          recorded: month.duration,
+          billable: billableTime,
+          nonBillable: month.duration - billableTime,
+          capacity: Number(monthlyCapacity.toFixed(0))
+        })
+
+        if(!data.months[`${start.toFormat('MMMM')}`]) { 
+          data.months[`${start.toFormat('MMMM')}`] = {
+            recorded: 0,
+            billable: 0,
+            nonBillable: 0,
+            capacity: 0
+          }
+        }
+
+        data.months[`${start.toFormat('MMMM')}`].recorded += month.duration
+        data.months[`${start.toFormat('MMMM')}`].billable += billableTime
+        data.months[`${start.toFormat('MMMM')}`].nonBillable += (month.duration - billableTime)
+        data.months[`${start.toFormat('MMMM')}`].capacity += Number(monthlyCapacity.toFixed(0))
+      })
+
+      data.rses[profile.id] = {
+        name: profile.displayName,
+        total: {
+          recorded: rse.duration,
+          billable: months.reduce((total, month) => total + month.billable, 0),
+          nonBillable: months.reduce((total, month) => total + month.nonBillable, 0),
+          capacity: months.reduce((total, month) => total + month.capacity, 0),
+        },
+        months: months
+      }
+    })
+
+    data.total.capacity = Object.values(data.rses).reduce((total, rse) => total + rse.total.capacity, 0)
+
+    return data
+  }
 })
