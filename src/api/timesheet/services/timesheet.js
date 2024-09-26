@@ -605,7 +605,7 @@ module.exports = ({ strapi }) =>  ({
     const summary = await fetchSummaryReport(year, userIDs, projectIDs),
           annuaLeave = await strapi.services['api::timesheet.timesheet'].leave(query),
           holidays = await fetchBankHolidays(year),
-          rses = await strapi.services['api::rse.rse'].find({populate: { capacities: { filters: dateRangeFilter } }, filters: { active: true } })
+          rses = await strapi.services['api::rse.rse'].find({populate: { capacities: { filters: dateRangeFilter } } })
 
 
     const holidayDates = holidays.map(holiday => DateTime.fromISO(holiday.date).toISODate())
@@ -624,6 +624,8 @@ module.exports = ({ strapi }) =>  ({
 
       let profile = rses.results.find(r => r.clockifyID === rse._id)
 
+      if(!profile) console.log(rse)
+
       const rseLeave = annuaLeave.data.filter(leave => leave.ID === profile.username)
 
       let months = []
@@ -633,7 +635,7 @@ module.exports = ({ strapi }) =>  ({
         let billableTime = month.children.reduce((total, project) => project.amount > 0 ? total + project.duration : 0, 0)
 
         const start = DateTime.fromFormat(month.name, 'MMM yyyy').startOf('month'),
-              end = start.month === DateTime.now().month ? DateTime.now() : start.endOf('month')
+              end = start.month === DateTime.now().month && start.year === DateTime.now().year ? DateTime.now() : start.endOf('month')
 
         let date = start
 
