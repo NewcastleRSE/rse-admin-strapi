@@ -1,280 +1,178 @@
-"use strict";
+"use strict"
 
 /**
  * rse service.
  */
 
-const { DateTime } = require("luxon");
-const { createCoreService } = require("@strapi/strapi").factories;
+const { createCoreService } = require("@strapi/strapi").factories
+const { DateTime, Interval } = require("luxon")
 
-function getAvailability(rse, assignments, capacities) {
-  // Initialize years
-  let contractStart = DateTime.fromISO(rse.contractStart);
-  let contractEnd = DateTime.fromISO(rse.contractEnd);
-  let lastAssignment = new Date(
-    Math.max(...assignments.map((e) => new Date(e.end)))
-  );
-  let lastAssignmentEnd =
-    assignments.length > 0
-      ? DateTime.fromISO(lastAssignment.toISOString())
-      : DateTime.now();
-  let assignmentsEnd;
 
-  // RSE has fixed term contract and end is later than last assignment
-  if (contractEnd && contractEnd > lastAssignmentEnd) {
-    assignmentsEnd = contractEnd;
-    // console.log(`${rse.firstname} ${rse.lastname}: Contract Ends ${assignmentsEnd}`)
-  }
-  // RSE has fixed term contract and end is earlier than last assignment
-  else if (contractEnd && contractEnd < lastAssignment) {
-    assignmentsEnd = lastAssignmentEnd;
-    // console.log(`${rse.firstname} ${rse.lastname}: Assignment Ends  ${assignmentsEnd}`)
-  }
-  // Contract is open-ended, extend 24 months into the future past last assignment end date
-  else {
-    assignmentsEnd = lastAssignmentEnd.plus({ years: 2 });
-    // console.log(`${rse.firstname} ${rse.lastname}: Open Ended  ${assignmentsEnd}`)
-  }
-
-  let availability = {};
-
-  // Create outer availability object
-  let year = contractStart.year;
-  while (year <= assignmentsEnd.year) {
-    // Default to 100 percent availability each month
-    availability[year] = new Array(12).fill(100);
-    year++;
-  }
-
-  // Set months in first year before contract start to null
-  let startMonth = 1;
-  while (startMonth < contractStart.month) {
-    availability[contractStart.year][startMonth - 1] = null;
-    startMonth++;
-  }
-
-  if (rse.contractEnd) {
-    // Set months in final year before contract end to null
-    let endMonth = 12;
-    while (endMonth > contractEnd.month) {
-      availability[contractEnd.year][endMonth - 1] = null;
-      endMonth--;
-    }
-  } else {
-    // Set months in final year of assignments end to null
-    let endMonth = 12;
-    while (endMonth > assignmentsEnd.month) {
-      availability[assignmentsEnd.year][endMonth - 1] = null;
-      endMonth--;
-    }
-  }
-
-  // Use each capacity to update availability
-  capacities.forEach((capacity) => {
-    let start = DateTime.fromISO(new Date(capacity.start).toISOString());
-    let end = assignmentsEnd;
-
-    if (capacity.end) {
-      end = DateTime.fromISO(new Date(capacity.end).toISOString());
-    }
-
-    // Loop over each year in the capacity
-    let year = start.year;
-    while (year <= end.year) {
-      // Loop over each month in the year the capacity is valid for
-      let month = year === start.year ? start.month : 1;
-      let endMonth = year === end.year ? end.month : 12;
-      while (month <= endMonth) {
-        // capacity spans new year so needs to be added as key
-        if (!availability.hasOwnProperty(year)) {
-          availability[year] = [];
-        }
-
-        // Set assignment FTE from that months capacity
-        availability[year][month - 1] = capacity.capacity;
-        month++;
-      }
-      year++;
-    }
-  });
-
-  // Use each assignment to update availability
-  assignments.forEach((assignment) => {
-    let start = DateTime.fromISO(new Date(assignment.start).toISOString());
-    let end = DateTime.fromISO(new Date(assignment.end).toISOString());
-
-    // Loop over each year in the assignment
-    let year = start.year;
-    while (year <= end.year) {
-      // Loop over each month in the year the assignment is valid for
-      let month = year === start.year ? start.month : 1;
-      let endMonth = year === end.year ? end.month : 12;
-      while (month <= endMonth) {
-        try {
-          // Subtract assignment FTE from that months availability
-          let maxAvailability = availability[year][month - 1],
-              currentAvailability = maxAvailability - assignment.fte
-
-          availability[year][month - 1] = currentAvailability < 0 ? 0 : currentAvailability
-        }
-        catch(ex){
-          console.log(rse)
-          console.log(year)
-          console.log(month)
-        }
-        month++;
-      }
-      year++;
-    }
-  });
-
-  return availability;
-}
-
-module.exports = createCoreService("api::rse.rse", ({ strapi }) => ({
+module.exports = createCoreService('api::rse.rse', () => ({
   async find(...args) {
-    let { results, pagination } = await super.find(...args);
 
-    let rses = results;
-    results = [];
+    let populate = {
+      assignments: false,
+      capacities: false
+    }
 
-    for await (const rse of rses) {
-      // Get availability
-      const assignments = await strapi
-        .service("api::assignment.assignment")
-        .find({
-          populate: ["rse", "project"],
-          filters: {
-            rse: rse.id,
-          },
-        });
+    if(!args[0].populate || Array.isArray(args[0].populate)) {
+      args[0].populate = { assignments: true, capacities: true }
+    }
+    else {
+      if(Object.keys(args[0].populate).includes('assignments')) {
+        populate.assignments = true
+      }
+      else {  
+        args[0].populate['assignments'] = true
+      }
+  
+      if(Object.keys(args[0].populate).includes('capacities')) {
+        populate.capacities = true
+      }
+      else {
+        args[0].populate['capacities'] = true
+      }
+    }
 
-      const capacities = await strapi.service("api::capacity.capacity").find({
-        populate: ["rse"],
-        filters: {
-          rse: rse.id,
-        },
-      });
+    const { results, pagination } = await super.find(...args)
 
-      let availability = getAvailability(
-          rse,
-          assignments.results,
-          capacities.results
-        ),
-        currentDate = DateTime.now(),
-        contractEndDate = rse.contractEnd
-          ? DateTime.fromISO(rse.contractEnd)
-          : null,
-        nextAvailableDate = null;
+    let rses = results
+    
+    rses.forEach((rse, index) => {
 
-      let year = contractEndDate ? contractEndDate.year : currentDate.year,
-        month = null;
+      // Sort assignments by start date
+      rse.assignments = rse.assignments.sort((a, b) => DateTime.fromISO(a.start) - DateTime.fromISO(b.start))
 
-      // Loop over years starting from contract end year or current year
-      while (year < Math.max(...Object.keys(availability).map(Number))) {
-        let i = 0;
+      // Only look at assignments that end in the future
+      const assignments = rse.assignments.filter(assignment => { return DateTime.fromISO(assignment.end) >= DateTime.now() }),
+            endDates = assignments.reduce((dates, assignment) => { dates.push(DateTime.fromISO(assignment.end)); return dates }, []).sort((a, b) => a - b)
 
-        // If current year set start of next month
-        if (year === currentDate.year) {
-          i = currentDate.month - 1;
-        }
+      if(!rse.active || endDates.length === 0) {
+        rse.nextAvailableDate = null
+        rse.nextAvailableFTE = null
+      }
+      else {
+        // Loop over end dates
+        for(const date of endDates) {
 
-        // Loop over months in year
-        for (i; i < availability[year].length; i++) {
-          // If availability found set month from index and break out of loop
-          if (availability[year][i] > 0) {
-            month = i + 1;
-            break;
+          let assignments = [],
+              capacities = []
+
+          // Find assignments that are concurrent with the end date
+          rse.assignments.forEach((assignment) => {
+            const period = Interval.fromDateTimes(DateTime.fromISO(assignment.start), DateTime.fromISO(assignment.end))
+            period.contains(date.plus({ days: 1})) ? assignments.push(assignment) : null
+          })
+
+          // Find capacities that are concurrent with the end date
+          rse.capacities.forEach((capacity) => {
+            // If end date is null, set it to 20 years in the future
+            capacity.end = capacity.end ? capacity.end : DateTime.now().plus({ years: 20}).toISODate()
+            const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start), DateTime.fromISO(capacity.end))
+            period.contains(date.plus({ days: 1})) ? capacities.push(capacity) : null
+          })
+
+          // Reduce down total assigned time and capacity time
+          const assigned = assignments.reduce((total, assignment) => total + assignment.fte, 0),
+                capacity = capacities.reduce((total, capacity) => total + capacity.capacity, 0)
+
+          // If there is capacity available, set the next available date and FTE
+          if(capacity - assigned > 0) {
+            rse.nextAvailableDate = date.plus({ days: 1 }).toISODate()
+            rse.nextAvailableFTE = capacity - assigned
+            break
           }
         }
-        // If month has been set break out of loop
-        if (month) {
-          break;
-        }
-        year++;
       }
 
-      // Availability found, create date object
-      if (month) {
-        let day = 1;
-        if (currentDate.year === year && currentDate.month === month) {
-          day = currentDate.day;
-        }
-        nextAvailableDate = DateTime.utc(year, month, day);
-        // console.log(`${rse.firstname} ${rse.lastname} ${nextAvailableDate.toISODate()}`)
-      }
-      // RSE has no availability
-      else {
-        if (contractEndDate > currentDate) {
-          console.error(`${rse.firstname} ${rse.lastname} has no availability`);
-        }
-      }
+      // cleanup if assignments and capacities are not requested
+      if(!populate.assignments) { delete results[index].assignments }
+      if(!populate.capacities) { delete results[index].capacities }
+    })
 
-      try {
-        rse.lastAssignmentEnd = new Date(
-          Math.max(
-            ...assignments.results.map((e) =>
-              DateTime.fromJSDate(new Date(e.end)).toISODate()
-            )
-          )
-        );
-        rse.nextAvailableDate = nextAvailableDate
-          ? nextAvailableDate.toISODate()
-          : null;
-        rse.nextAvailableFTE = availability[year][month - 1];
-        rse.availability = availability;
-      } catch (err) {
-        console.log(rse);
-      }
+    return { results, pagination }
+  },
+  async findOne(entityId, params) {
 
-      results.push(rse);
+    let populate = {
+      assignments: true,
+      capacities: true
     }
 
-    return { results, pagination };
-  },
-  async findOne(entryId, ...args) {
-    // Get availability
-    const assignments = await strapi
-      .service("api::assignment.assignment")
-      .find({
-        populate: ["rse"],
-        filters: {
-          rse: {
-            id: {
-              $eq: entryId,
-            },
-          },
-        },
-      });
+    // If populate is not set, populate assignments and capacities
+    if(params.populate && !params.populate.isArray && params.populate.assignments && params.populate.capacities) {
+      params.populate = ['assignments', 'capacities']
+    }
+    else {
+      if(!params.populate || !params.populate.isArray) {
+        params.populate = []
+      }
+  
+      if(!params.populate.includes('assignments')) {
+        populate.assignments = false
+        params.populate.push('assignments')
+      }
+  
+      if(!params.populate.includes('capacities')) {
+        populate.capacities = false
+        params.populate.push('capacities')
+      }
+    }
+   
+    const result = await super.findOne(entityId, params)
+    
+    let rse = result
 
-    const capacities = await strapi.service("api::capacity.capacity").find({
-      populate: ["rse"],
-      filters: {
-        rse: {
-          id: {
-            $eq: entryId,
-          },
-        },
-      },
-    });
+    // Sort assignments by start date
+    rse.assignments = rse.assignments.sort((a, b) => DateTime.fromISO(a.start) - DateTime.fromISO(b.start))
 
-    let result = await super.findOne(entryId, ...args);
-    let availability = getAvailability(
-      result,
-      assignments.results,
-      capacities.results
-    );
+    // Only look at assignments that end in the future
+    const assignments = rse.assignments.filter(assignment => { return DateTime.fromISO(assignment.end) >= DateTime.now() }),
+          endDates = assignments.reduce((dates, assignment) => { dates.push(DateTime.fromISO(assignment.end)); return dates }, []).sort((a, b) => a - b)
 
-    let date = DateTime.now();
+    if(!rse.active || endDates.length === 0) {
+      rse.nextAvailableDate = null
+      rse.nextAvailableFTE = null
+    }
+    else {
+      // Loop over end dates
+      for(const date of endDates) {
 
-    let month = availability[date.year].findIndex(function (availability) {
-      return availability > 0;
-    });
+        let assignments = [],
+            capacities = []
 
-    result.nextAvailableDate = new Date(Date.UTC(date.year, month, 1));
-    result.nextAvailableFTE = availability[date.year][month];
-    result.availability = availability;
+        // Find assignments that are concurrent with the end date
+        rse.assignments.forEach((assignment) => {
+          const period = Interval.fromDateTimes(DateTime.fromISO(assignment.start), DateTime.fromISO(assignment.end))
+          period.contains(date.plus({ days: 1})) ? assignments.push(assignment) : null
+        })
 
-    return result;
-  },
-}));
+        // Find capacities that are concurrent with the end date
+        rse.capacities.forEach((capacity) => {
+          // If end date is null, set it to 20 years in the future
+          capacity.end = capacity.end ? capacity.end : DateTime.now().plus({ years: 20}).toISODate()
+          const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start), DateTime.fromISO(capacity.end))
+          period.contains(date.plus({ days: 1})) ? capacities.push(capacity) : null
+        })
+
+        // Reduce down total assigned time and capacity time
+        const assigned = assignments.reduce((total, assignment) => total + assignment.fte, 0),
+              capacity = capacities.reduce((total, capacity) => total + capacity.capacity, 0)
+
+        // If there is capacity available, set the next available date and FTE
+        if(capacity - assigned > 0) {
+          rse.nextAvailableDate = date.plus({ days: 1 }).toISODate()
+          rse.nextAvailableFTE = capacity - assigned
+          break
+        }
+      }
+    }
+
+    // cleanup if assignments and capacities are not requested
+    if(!populate.assignments) { delete result.assignments }
+    if(!populate.capacities) { delete result.capacities }
+
+    return result
+  }
+}))

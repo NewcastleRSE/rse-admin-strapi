@@ -1,61 +1,46 @@
-"use strict";
-
 /**
- * A set of functions called "actions" for `timesheet`
+ * A set of functions called 'actions' for `timesheet`
  */
 
-const service = require("../services/timesheet");
-
 module.exports = {
-  find: async (ctx, next) => {
+  find: async (ctx) => {
     try {
-      ctx.body = await service.find();
+      ctx.body = await strapi.service('api::timesheet.timesheet').find(ctx.request.query)
     } catch (err) {
-      ctx.body = err;
-      console.error(err);
+      ctx.body = err
+      console.error(err)
     }
   },
-  findOne: async (ctx, next) => {
+  leave: async (ctx) => {
     try {
-      ctx.body = await service.findOne(ctx.params.id);
+      ctx.body = await strapi.service('api::timesheet.timesheet').leave(ctx.request.query)
     } catch (err) {
-      ctx.body = err;
-      console.error(err);
+      ctx.body = err
+      console.error(err)
     }
   },
-  project: async (ctx, next) => {
+  calendar: async (ctx) => {
     try {
-      let period = ctx.request.headers["period"];
-      ctx.body = await service.findProject(ctx.params.id, period);
+      ctx.body = await strapi.service('api::timesheet.timesheet').calendar(ctx.request.params.id, ctx.request.query)
     } catch (err) {
-      ctx.body = err;
-      console.error(err);
+      ctx.body = err
+      console.error(err)
     }
   },
-  allocated: async (ctx, next) => {
+  summary: async (ctx) => {
     try {
-      let period = ctx.request.headers["period"];
-      ctx.body = await service.findAllocatedTime(period);
+      ctx.body = await strapi.service('api::timesheet.timesheet').summary(ctx.request.query)
     } catch (err) {
-      ctx.body = err;
-      console.error(err);
+      ctx.body = err
+      console.error(err)
     }
   },
-  leave: async (ctx, next) => {
+  utilisation: async (ctx) => {
     try {
-      ctx.body = await service.findLeave();
+      ctx.body = await strapi.service('api::timesheet.timesheet').utilisation(ctx.request.query)
     } catch (err) {
-      ctx.body = err;
-      console.error(err);
+      ctx.body = err
+      console.error(err)
     }
-  },
-  user: async (ctx, next) => {
-    try {
-      let period = ctx.request.headers["period"];
-      ctx.body = await service.findUser(ctx.params.id, period);
-    } catch (err) {
-      ctx.body = err;
-      console.error(err);
-    }
-  },
-};
+  }
+}

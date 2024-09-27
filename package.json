@@ -17,7 +17,8 @@
     "@strapi/plugin-sentry": "^4.24.2",
     "@strapi/plugin-users-permissions": "^4.24.2",
     "@strapi/strapi": "^4.24.2",
-    "axios": "1.4.0",
+    "axios": "^1.7.5",
+    "axios-cache-interceptor": "^1.5.3",
     "camelcase": "5.2.0",
     "camelcase-keys": "5.2.0",
     "deepdash": "^5.3.9",
@@ -39,7 +40,7 @@
     "uuid": "ca6b733a-92c2-453b-9dbb-89dbf373fb2d"
   },
   "engines": {
-    "node": ">=16.x.x <=18.x.x",
+    "node": ">=16.x.x <=20.x.x",
     "npm": ">=6.0.0"
   },
   "license": "MIT"

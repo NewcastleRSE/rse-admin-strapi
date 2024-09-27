@@ -6,7 +6,7 @@ module.exports = {
       handler: "timesheet.find",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     },
     {
@@ -15,44 +15,34 @@ module.exports = {
       handler: "timesheet.leave",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     },
     {
       method: "GET",
-      path: "/timesheets/allocated",
-      handler: "timesheet.allocated",
+      path: "/rses/:id/calendar",
+      handler: "timesheet.calendar",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     },
     {
       method: "GET",
-      path: "/timesheets/:id",
-      handler: "timesheet.findOne",
+      path: "/timesheets/summary",
+      handler: "timesheet.summary",
       config: {
         policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     },
     {
       method: "GET",
-      path: "/timesheets/project/:id",
-      handler: "timesheet.project",
+      path: "/timesheets/utilisation",
+      handler: "timesheet.utilisation",
       config: {
         policies: [],
-        middlewares: [],
-      },
-    },
-
-    {
-      method: "GET",
-      path: "/timesheets/user/:id",
-      handler: "timesheet.user",
-      config: {
-        policies: [],
-        middlewares: [],
+        middlewares: ['api::timesheet.financial-year'],
       },
     }
   ],

@@ -1,418 +1,275 @@
-"use strict";
+'use strict'
 
-const { DateTime } = require("luxon");
+const { createCoreService } = require('@strapi/strapi').factories
+const { DateTime, Interval } = require('luxon')
+const { setupCache } = require('axios-cache-interceptor')
+let axios = require('axios')
+const { sum } = require('pdf-lib')
 
-/**
- * timesheet service.
- */
-// https://reports.api.clockify.me/v1/workspaces/61f3ac40ac897025894b32ca/reports/summary
-// https://reports.api.clockify.me/v1/workspaces/61f3ac40ac897025894b32ca/reports/detailed
-/* {
-    "dateRangeStart": "2022-07-01T00:00:00.000",
-    "dateRangeEnd": "2022-07-31T23:59:59.000",
-    "detailedFilter": {
-      "page": 1,
-      "pageSize": 100
-    },
-    "users": {
-      "ids": ["61f7a6dfba97e77c50b8f5c4"],
-      "contains": "CONTAINS",
-      "status": "ALL"
-    }
-  }*/
+const instance = axios.create()
+axios = setupCache(instance, {
+  methods: ['get', 'post']
+})
 
-const axios = require("axios");
-const apiConfig = {
-  baseURL: `https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`,
-  headers: {
-    "X-Api-Key": process.env.CLOCKIFY_KEY,
-  },
-};
-
-const reportConfig = {
+const clockifyConfig = {
   baseURL: `https://reports.api.clockify.me/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}/reports`,
   headers: {
-    "X-Api-Key": process.env.CLOCKIFY_KEY,
+    'X-Api-Key': process.env.CLOCKIFY_KEY,
   },
-};
+  cache: {
+    maxAge: 60 * 60 * 1000
+  }
+}
+
+const bankHolidaysConfig = {
+  baseURL: 'https://www.gov.uk',
+  cache: {
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}
 
 const leaveConfig = {
   baseURL: 'https://sageapps.ncl.ac.uk/public/',
   headers: {
     Authorization: `Bearer ${process.env.LEAVE_API_TOKEN}`
+  },
+  cache: {
+    maxAge: 60 * 60 * 1000
   }
 }
 
-const getTotalAllocatedDays = (data) => {
-  return data;
-};
+async function fetchBankHolidays(year) {
+  const response = await axios.get('/bank-holidays.json', bankHolidaysConfig)
+        
+  let bankHolidays = response.data['england-and-wales'].events,
+        closures = []
 
-// Maps through each user and their projects and searches for the project id (id), then adds up all of the duration (time spent) for each staff member and formats the duration into hours, minutes and seconds. Then pushes the staff members name and timespent into an array. This array only contains staff members that have spent more than 0 seconds on the project.
-const formatProject = (data, id) => {
-  let result = [];
-  let totalDuration = 0;
-  if (data) {
-    data.map((user) => {
-      let staffName = user.name;
-      let duration = 0;
-      user.children.map((project) => {
-        if (project._id === id) {
-          duration += project.duration;
-        }
-      });
-      if (duration > 0) {
-        let formattedTime = calculateTime(duration);
-        totalDuration += duration;
-        result.push({
-          staffMember: staffName,
-          timeSpent: {
-            days: formattedTime.days,
-            hours: formattedTime.hours,
-            minutes: formattedTime.minutes,
-            seconds: formattedTime.seconds,
-          },
-        });
+  if(year) {
+    const startDate = DateTime.fromISO(`${year}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(year)+1)}-07-31`)
+
+    bankHolidays = bankHolidays.filter(holiday => {
+      const holidayDate = DateTime.fromISO(holiday.date)
+      return holidayDate >= startDate && holidayDate <= endDate
+    })
+  }
+
+  const christmases = bankHolidays.filter(holiday => holiday.title === 'Christmas Day')
+
+  christmases.forEach(christmas => {
+      const christmasBankHoliday = DateTime.fromISO(christmas.date)
+      const christmasEve = DateTime.fromISO(`${christmasBankHoliday.year}-12-24`)
+
+      for(let i=0; i<=7; i++) {
+          let closureDate = christmasEve.plus({days: i})
+          
+          if(closureDate.toISODate() !== christmasBankHoliday.toISODate()) {
+              closures.push({
+                  title: 'University Closure',
+                  date: closureDate.toISODate(),
+                  notes: '',
+                  bunting: false
+              })
+          } 
       }
-    });
-  }
 
-  // works out the users percentile time allocation contribution to the project this month.
-  result.map((user) => {
-    let percentile = 0;
-    let duration = 0;
-    duration += user.timeSpent.days * 26640;
-    duration += user.timeSpent.hours * 3600;
-    duration += user.timeSpent.minutes * 60;
-    duration += user.timeSpent.seconds;
-    percentile = (duration / totalDuration) * 100;
-    user.percentageOfProject = percentile.toFixed(2);
-  });
-
-  return result;
-};
-
-// Maps through to find the project name. There is a way to do this through clockify too. https://docs.clockify.me/#tag/Project/operation/getProject
-const getProjectName = (data, id) => {
-  let projectName = "";
-  if (data) {
-    data.map((user) => {
-      user.children.map((project) => {
-        if (project._id === id) {
-          projectName = project.name;
-        }
-      });
-    });
-  }
-  return projectName;
-};
-
-// Format time. Each day is 7.4 hours.
-const calculateTime = (time) => {
-  let days = Math.floor(time / 26640);
-  let hours = Math.floor((time % 26640) / 3600);
-  let minutes = Math.floor((time % 3600) / 60);
-  let seconds = Math.floor(time % 60);
-  return { days: days, hours: hours, minutes: minutes, seconds: seconds };
-};
-
-// Gets the projects names and time allocation to each project
-const getProjects = (data) => {
-  // loop through all of the timeentries, find the unique project names.
-
-  const response = []
-
-  // Group time entries by project name
-  const projects = data.timeentries.reduce(function (r, a) {
-      r[a.projectName] = r[a.projectName] || [];
-      r[a.projectName].push(a);
-      return r;
-  }, Object.create(null))
-
-  // Loop through projects
-  Object.keys(projects).forEach(name => {
-
-    // Reduce all project time entry durations to single number
-    const allocatedTime = projects[name].reduce((duration, timeentry) => duration + timeentry.timeInterval.duration, 0)
-
-    // Calculate days, hours, minutes and seconds // change so its 7.4 hours per day.
-    const formattedTime = calculateTime(allocatedTime);
-    
-    response.push({
-      project: name,
-      timeAllocation: {
-        days: formattedTime.days,
-        hours: formattedTime.hours,
-        minutes: formattedTime.minutes,
-        seconds: formattedTime.seconds,
-      },
-    });
+      // If Christmas Eve is a Tuesday, the closure will start the day before
+      if(christmasEve.weekday === 2) {
+          closures.push({
+              title: 'University Closure',
+              date: christmasEve.minus({days: 1}).toISODate(),
+              notes: '',
+              bunting: false
+          })
+      }
   })
 
-  return response;
-};
+  return [...closures, ...bankHolidays]
+}
 
-const getUserName = (data) => {
-  return data.timeentries[0]?.userName;
-};
+async function fetchSummaryReport(year, userIDs, projectIDs) {
+    let startDate = DateTime.utc(year, 8),
+        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
 
-const getDateRanges = (period) => {
-  period = period.toLowerCase();
-  const now = DateTime.utc();
-  let dateRangeStart, dateRangeEnd, days, months, year;
-  // Can say last30days or last6months, cant say years becase we don't have permissiosn to see reports for date ranges longer than a year.
-  if (period.indexOf("last") == 0) {
-    days = period.slice(4, period.indexOf("days"));
-    months = period.slice(4, period.indexOf("months"));
-    if (days > 365) days = 365; // dont have permission to see reports for date ranges longer than a year.
-    if (months > 12) months = 12;
-    if (days < 0) days = 0;
-    if (months < 0) months = 0;
-    period = days && "days";
-    period = months && "months";
-  }
-
-  // If it's a year such as 2023 then set the period to year for the switch statement and extract the year
-  if (period.indexOf("20") == 0) {
-    year = period.slice(0, 4);
-    period = year && "year";
-  }
-
-  // Switch statement to work out time periods.
-  switch (period) {
-    case "monthly":
-      dateRangeStart = DateTime.utc(now.year, now.month, 1).toISO();
-      dateRangeEnd = DateTime.utc().endOf("day").toISO();
-      break;
-    case "yearly":
-      if (now.month > 7) {
-        dateRangeStart = DateTime.utc(now.year, 8, 1).toISO();
-        dateRangeEnd = DateTime.utc(now.year + 1, 7, 31).toISO();
-        // If it's earlier than July then the start should be 1st of August of last year and the end should be July 31st of this year.
-      } else {
-        dateRangeStart = DateTime.utc(now.year - 1, 8, 1).toISO();
-        dateRangeEnd = DateTime.utc(now.year, 7, 31).toISO();
-      }
-      break;
-    case "year":
-      dateRangeStart = DateTime.utc(Number(year), 8, 1).toISO();
-      dateRangeEnd = DateTime.utc(Number(year) + 1, 7, 31).toISO();
-      break;
-    case "weekly":
-      // Current period is from Monday to Friday, but can increase 5 to 7 to get Monday - Sunday.
-      (dateRangeStart = DateTime.utc().startOf("week").toISO()),
-        (dateRangeEnd = DateTime.utc()
-          .startOf("week")
-          .plus({ days: 5 })
-          .toISO());
-      break;
-    case "days":
-      (dateRangeStart = DateTime.utc()
-        .startOf("day")
-        .minus({ days: days })
-        .toISO()),
-        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
-      break;
-    case "months":
-      (dateRangeStart = DateTime.utc()
-        .startOf("day")
-        .minus({ months: months })
-        .toISO()),
-        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
-      break;
-    case "january":
-      dateRangeStart = dateHelper(1).dateRangeStart;
-      dateRangeEnd = dateHelper(1).dateRangeEnd;
-      break;
-    case "february":
-      dateRangeStart = dateHelper(2).dateRangeStart;
-      dateRangeEnd = dateHelper(2).dateRangeEnd;
-      break;
-    case "march":
-      dateRangeStart = dateHelper(3).dateRangeStart;
-      dateRangeEnd = dateHelper(3).dateRangeEnd;
-      break;
-    case "april":
-      dateRangeStart = dateHelper(4).dateRangeStart;
-      dateRangeEnd = dateHelper(4).dateRangeEnd;
-      break;
-    case "may":
-      dateRangeStart = dateHelper(5).dateRangeStart;
-      dateRangeEnd = dateHelper(5).dateRangeEnd;
-      break;
-    case "june":
-      dateRangeStart = dateHelper(6).dateRangeStart;
-      dateRangeEnd = dateHelper(6).dateRangeEnd;
-      break;
-    case "july":
-      dateRangeStart = dateHelper(7).dateRangeStart;
-      dateRangeEnd = dateHelper(7).dateRangeEnd;
-      break;
-    case "august":
-      dateRangeStart = dateHelper(8).dateRangeStart;
-      dateRangeEnd = dateHelper(8).dateRangeEnd;
-      break;
-    case "september":
-      dateRangeStart = dateHelper(9).dateRangeStart;
-      dateRangeEnd = dateHelper(9).dateRangeEnd;
-      break;
-    case "october":
-      dateRangeStart = dateHelper(10).dateRangeStart;
-      dateRangeEnd = dateHelper(10).dateRangeEnd;
-      break;
-    case "november":
-      dateRangeStart = dateHelper(11).dateRangeStart;
-      dateRangeEnd = dateHelper(11).dateRangeEnd;
-      break;
-    case "december":
-      // dont need to use dateHelper as this is the same regardless of when december occurs.
-      dateRangeStart = DateTime.utc(now.year - 1, 12, 1).toISO();
-      dateRangeEnd = DateTime.utc(now.year, 1, 1).minus({ days: 1 }).toISO();
-      break;
-    default:
-      (dateRangeStart = DateTime.utc()
-        .startOf("day")
-        .minus({ days: 30 })
-        .toISO()),
-        (dateRangeEnd = DateTime.utc().endOf("day").toISO());
-      break;
-  }
-  return { dateRangeStart: dateRangeStart, dateRangeEnd: dateRangeEnd };
-};
-
-// This function takes a month, and returns the most recent month that has passed matching that month.
-// e.g. if the month is 5 (May) and it's January, we want the May from the year before. However, if it's June, we want the May from that year.
-const dateHelper = (month) => {
-  const now = DateTime.utc();
-  let dateRangeStart, dateRangeEnd;
-  if (now.month > month) {
-    dateRangeStart = DateTime.utc(now.year, month, 1).toISO();
-    dateRangeEnd = DateTime.utc(now.year, month + 1, 1)
-      .toISO();
-  } else {
-    dateRangeStart = DateTime.utc(now.year - 1, month, 1).toISO();
-    dateRangeEnd = DateTime.utc(now.year - 1, month + 1, 1)
-      .toISO();
-  }
-  // console.log(dateRangeStart);
-  // console.log(dateRangeEnd);
-  return { dateRangeStart: dateRangeStart, dateRangeEnd: dateRangeEnd };
-};
-
-// Creates and returns a report for all users in the workspace.
-module.exports = {
-  async find(...args) {
-
-    const currentDate = DateTime.utc()
-
-    let startDate = DateTime.utc(currentDate.year, 8),
-        endDate = startDate.plus({ year: 1 })
-
-    if(currentDate.month < 8) {
-      startDate = startDate.minus({ year: 1 }),
-      endDate = endDate.minus({ year: 1 })
-    }
-
-    const payload = {
+    let payload = {
       dateRangeStart: startDate.toISO(),
       dateRangeEnd: endDate.toISO(),
-      // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
-      tasks: { 
-        contains: 'DOES_NOT_CONTAIN',
-        ids: [ '61f7e1d7ba97e77c50bedfe1', '620f68f6ac46e3525d17c0fa', '6270d983736b43623af4c932', '61fd34562ea4bf0a6f564c4f' ]
-      },
       summaryFilter: {
-        groups: ['USER', 'MONTH', 'PROJECT',],
-      },
-    };
-
-    try {
-      const response = await axios.post(`/summary`, payload, reportConfig);
-
-      const totals = {
-        days: Math.round((response.data.totals[0].totalTime / 3600) / 7.4),
-        entries: response.data.totals[0].entriesCount
+        groups: ['USER', 'MONTH', 'PROJECT']
       }
-
-      const team = []
-
-      response.data.groupOne.forEach(rse => {
-        let rseGroup = {
-          name: rse.name,
-          days: Math.round((rse.duration / 3600) / 7.4),
-          months: []
-        }
-        rse.children.forEach(month => {
-          let monthGroup = {
-            days: Math.round((month.duration / 3600) / 7.4),
-            name: month.name,
-            projects: []
-          }
-          month.children.forEach(project => {
-            monthGroup.projects.push({
-              days: Math.round((project.duration / 3600) / 7.4),
-              name: project.name,
-              client: project.clientName
-            })
-          })
-          rseGroup.months.push(monthGroup)
-        })
-        team.push(rseGroup)
-      })
-
-      return {
-        data: {
-          totals: totals,
-          team: team,
-        },
-        meta: {
-          pagination: {
-            page: 1,
-            pageSize: 100,
-            pageCount: 1,
-            total: response.data.groupOne.length,
-          },
-        },
-      };
-    } catch (error) {
-      console.error(error);
-    }
-  },
-
-  async findOne(userID) {
-
-    const currentDate = DateTime.utc()
-
-    let startDate = DateTime.utc(currentDate.year, 8),
-        endDate = startDate.plus({ year: 1 })
-
-    if(currentDate.month < 8) {
-      startDate = startDate.minus({ year: 1 }),
-      endDate = endDate.minus({ year: 1 })
     }
 
-    const payload = {
+    if(userIDs) {
+      payload.users = {
+        ids: userIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
+
+    if(projectIDs) {
+      payload.projects = {
+        ids: projectIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
+
+    return await axios.post('/summary', payload, clockifyConfig)
+}
+
+async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntries = []) {
+    let startDate = DateTime.utc(year, 8),
+        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+
+    let payload = {
       dateRangeStart: startDate.toISO(),
       dateRangeEnd: endDate.toISO(),
       detailedFilter: {
-        page: 1,
+        page: page,
         pageSize: 1000,
-      },
-      users: {
-        ids: [userID],
-        contains: "CONTAINS",
-        status: "ALL",
-      },
+      }
     }
 
-    try {
-      const response = await axios.post(`/detailed`, payload, reportConfig)
+    if(userIDs) {
+      payload.users = {
+        ids: userIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
 
-      const data = {
-        totals: response.data.totals,
+    if(projectIDs) {
+      payload.projects = {
+        ids: projectIDs,
+        contains: 'CONTAINS',
+        status: 'ALL',
+      }
+    }
+
+    const response = await axios.post('/detailed', payload, clockifyConfig)
+
+    timeEntries = [...timeEntries, ...response.data.timeentries]
+
+    if(timeEntries.length < response.data.totals[0].entriesCount) {
+      return fetchDetailedReport(year, userIDs, projectIDs, page + 1, timeEntries)
+    }
+    else {
+      return timeEntries
+    }
+}
+
+function createCalendar(rse, holidays, leave, assignments, capacities, timesheets, startDate, endDate) {
+  const dates = []
+
+  let date = startDate
+
+  while(date <= endDate) {
+
+    const holiday = holidays.find(holiday => holiday.date === date.toISODate()),
+          leaveDay = leave.find(leave => leave.DATE === date.toISODate() && leave.ID === rse.username),
+          currentAssignments = assignments.filter(assignment => {
+            const start = DateTime.fromISO(assignment.start),
+                  end = DateTime.fromISO(assignment.end)
+            return date >= start && date <= end
+          })
+
+    let dateCapacity = 0
+      
+    capacities.forEach(capacity => {
+
+        capacity.end = capacity.end ? capacity.end : endDate.toISODate()
+
+        // Build interval for capacity period
+        const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start), DateTime.fromISO(capacity.end))
+
+        // Is current date in loop within the capacity period
+        if(period.contains(date)) {
+          dateCapacity = capacity.capacity
+        }
+    })
+
+    const timesheetReport = timesheets.dates[date.toISODate()],
+          timesheetSummary = []
+
+    if(timesheetReport) {
+      timesheetReport.filter(timesheet => timesheet.userId === rse.clockifyID).forEach(timesheet => {
+        timesheetSummary.push({
+          start: timesheet.timeInterval.start,
+          end: timesheet.timeInterval.end,
+          duration: timesheet.timeInterval.duration,
+          billable: timesheet.billable,
+          project: timesheet.projectName,
+        })
+      })
+    }
+
+    let day = {
+      date: date.toISODate(),
+      metadata: {
+        day: date.day,
+        month: date.month,
+        year: date.year,
+        dayOfWeek: date.weekday,
+        isWeekend: date.weekday > 5,
+        isWorkingDay: date.weekday < 6 && !holiday
+      },
+      utilisation: {
+        capacity: dateCapacity,
+        allocated: currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+        unallocated: dateCapacity - currentAssignments.reduce((total, assignment) => total + assignment.fte, 0),
+        recorded: {
+          billable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? timesheet.duration : 0), 0),
+          nonBillable: timesheetSummary.reduce((total, timesheet) => total + (timesheet.billable ? 0 : timesheet.duration), 0)
+        }
+      },
+      holiday: holiday ? holiday : null,
+      leave: leaveDay ? { 
+        type: leaveDay.TYPE,
+        durationCode: leaveDay.DURATION,
+        duration: leaveDay.DURATION === 'Y' ? 7.26 : 3.63,
+        status: leaveDay.STATUS
+      } : null,
+      assignments: currentAssignments.map(({ rse, ...assignment }) => assignment),
+      timesheet: timesheetSummary
+    }
+
+    dates.push(day)
+
+    date = date.plus({days: 1})
+  }
+
+  return dates
+}
+
+// Creates and returns a report for all users in the workspace.
+module.exports = ({ strapi }) =>  ({
+  /**
+   * Promise to fetch all records.
+   *
+   * @return {Promise}
+   */
+  find: async(...args) => {
+    try {
+
+      const query = args[0]
+
+      // Year is always present due to middleware
+      const year = Number(query.filters.year.$eq)
+         
+      // Optional query parameters
+      const userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
+            projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
+
+      clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
+      const response = await fetchDetailedReport(year, userIDs, projectIDs)
+
+      let data = {
         dates: {}
       }
 
-      response.data.timeentries.forEach(entry => {
+      response.forEach(entry => {
 
         const key = DateTime.fromISO(entry.timeInterval.start).toISODate()
 
@@ -430,245 +287,418 @@ module.exports = {
             page: 1,
             pageSize: 1000,
             pageCount: 1,
-            total: response.data.timeentries.length,
-          },
-        },
+            total: Object.keys(data.dates).length
+          }
+        }
       }
     } catch (error) {
       console.error(error)
     }
   },
 
-  // Request:
-  // GET:http://localhost:8080/api/timesheets/project/{projectID}?populate=*
-  // Output:
-  // "projectAllocation": {
-  //   "project": {
-  //       "projectName": "RSE Team",
-  //       "allocation": [
-  //           {
-  //               "user": "Tiago Sousa Garcia",
-  //               "timeSpent": {
-  //                   "hours": 14,
-  //                   "minutes": 30,
-  //                   "seconds": 1800
-  //               }
-  //           },
-  // Will return a list of all users that have worked on a project as specified by the project id passed in. Will show their time spent in hours, minutes and seconds
-  async findProject(id, period) {
+  leave: async(...args) => {
 
-    console.log(period)
-    const date = DateTime.fromFormat(`${period.month} ${period.year}`, 'LLLL yyyy')
+    const query = args[0]
 
-    // This time range gets the entire fiscal annum
-    const payload = {
-      dateRangeStart: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
-      dateRangeEnd: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
-      // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
-      projects: {
-        contains: "CONTAINS",
-        ids: [id],
-      },
-      summaryFilter: {
-        groups: ["USER"],
-      },
+    let username
+
+    if(query.filters.username) {
+      username = query.filters.username.$eq
     }
 
-    let response = null
+    leaveConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
+    const currentDate = DateTime.utc()
+
+    let startDate = DateTime.utc(Number(query.filters.year.$eq), 8),
+        endDate = startDate.plus({ year: 1 })
+
+    const period = Interval.fromDateTimes(startDate.startOf('day'), endDate.endOf('day'))
 
     try {
-      response = await axios.post(`/summary`, payload, reportConfig);
+      // Due to the FY not being the same as the leave year, get the previous year too and combine the two
+      const [response1, response2] = await Promise.all([
+        axios.get(`/turner?YEAR=${startDate.year}-${endDate.year}`, leaveConfig),
+        axios.get(`/turner?YEAR=${(startDate.year-1)}-${(endDate.year -1)}`, leaveConfig)
+      ])
 
-      const rses = []
+      const response = [...response1.data, ...response2.data]
 
-      response.data.groupOne.forEach(rse => {
-        rses.push({
-          name: rse.name,
-          totalTime: rse.duration,
-          amounts: rse.amount
-        })
+      const FYleave = []
+
+      // Include the leave that is within the FY period
+      response.forEach(leave => {
+        if (period.contains(DateTime.fromISO(leave.DATE))) {
+          if(username && leave.ID !== username) return
+          FYleave.push(leave)
+        }
       })
 
-      const totals = response.data.totals[0] ? response.data.totals[0] : { totalTime: 0, totalBillableTime: 0}
-
       return {
-        data: {
-          total: totals.totalTime,
-          totalBillable: totals.totalBillableTime,
-          rses: rses
-        },
-        meta: {
-          period: {
-            start: date.startOf('month').toISO({ includeOffset: false }) + 'Z',
-            end: date.endOf('month').toISO({ includeOffset: false }) + 'Z',
-            entriesCount: response.data.totals[0].entriesCount
-          },
-          pagination: {
-            page: 1,
-            pageSize: 100,
-            pageCount: 1,
-            total: response.data.groupOne.length,
-          },
-        },
-      };
-    } catch (error) {
-      console.error(error)
-    }
-  },
-
-  async findUser(id, period) {
-
-    const user = await strapi.entityService.findOne('api::rse.rse', id)
-
-    let dateRangeStart = getDateRanges(period).dateRangeStart;
-    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
-
-    const payload = {
-      // Generates a report from the last 30 days.
-      dateRangeStart: dateRangeStart,
-      dateRangeEnd: dateRangeEnd,
-      detailedFilter: {
-        page: 1,
-        pageSize: 100,
-      },
-      users: {
-        ids: [user.clockifyID],
-        contains: "CONTAINS",
-        status: "ALL",
-      },
-    };
-
-    try {
-      const response = await axios.post(`/detailed`, payload, reportConfig);
-      return {
-        data: {
-          userName: getUserName(response.data, id),
-          projects: getProjects(response.data, id),
-        },
-        meta: {
-          period: {
-            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
-            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
-          },
-          pagination: {
-            page: 1,
-            pageSize: 100,
-            pageCount: 1,
-            total: response.data.timeentries.length,
-          },
-        },
-      };
-    } catch (error) {
-      console.error(error);
-    }
-  },
-
-  async findLeave() {
-    try {
-      let response = await axios.get(`/turner`, leaveConfig)
-      return { data: response.data }
+        data: FYleave
+      }
     }
     catch(ex) {
       console.error(ex)
     }
   },
 
-  async findAllocatedTime(period) {
-    let dateRangeStart = getDateRanges(period).dateRangeStart;
-    let dateRangeEnd = getDateRanges(period).dateRangeEnd;
-    // This time range gets the entire fiscal annum
-    const payload = {
-      dateRangeStart: dateRangeStart,
-      dateRangeEnd: dateRangeEnd,
-      // This will filter by User, then by their projects, then by each task in each project. Clockify will show time spent by each user, time spent on each project and time spent on each task in each project. A task in a project could be a meeting or a task.
-      summaryFilter: {
-        groups: ["USER", "PROJECT"],
-      },
-    };
-    try {
-      const response = await axios.post(`/summary`, payload, reportConfig);
-      return {
-        data: {
-          totalAllocatedDays: getTotalAllocatedDays(response.data.groupOne),
+  calendar: async(rseId, ...args) => {
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    // Filter for use when checking if an object with a date range overlaps with the year
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
         },
-        meta: {
-          period: {
-            start: dateRangeStart.slice(0, dateRangeStart.indexOf("T")),
-            end: dateRangeEnd.slice(0, dateRangeStart.indexOf("T")),
-          },
-          pagination: {
-            page: 1,
-            pageSize: 100,
-            pageCount: 1,
-            total: response.data.groupOne.length,
-          },
+        {
+          end: { 
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
         },
-      };
-    } catch (error) {
-      console.error(error);
+        {
+          start: { 
+            $lt: startDate.toISODate()
+          },
+          end: {
+            $gt: endDate.toISODate()
+          }
+        }
+      ]
     }
-  },
-
-  async createClockifyProject(hsProject) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const projectName = hsProject.dealname,
-          projectOwner =
-            hsProject.contacts[0].firstname +
-            " " +
-            hsProject.contacts[0].lastname;
-
-        let clientRequest = {
-          params: {
-            name: projectOwner,
-            "page-size": 200,
-          },
-        };
-        let projectRequest = {
-          params: {
-            name: projectName,
-            "page-size": 200,
-          },
-        };
-        let clientConfig = { ...apiConfig, ...clientRequest };
-        let projectConfig = { ...apiConfig, ...projectRequest };
-        let response = await axios.get(`/clients`, clientConfig);
-        let clientId = null;
-
-        // Client does not exist, create a new one
-        if (!response.data || !response.data.length) {
-          response = await axios.post(
-            `/clients`,
-            {
-              name: projectOwner,
-              note: "",
-            },
-            apiConfig
-          );
-          clientId = response.data.id;
-        } else {
-          clientId = response.data[0].id;
-        }
-
-        response = await axios.get(`/projects`, projectConfig);
-
-        // Clockify project doesn't exist, create it
-        if (!response.data || !response.data.length) {
-          let project = {
-            name: projectName,
-            clientId: clientId,
-            isPublic: "true",
-            billable: "true",
-            public: true,
-          };
-
-          resolve(await axios.post(`/projects`, project, apiConfig));
-        } else {
-          resolve(response.data[0]);
-        }
-      } catch (error) {
-        reject(error.response ? error.response.data : error);
+  
+    const rsePopulate = {
+      populate: {
+        assignments: {
+          populate: {
+            project: {
+              fields: ['name']
+            }
+          }
+        },
+        capacities: true
+      },
+      filters: {
+        assignments: dateRangeFilter,
+        capacities: dateRangeFilter
       }
-    });
+    }
+
+    const rse = await strapi.services['api::rse.rse'].findOne(rseId, rsePopulate)
+
+    const holidays = await fetchBankHolidays(args[0].filters.year.$eq),
+          leave = await strapi.services['api::timesheet.timesheet'].leave({ filters: {...args[0].filters, username: [rse.username]} }),
+          timesheets = await strapi.services['api::timesheet.timesheet'].find({ filters: {...args[0].filters, userIDs: [rse.clockifyID]} })
+
+    const calendar = createCalendar(rse, holidays, leave.data, rse.assignments, rse.capacities, timesheets.data, startDate, endDate)
+    
+    return { data: calendar, meta: { pagination: {}} }
   },
-};
+
+  summary: async(...args) => {
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    // Filter for use when checking if an object with a date range overlaps with the year
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        {
+          $or: [
+            {
+              end: {
+                $between: [startDate.toISODate(), endDate.toISODate() ]
+              }
+            },
+            {
+              end: {
+                $null: true
+              }
+            }
+          ]
+        },
+        {
+          $and: [
+            {
+              start: { 
+                $lt: startDate.toISODate()
+              },
+            },
+            {
+              end: {
+                $gt: endDate.toISODate()
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    const timesheets = await strapi.services['api::timesheet.timesheet'].find(...args),
+          assignments = await strapi.services['api::assignment.assignment'].find({filters: dateRangeFilter}),
+          capacities = await strapi.services['api::capacity.capacity'].find({filters: dateRangeFilter}),
+          holidays = await fetchBankHolidays(args[0].filters.year.$eq),
+          annualLeave = await strapi.services['api::timesheet.timesheet'].leave({...args[0]})
+
+    const summary = {
+      totals: {
+        capacity: 0,
+        assigned: 0,
+        leave: 0,
+        sickness: 0,
+        recorded: 0,
+        billable: 0,
+        nonBillable: 0,
+        volunteered: 0,
+      },
+      days: {
+        capacity: [],
+        assigned: [],
+        leave: [],
+        sickness: [],
+        recorded: [],
+        billable: [],
+        nonBillable: [],
+        volunteered: [],
+      }
+    }
+
+    let date = startDate
+
+    while(date <= endDate) {
+
+      let holiday = holidays.find(holiday => holiday.date === date.toISODate()),
+          leave = annualLeave.data.filter(leave => leave.DATE === date.toISODate() && leave.TYPE === 'AL'),
+          sickness = annualLeave.data.filter(leave => leave.DATE === date.toISODate() && leave.TYPE === 'SICK')
+
+
+      // Is a working day
+      if(date.weekday < 6 && !holiday) {
+
+        let dailyAssignments = assignments.results.filter(assignment => {
+          // Build interval for assignment period
+          const period = Interval.fromDateTimes(DateTime.fromISO(assignment.start).startOf('day'), DateTime.fromISO(assignment.end).endOf('day'))
+          // Is current date in loop within the assignment period
+          return period.contains(date)
+        })
+
+        let dailyCapacities = capacities.results.filter(capacity => {
+            capacity.end = capacity.end ? capacity.end : endDate.toISODate()
+            // Build interval for capacity period
+            const period = Interval.fromDateTimes(DateTime.fromISO(capacity.start).startOf('day'), DateTime.fromISO(capacity.end).endOf('day'))
+            // Is current date in loop within the capacity period
+            return period.contains(date)
+        })
+
+        let timeEntries = timesheets.data.dates[date.toISODate()] || []
+
+        let dailyTimesheetSummary = {
+          leave: leave.reduce((total, entry) => total + (entry.DURATION === 'Y' ? 1 : 0.5), 0),
+          sickness: sickness.reduce((total, entry) => total + (entry.DURATION === 'Y' ? 1 : 0.5), 0),
+          recorded: timeEntries,
+          billable: timeEntries.filter(entry => entry.billable),
+          nonBillable: timeEntries.filter(entry => !entry.billable),
+          volunteered: timeEntries.filter(entry => entry.projectName === 'Volunteering'),
+        }
+
+        // Reduce all timesheets down to a daily total in days
+        summary.days.capacity.push(dailyCapacities.reduce((total, capacity) => total + (capacity.capacity / 100), 0).toFixed(1))
+        summary.days.assigned.push(dailyAssignments.reduce((total, assignment) => total + (assignment.fte / 100), 0).toFixed(1))
+        summary.days.leave.push((dailyTimesheetSummary.leave).toFixed(1))
+        summary.days.sickness.push((dailyTimesheetSummary.sickness).toFixed(1))
+        summary.days.recorded.push((dailyTimesheetSummary.recorded.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.billable.push((dailyTimesheetSummary.billable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.nonBillable.push((dailyTimesheetSummary.nonBillable.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+        summary.days.volunteered.push((dailyTimesheetSummary.volunteered.reduce((total, entry) => total + entry.timeInterval.duration, 0) / 60 / 60 / 7.26).toFixed(1))
+      }
+      else {
+        summary.days.capacity.push(null)
+        summary.days.assigned.push(null)
+        summary.days.leave.push(null)
+        summary.days.sickness.push(null)
+        summary.days.recorded.push(null)
+        summary.days.billable.push(null)
+        summary.days.nonBillable.push(null)
+        summary.days.volunteered.push(null)
+      }
+
+      date = date.plus({days: 1})
+    }
+
+    // Reduce daily totals to annual totals
+    summary.totals.capacity = (summary.days.capacity.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.assigned = (summary.days.assigned.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.leave = (summary.days.leave.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.sickness = (summary.days.sickness.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.recorded = (summary.days.recorded.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.billable = (summary.days.billable.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.nonBillable = (summary.days.nonBillable.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+    summary.totals.volunteered = (summary.days.volunteered.reduce((total, entry) => total + Number(entry), 0)).toFixed(1)
+
+    return { data: summary }
+  },
+
+  utilisation: async(...args) => {
+
+    const query = args[0]
+
+    const startDate = DateTime.fromISO(`${args[0].filters.year.$eq}-08-01`),
+          endDate = DateTime.fromISO(`${(Number(args[0].filters.year.$eq)+1)}-07-31`)
+
+    const dateRangeFilter = {
+      $or: [
+        { 
+          start: {
+            $between: [startDate.toISODate(), endDate.toISODate() ]
+          }
+        },
+        { 
+          $or: [
+            {
+              end: {
+                $between: [startDate.toISODate(), endDate.toISODate() ]
+              }
+            },
+            {
+              end: {
+                $null: true
+              }
+            }
+          ]
+        },
+        {
+          $and: [
+            {
+              start: { 
+                $lt: startDate.toISODate()
+              },
+            },
+            {
+              end: {
+                $gt: endDate.toISODate()
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    // Year is always present due to middleware
+    const year = Number(query.filters.year.$eq)
+        
+    // Optional query parameters
+    const userIDs = query.filters.userIDs ? query.filters.userIDs.$in : null,
+          projectIDs = query.filters.projectIDs ? query.filters.projectIDs.$in : null
+
+    clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
+    const summary = await fetchSummaryReport(year, userIDs, projectIDs),
+          annuaLeave = await strapi.services['api::timesheet.timesheet'].leave(query),
+          holidays = await fetchBankHolidays(year),
+          rses = await strapi.services['api::rse.rse'].find({populate: { capacities: { filters: dateRangeFilter } } })
+
+
+    const holidayDates = holidays.map(holiday => DateTime.fromISO(holiday.date).toISODate())
+
+    let data = {
+      total: {
+        billable: summary.data.totals[0].totalBillableTime,
+        nonBillable: summary.data.totals[0].totalTime - summary.data.totals[0].totalBillableTime,
+        recorded: summary.data.totals[0].totalTime
+      },
+      months: {},
+      rses: {}
+    }
+
+    summary.data.groupOne.forEach(rse => {
+
+      let profile = rses.results.find(r => r.clockifyID === rse._id)
+
+      if(!profile) console.log(rse)
+
+      const rseLeave = annuaLeave.data.filter(leave => leave.ID === profile.username)
+
+      let months = []
+
+      rse.children.forEach(month => {
+
+        let billableTime = month.children.reduce((total, project) => project.amount > 0 ? total + project.duration : 0, 0)
+
+        const start = DateTime.fromFormat(month.name, 'MMM yyyy').startOf('month'),
+              end = start.month === DateTime.now().month && start.year === DateTime.now().year ? DateTime.now() : start.endOf('month')
+
+        let date = start
+
+        let monthlyCapacity = 0
+    
+        // calculate seconds available in the month
+        while(date < end) {
+          if(!date.isWeekend && !holidayDates.includes(date.toISODate())) {
+
+            let leaveDay = rseLeave.find(leave => leave.DATE === date.toISODate())
+
+            if(leaveDay) {
+              // add 3.7 hours for half day leave
+              monthlyCapacity += leaveDay.DURATION === 'Y' ? 0 : 3.7 * 60 * 60
+            }
+            else {
+              monthlyCapacity += 7.4 * 60 * 60
+            }
+          }
+          date = date.plus({days: 1})
+        }
+
+        // pro-rata based on rse capacity
+        monthlyCapacity = monthlyCapacity * (profile.capacities[0].capacity / 100)
+
+        months.push({
+          month: start.month,
+          year: start.year,
+          recorded: month.duration,
+          billable: billableTime,
+          nonBillable: month.duration - billableTime,
+          capacity: Number(monthlyCapacity.toFixed(0))
+        })
+
+        if(!data.months[`${start.toFormat('MMMM')}`]) { 
+          data.months[`${start.toFormat('MMMM')}`] = {
+            recorded: 0,
+            billable: 0,
+            nonBillable: 0,
+            capacity: 0
+          }
+        }
+
+        data.months[`${start.toFormat('MMMM')}`].recorded += month.duration
+        data.months[`${start.toFormat('MMMM')}`].billable += billableTime
+        data.months[`${start.toFormat('MMMM')}`].nonBillable += (month.duration - billableTime)
+        data.months[`${start.toFormat('MMMM')}`].capacity += Number(monthlyCapacity.toFixed(0))
+      })
+
+      data.rses[profile.id] = {
+        name: profile.displayName,
+        total: {
+          recorded: rse.duration,
+          billable: months.reduce((total, month) => total + month.billable, 0),
+          nonBillable: months.reduce((total, month) => total + month.nonBillable, 0),
+          capacity: months.reduce((total, month) => total + month.capacity, 0),
+        },
+        months: months
+      }
+    })
+
+    data.total.capacity = Object.values(data.rses).reduce((total, rse) => total + rse.total.capacity, 0)
+
+    return data
+  }
+})
