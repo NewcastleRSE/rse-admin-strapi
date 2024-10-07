@@ -328,7 +328,7 @@ module.exports = ({ strapi }) =>  ({
 
       // Include the leave that is within the FY period
       response.forEach(leave => {
-        if (period.contains(DateTime.fromISO(leave.DATE))) {
+        if (period.contains(DateTime.fromISO(leave.DATE)) && leave.STATUS !== '3') {
           if(username && leave.ID !== username) return
           FYleave.push(leave)
         }
