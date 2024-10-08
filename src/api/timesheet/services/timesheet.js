@@ -632,7 +632,7 @@ module.exports = ({ strapi }) =>  ({
 
       rse.children.forEach(month => {
 
-        let billableTime = month.children.reduce((total, project) => project.amount > 0 ? total + project.duration : 0, 0)
+        let billableTime = month.children.reduce((total, project) => project.amount > 0 ? total + project.duration : total + 0, 0)
 
         const start = DateTime.fromFormat(month.name, 'MMM yyyy').startOf('month'),
               end = start.month === DateTime.now().month && start.year === DateTime.now().year ? DateTime.now() : start.endOf('month')
