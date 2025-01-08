@@ -10,5 +10,12 @@ module.exports = ({ env }) => ({
     },
     'import-export-entries': {
       enabled: true,
-    }
+    },
+    'users-permissions': {
+      config: {
+        jwt: {
+          expiresIn: '12h',
+        },
+      },
+    },
   });
