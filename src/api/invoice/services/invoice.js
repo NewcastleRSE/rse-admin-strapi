@@ -28,7 +28,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         // Convert seconds to hours, then 7.24 hours per day
         const days = Math.round((timesheets.data.total / 3600) / 7.24)
 
-        const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
+        const invoices = await strapi.documents('api::invoice.invoice').findMany({
             filters: {
                 documentNumber: documentNumber
             },
@@ -50,7 +50,9 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             invoice = await super.create(params)
         }
 
-        invoice.project = await strapi.entityService.findOne('api::project.project', project.id)
+        invoice.project = await strapi.documents('api::project.project').findOne({
+            documentId: project.id
+        })
 
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
