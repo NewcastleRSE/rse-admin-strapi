@@ -93,7 +93,7 @@ module.exports = createCoreService('api::rse.rse', () => ({
 
     return { results, pagination }
   },
-  async findOne(entityId, params) {
+  async findOne(documentId, params) {
 
     let populate = {
       assignments: true,
@@ -120,7 +120,7 @@ module.exports = createCoreService('api::rse.rse', () => ({
       }
     }
    
-    const result = await super.findOne(entityId, params)
+    const result = await super.findOne(documentId, params)
     
     let rse = result
 

@@ -350,24 +350,40 @@ module.exports = ({ strapi }) =>  ({
 
     // Filter for use when checking if an object with a date range overlaps with the year
     const dateRangeFilter = {
-      $or: [
-        { 
-          start: {
-            $between: [startDate.toISODate(), endDate.toISODate() ]
-          }
+      $and: [
+        {
+          end: { $lt: startDate.toISODate() } 
         },
         {
-          end: { 
-            $between: [startDate.toISODate(), endDate.toISODate() ]
-          }
-        },
-        {
-          start: { 
-            $lt: startDate.toISODate()
-          },
-          end: {
-            $gt: endDate.toISODate()
-          }
+          $or: [
+            { 
+              start: {
+                $between: [startDate.toISODate(), endDate.toISODate() ]
+              }
+            },
+            {
+              $or: [
+                {
+                  end: {
+                    $between: [startDate.toISODate(), endDate.toISODate() ]
+                  }
+                },
+                {
+                  end: {
+                    $null: true
+                  }
+                }
+              ]
+            },
+            {
+              start: { 
+                $lt: startDate.toISODate()
+              },
+              end: {
+                $gt: endDate.toISODate()
+              }
+            }
+          ]
         }
       ]
     }
@@ -389,11 +405,11 @@ module.exports = ({ strapi }) =>  ({
       }
     }
 
-    const rse = await strapi.services['api::rse.rse'].findOne(rseId, rsePopulate)
+    const rse = await strapi.service('api::rse.rse').findOne(rseId, rsePopulate)
 
     const holidays = await fetchBankHolidays(args[0].filters.year.$eq),
-          leave = await strapi.services['api::timesheet.timesheet'].leave({ filters: {...args[0].filters, username: [rse.username]} }),
-          timesheets = await strapi.services['api::timesheet.timesheet'].find({ filters: {...args[0].filters, userIDs: [rse.clockifyID]} })
+          leave = await strapi.service('api::timesheet.timesheet').leave({ filters: {...args[0].filters, username: [rse.username]} }),
+          timesheets = await strapi.service('api::timesheet.timesheet').find({ filters: {...args[0].filters, userIDs: [rse.clockifyID]} })
 
     const calendar = createCalendar(rse, holidays, leave.data, rse.assignments, rse.capacities, timesheets.data, startDate, endDate)
     
@@ -444,11 +460,11 @@ module.exports = ({ strapi }) =>  ({
       ]
     }
 
-    const timesheets = await strapi.services['api::timesheet.timesheet'].find(...args),
-          assignments = await strapi.services['api::assignment.assignment'].find({filters: dateRangeFilter}),
-          capacities = await strapi.services['api::capacity.capacity'].find({filters: dateRangeFilter}),
+    const timesheets = await strapi.service('api::timesheet.timesheet').find(...args),
+          assignments = await strapi.service('api::assignment.assignment').find({filters: dateRangeFilter}),
+          capacities = await strapi.service('api::capacity.capacity').find({filters: dateRangeFilter}),
           holidays = await fetchBankHolidays(args[0].filters.year.$eq),
-          annualLeave = await strapi.services['api::timesheet.timesheet'].leave({...args[0]})
+          annualLeave = await strapi.service('api::timesheet.timesheet').leave({...args[0]})
 
     const summary = {
       totals: {
@@ -603,9 +619,9 @@ module.exports = ({ strapi }) =>  ({
     clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
 
     const summary = await fetchSummaryReport(year, userIDs, projectIDs),
-          annuaLeave = await strapi.services['api::timesheet.timesheet'].leave(query),
+          annuaLeave = await strapi.service('api::timesheet.timesheet').leave(query),
           holidays = await fetchBankHolidays(year),
-          rses = await strapi.services['api::rse.rse'].find({populate: { capacities: { filters: dateRangeFilter } } })
+          rses = await strapi.service('api::rse.rse').find({populate: { capacities: { filters: dateRangeFilter } } })
 
 
     const holidayDates = holidays.map(holiday => DateTime.fromISO(holiday.date).toISODate())
