@@ -12,11 +12,10 @@
   "dependencies": {
     "@hubspot/api-client": "^9.0.0",
     "@pdf-lib/fontkit": "^1.1.1",
-    "@strapi/plugin-documentation": "^4.24.2",
-    "@strapi/plugin-i18n": "^4.24.2",
-    "@strapi/plugin-sentry": "^4.24.2",
-    "@strapi/plugin-users-permissions": "^4.24.2",
-    "@strapi/strapi": "^4.24.2",
+    "@strapi/plugin-documentation": "^5.8.0",
+    "@strapi/plugin-sentry": "^5.8.0",
+    "@strapi/plugin-users-permissions": "^5.8.0",
+    "@strapi/strapi": "^5.8.0",
     "axios": "^1.7.5",
     "axios-cache-interceptor": "^1.5.3",
     "camelcase": "5.2.0",
@@ -24,14 +23,12 @@
     "deepdash": "^5.3.9",
     "exceljs": "^4.3.0",
     "luxon": "^3.3.0",
-    "mysql": "^2.18.1",
+    "mysql2": "^3.12.0",
     "pdf-lib": "^1.17.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-router-dom": "^5.2.0",
-    "strapi-plugin-import-export-entries": "^1.21.0",
-    "strapi-plugin-transformer": "^3.1.0",
-    "styled-components": "^5.2.1"
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
   },
   "author": {
     "name": "Mark Turner"
