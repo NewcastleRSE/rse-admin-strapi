@@ -36,7 +36,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         // Filtering the clockify projects that are in the project list
         const clockifyProjects = response.data.filter(p => clockifyIDs.includes(p.id))
 
-        // some custom logic
         results.forEach(result => {
             try {
                 const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
@@ -49,5 +48,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         })
     
         return { results, pagination }
+    },
+    async createFromHubspot(hubspotID) {
+      console.log(`Creating project from Hubspot: ${hubspotID}`)
+      return hubspotID
     }
 }))
