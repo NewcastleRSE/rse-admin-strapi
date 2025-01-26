@@ -32,13 +32,16 @@ async function createClockifyProject(hsProject) {
   return new Promise(async (resolve, reject) => {
       try {
 
-          if (hsProject.contacts.length === 0) {
+          if (hsProject.properties.contacts.length === 0) {
               throw new Error('Project has no contacts')
           }
 
-          const contact = hsProject.contacts[0]
+          console.log(hsProject.properties.contacts[0])
+          console.log(hsProject.properties.dealname)
 
-          const projectName = hsProject.dealname,
+          const contact = hsProject.properties.contacts[0]
+
+          const projectName = hsProject.properties.dealname,
                 projectOwner = `${contact.firstname} ${contact.lastname}`
 
           let clientRequest = {
@@ -53,8 +56,8 @@ async function createClockifyProject(hsProject) {
                   'page-size': 200,
               },
           }
-          let clientConfig = { ...apiConfig, ...clientRequest }
-          let projectConfig = { ...apiConfig, ...projectRequest }
+          let clientConfig = { ...clockifyConfig, ...clientRequest }
+          let projectConfig = { ...clockifyConfig, ...projectRequest }
           let response = await axios.get(`/clients`, clientConfig)
           let clientId = null
 
@@ -168,11 +171,14 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
 
       const [contacts, lineItems, notes] = await Promise.all([Promise.all(contactCalls), Promise.all(lineItemCalls), Promise.all(noteCalls)])
 
-      deal.contacts = contacts.map(contact => contact.properties)
-      deal.lineItems = lineItems.map(lineItem => lineItem.properties)
-      deal.notes = notes.map(note => note.properties)
+      deal.properties.contacts = contacts.map(contact => contact.properties)
+      deal.properties.lineItems = lineItems.map(lineItem => lineItem.properties)
+      deal.properties.notes = notes.map(note => note.properties)
+
+      const clockifyProject = await createClockifyProject(deal)
 
       console.log(deal)
+      console.log(clockifyProject)
 
       return hubspotID
     }
