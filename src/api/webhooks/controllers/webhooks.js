@@ -42,7 +42,7 @@ module.exports = {
 
         // Find the project with the hubspotID
         const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload[0].objectId } })
-  
+
         // If the project exists
         if(project) {
           // Initialize the data payload
@@ -70,8 +70,16 @@ module.exports = {
         else if(payload[0].propertyName === 'dealstage') {
           const stage = formatDealStage(payload[0].propertyValue)
 
-          if(stage === 'awaitingAllocation' || stage === 'allocated' || stage === 'completed') {
-            await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
+          if(stage === 'Awaiting Allocation' || stage === 'Allocated' || stage === 'Completed') {
+            try {
+              await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
+              ctx.status = 200
+            }
+            catch (err) {
+              console.error(err)
+              ctx.status = 500
+            }
+            ctx.status = 200
           }
           else {
             ctx.status = 304; return
@@ -81,8 +89,7 @@ module.exports = {
         else {
           ctx.status = 304; return
         }
-      }
-      
+      } 
     } catch (err) {
       console.error(err)
       ctx.status = 500; // Set the HTTP status code to 500 to indicate a server error
