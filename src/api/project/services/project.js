@@ -1,5 +1,6 @@
 'use strict';
 
+const DateTime = require('luxon').DateTime
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -25,6 +26,80 @@ const clockifyConfig = {
   },
   cache: {
     maxAge: 60 * 60 * 1000
+  }
+}
+
+// Recursively fetch all project associations (contacts, notes, etc.)
+async function getHubSpotAssociations(
+  association,
+  after,
+  limit,
+  properties,
+  ids,
+  associationList
+) {
+  try {
+      const publicObjectSearchRequest = {
+          filterGroups: [
+              {
+                  filters: [
+                      { propertyName: "hs_object_id", operator: "IN", values: ids },
+                  ],
+              },
+          ],
+          properties,
+          limit,
+          after,
+      }
+
+      let hsAssociations
+
+      if (association === "contacts") {
+          hsAssociations = await hubspotClient.crm.contacts.searchApi.doSearch(
+              publicObjectSearchRequest
+          )
+          associationList = associationList.concat(hsAssociations.results)
+      } else if (association === "notes") {
+          hsAssociations = await hubspotClient.crm.objects.notes.searchApi.doSearch(
+              publicObjectSearchRequest
+          )
+          associationList = associationList.concat(hsAssociations.results)
+      } else if (association === "lineItems") {
+          hsAssociations = await hubspotClient.crm.lineItems.searchApi.doSearch(
+              publicObjectSearchRequest
+          )
+          associationList = associationList.concat(hsAssociations.results)
+      } else {
+          console.error("Invalid association type")
+      }
+
+      if (hsAssociations.paging) {
+          return getHubSpotAssociations(
+              association,
+              hsAssociations.paging.next.after,
+              limit,
+              properties,
+              ids,
+              associationList
+          )
+      } else {
+          return associationList
+      }
+  } catch (e) {
+      if (e.code === 429) {
+          await sleep(10000)
+          return getHubSpotAssociations(
+              association,
+              after,
+              limit,
+              properties,
+              ids,
+              associationList
+          )
+      }
+      else {
+          console.error(e)
+      }
   }
 }
 
@@ -69,7 +144,7 @@ async function createClockifyProject(hsProject) {
                       name: projectOwner,
                       note: '',
                   },
-                  apiConfig
+                  clockifyConfig
               )
               clientId = response.data.id
           } else {
@@ -88,24 +163,26 @@ async function createClockifyProject(hsProject) {
                   public: true
               }
 
-              const newProject = await axios.post(`/projects`, project, apiConfig)
+              const newProject = { id: '67958ab84a96335dfc83a53e'}
 
-              if (hsProject.lineItems.length !== 0) {
-                  // Convert days to hours
-                  const hours = Math.floor(hsProject.lineItems[0].quantity * 7.4)
+              // const newProject = await axios.post(`/projects`, project, clockifyConfig)
 
-                  const estimate = {
-                      timeEstimate: {
-                          estimate: `PT${hours}H`,
-                          type: 'MANUAL',
-                          resetOption: null,
-                          active: true,
-                          includeNonBillable: true
-                      }
-                  }
+              // if (hsProject.lineItems.length !== 0) {
+              //     // Convert days to hours
+              //     const hours = Math.floor(hsProject.lineItems[0].quantity * 7.4)
 
-                  await axios.patch(`/projects/${newProject.data.id}/estimate`, estimate, apiConfig)
-              }
+              //     const estimate = {
+              //         timeEstimate: {
+              //             estimate: `PT${hours}H`,
+              //             type: 'MANUAL',
+              //             resetOption: null,
+              //             active: true,
+              //             includeNonBillable: true
+              //         }
+              //     }
+
+              //     await axios.patch(`/projects/${newProject.data.id}/estimate`, estimate, clockifyConfig)
+              // }
 
               resolve(newProject)
           } else {
@@ -144,41 +221,82 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         return { results, pagination }
     },
     async createFromHubspot(hubspotID) {
-      console.log(`Creating project from Hubspot: ${hubspotID}`)
+      
+      // Get deal from HubSpot
       const deal = await hubspotClient.crm.deals.basicApi.getById(hubspotID, dealProperties, null, ['contacts', 'line_items', 'notes'])
 
-      const contactCalls = [],
-            lineItemCalls = [],
-            noteCalls = []
-
+      // Populate contacts
       if(deal.associations.contacts?.results.length) {
-        for(const contact of deal.associations.contacts.results) {
-          contactCalls.push(hubspotClient.crm.contacts.basicApi.getById(contact.id))
-        }
+        deal.properties.contacts = await getHubSpotAssociations('contacts', null, 100, contactProperties, deal.associations.contacts.results.map(contact => contact.id), [])
       }
 
+      // Populate line items
       if(deal.associations.lineItems?.results.length) {
-        for(const lineItem of deal.associations.lineItems.results) {
-          lineItemCalls.push(hubspotClient.crm.lineItems.basicApi.getById(lineItem.id))
-        }
+        deal.properties.lineItems = await getHubSpotAssociations('lineItems', null, 100, lineItemProperties, deal.associations.lineItems.results.map(lineItem => lineItem.id), [])
       }
 
+      // Populate notes
       if(deal.associations.notes?.results.length) {
-        for(const note of deal.associations.notes.results) {
-          noteCalls.push(hubspotClient.crm.notes.basicApi.getById(note.id))
-        }
+        deal.properties.notes = await getHubSpotAssociations('notes', null, 100, ['content'], deal.associations.notes.results.map(note => note.id), [])
       }
 
-      const [contacts, lineItems, notes] = await Promise.all([Promise.all(contactCalls), Promise.all(lineItemCalls), Promise.all(noteCalls)])
+      // Get contact emails
+      const contactEmails = deal.properties.contacts.map(contact => contact.properties.email)
 
-      deal.properties.contacts = contacts.map(contact => contact.properties)
-      deal.properties.lineItems = lineItems.map(lineItem => lineItem.properties)
-      deal.properties.notes = notes.map(note => note.properties)
+      // Get existing contact emails
+      const strapiContactEmails = (await strapi.documents('api::contact.contact').findMany({ filters: { email: contactEmails }})).map(contact => contact.email)
 
+      // Get new contact emails
+      const newContacts = deal.properties.contacts.filter(contact => !strapiContactEmails.includes(contact.properties.email))
+
+      // Create Clockify project
       const clockifyProject = await createClockifyProject(deal)
 
-      console.log(deal)
-      console.log(clockifyProject)
+      const contactIDs = []
+      
+      try {
+        for(const contact of newContacts) {
+          contactIDs.push((await strapi.services['api::contact.contact'].create({
+            email: contact.properties.email,
+            firstname: contact.properties.firstname,
+            lastname: contact.properties.lastname,
+            displayName: contact.properties.firstname + ' ' + contact.properties.lastname,
+            jobTitle: contact.properties.jobtitle,
+            department: contact.properties.department,
+          })).id)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+
+      try {
+
+        const project = {
+          name: deal.properties.dealname,
+          hubspotID: deal.id,
+          clockifyID: clockifyProject.id,
+          status: 'green',
+          stage: deal.properties.dealstage,
+          costModel: deal.properties.costModel,
+          awardStage: deal.properties.awardStage,
+          startDate: DateTime.fromMillis(Number(deal.properties.startDate)).toISODate(),
+          endDate: DateTime.fromMillis(Number(deal.properties.endDate)).toISODate(),
+          funder: deal.properties.fundingBody,
+          school: deal.properties.school,
+          faculty: deal.properties.faculty,
+          amount: deal.properties.amount,
+          value: deal.properties.value,
+          financeContact: deal.properties.financeContact,
+          account: deal.properties.account,
+          nuProjects: deal.properties.nuProjects,
+          contacts: contactIDs
+        }
+
+        await strapi.services['api::project.project'].create(project)
+      }
+      catch (e) {
+        console.error(e)
+      }
 
       return hubspotID
     }
