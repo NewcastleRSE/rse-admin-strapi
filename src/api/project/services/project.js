@@ -225,6 +225,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       // Get deal from HubSpot
       const deal = await hubspotClient.crm.deals.basicApi.getById(hubspotID, dealProperties, null, ['contacts', 'line_items', 'notes'])
 
+      if(!deal.associations || !deal.associations.contacts) {
+        throw new Error('Deal has no contacts')
+      }
+
       // Populate contacts
       if(deal.associations.contacts?.results.length) {
         deal.properties.contacts = await getHubSpotAssociations('contacts', null, 100, contactProperties, deal.associations.contacts.results.map(contact => contact.id), [])
@@ -249,6 +253,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       // Get new contact emails
       const newContacts = deal.properties.contacts.filter(contact => !strapiContactEmails.includes(contact.properties.email))
 
+
+      const contactSchema = strapi.getModel('api::contact.contact'),
+            projectSchema = strapi.getModel('api::project.project')
+
       // Create Clockify project
       const clockifyProject = await createClockifyProject(deal)
 
@@ -256,14 +264,21 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       
       try {
         for(const contact of newContacts) {
-          contactIDs.push((await strapi.services['api::contact.contact'].create({
+
+          const newContact = {
             email: contact.properties.email,
             firstname: contact.properties.firstname,
             lastname: contact.properties.lastname,
             displayName: contact.properties.firstname + ' ' + contact.properties.lastname,
             jobTitle: contact.properties.jobtitle,
             department: contact.properties.department,
-          })).id)
+          }
+
+          const validData = await strapi.contentAPI.sanitize.output(newContact, contactSchema)
+
+          console.log(validData)
+
+          contactIDs.push((await strapi.services['api::contact.contact'].create(newContact)).id)
         }
       } catch (e) {
         console.error(e)
@@ -291,6 +306,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           nuProjects: deal.properties.nuProjects,
           contacts: contactIDs
         }
+
+        const validData = await strapi.contentAPI.sanitize.output(project, projectSchema)
+
+        console.log(validData)
 
         await strapi.services['api::project.project'].create(project)
       }

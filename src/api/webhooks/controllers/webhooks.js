@@ -36,8 +36,6 @@ module.exports = {
 
       const payload = ctx.request.body
 
-      console.log(payload[0])
-
       // Create the project if the deal is created in HubSpot
       if(payload[0].subscriptionType === 'deal.creation') {
         try {
@@ -85,14 +83,16 @@ module.exports = {
 
           if(stage === 'Awaiting Allocation' || stage === 'Allocated' || stage === 'Completed') {
             try {
-              await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
-              ctx.status = 200
+              const project = await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
+              console.log('project message: ')
+              console.log(project)
+              ctx.status = 200; return
             }
             catch (err) {
+              console.log('project error: ')
               console.error(err)
-              ctx.status = 500
+              ctx.status = 500; return
             }
-            ctx.status = 200
           }
           else {
             ctx.status = 304; return
