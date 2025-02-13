@@ -111,9 +111,6 @@ async function createClockifyProject(hsProject) {
               throw new Error('Project has no contacts')
           }
 
-          console.log(hsProject.properties.contacts[0])
-          console.log(hsProject.properties.dealname)
-
           const contact = hsProject.properties.contacts[0]
 
           const projectName = hsProject.properties.dealname,
@@ -163,26 +160,24 @@ async function createClockifyProject(hsProject) {
                   public: true
               }
 
-              const newProject = { id: '67958ab84a96335dfc83a53e'}
+              const newProject = await axios.post(`/projects`, project, clockifyConfig)
 
-              // const newProject = await axios.post(`/projects`, project, clockifyConfig)
+              if (hsProject.lineItems.length !== 0) {
+                  // Convert days to hours
+                  const hours = Math.floor(hsProject.lineItems[0].quantity * 7.4)
 
-              // if (hsProject.lineItems.length !== 0) {
-              //     // Convert days to hours
-              //     const hours = Math.floor(hsProject.lineItems[0].quantity * 7.4)
+                  const estimate = {
+                      timeEstimate: {
+                          estimate: `PT${hours}H`,
+                          type: 'MANUAL',
+                          resetOption: null,
+                          active: true,
+                          includeNonBillable: true
+                      }
+                  }
 
-              //     const estimate = {
-              //         timeEstimate: {
-              //             estimate: `PT${hours}H`,
-              //             type: 'MANUAL',
-              //             resetOption: null,
-              //             active: true,
-              //             includeNonBillable: true
-              //         }
-              //     }
-
-              //     await axios.patch(`/projects/${newProject.data.id}/estimate`, estimate, clockifyConfig)
-              // }
+                  await axios.patch(`/projects/${newProject.data.id}/estimate`, estimate, clockifyConfig)
+              }
 
               resolve(newProject)
           } else {
@@ -213,8 +208,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
                 result.estimate = clockifyProject.estimate.estimate
                 result.spent = clockifyProject.duration
             }
-            catch (e) {
-                console.log(result)
+            catch (error) {
+                console.error(error)
+                console.error(result)
             }
         })
     
@@ -274,10 +270,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
             department: contact.properties.department,
           }
 
-          const validData = await strapi.contentAPI.sanitize.output(newContact, contactSchema)
-
-          console.log(validData)
-
           contactIDs.push((await strapi.services['api::contact.contact'].create(newContact)).id)
         }
       } catch (e) {
@@ -308,8 +300,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         }
 
         const validData = await strapi.contentAPI.sanitize.output(project, projectSchema)
-
-        console.log(validData)
 
         await strapi.services['api::project.project'].create(project)
       }
