@@ -1,6 +1,6 @@
 'use strict';
 
-const camelcase = require('camelcase')
+const camelcase = require('camelcase');
 const DateTime = require('luxon').DateTime
 
 const stages = {
@@ -35,6 +35,11 @@ module.exports = {
     try {
 
       const payload = ctx.request.body
+
+      if(payload[0].attemptNumber > 0) {
+        ctx.status = 102
+        return
+      }
 
       // Create the project if the deal is created in HubSpot
       if(payload[0].subscriptionType === 'deal.creation') {
@@ -77,30 +82,21 @@ module.exports = {
           // Return 200
           ctx.status = 200
         }
-        // If the project does not exist and the stage is awaitingAllocation, allocated, or completed
-        else if(payload[0].propertyName === 'dealstage') {
-          const stage = formatDealStage(payload[0].propertyValue)
-
-          if(stage === 'Awaiting Allocation' || stage === 'Allocated' || stage === 'Completed') {
-            try {
-              const project = await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
-              console.log('project message: ')
-              console.log(project)
-              ctx.status = 200; return
+        else {
+          try {
+            await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
+            ctx.status = 200; return
+          }
+          catch (err) {
+            if(err.message === 'Missing required fields') {
+              ctx.body = { message: `Missing required fields`, error: err };
+              ctx.status = 422; return
             }
-            catch (err) {
-              console.log('project error: ')
-              console.error(err)
+            else {
+              ctx.body = { message: `Error creating project`, error: err };
               ctx.status = 500; return
             }
           }
-          else {
-            ctx.status = 304; return
-          }
-        } 
-        // If the project does not exist and the stage is not awaitingAllocation, allocated, or completed
-        else {
-          ctx.status = 304; return
         }
       } 
 

@@ -29,6 +29,28 @@ const clockifyConfig = {
   }
 }
 
+const stages = {
+    awaitingAllocation: process.env.HUBSPOT_DEAL_FUNDED_AWAITING_ALLOCATION,
+    allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
+    completed: process.env.HUBSPOT_DEAL_COMPLETED,
+  }
+  
+  // Invert stages to key by HubSpot stage names
+  const invert = (obj) => Object.fromEntries(Object.entries(obj).map((a) => a.reverse()))
+  const hsStages = invert(stages)
+  
+  function formatDealStage(stage) {
+    if (stage && hsStages[stage]) {
+        return hsStages[stage]
+            .replace(/([A-Z])/g, " $1")
+            .replace(/^./, function (str) {
+                return str.toUpperCase()
+            })
+    } else {
+        throw new Error(`${stage} is not in ${Object.keys(hsStages).join(', ')}`)
+    }
+  }
+
 // Recursively fetch all project associations (contacts, notes, etc.)
 async function getHubSpotAssociations(
   association,
@@ -221,6 +243,15 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       // Get deal from HubSpot
       const deal = await hubspotClient.crm.deals.basicApi.getById(hubspotID, dealProperties, null, ['contacts', 'line_items', 'notes'])
 
+      if(deal) {
+        try {
+          deal.properties.dealstage = formatDealStage(deal.properties.dealstage)
+        }
+        catch (error) {
+          throw new Error('Deal not at a valid stage')
+        }
+      }
+
       if(!deal.associations || !deal.associations.contacts) {
         throw new Error('Deal has no contacts')
       }
@@ -249,10 +280,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       // Get new contact emails
       const newContacts = deal.properties.contacts.filter(contact => !strapiContactEmails.includes(contact.properties.email))
 
-
-      const contactSchema = strapi.getModel('api::contact.contact'),
-            projectSchema = strapi.getModel('api::project.project')
-
       // Create Clockify project
       const clockifyProject = await createClockifyProject(deal)
 
@@ -270,10 +297,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
             department: contact.properties.department,
           }
 
-          contactIDs.push((await strapi.services['api::contact.contact'].create(newContact)).id)
+          contactIDs.push((await strapi.services['api::contact.contact'].create({ data: newContact })).id)
         }
       } catch (e) {
-        console.error(e)
+        console.error(e.details.errors)
       }
 
       try {
@@ -282,7 +309,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           name: deal.properties.dealname,
           hubspotID: deal.id,
           clockifyID: clockifyProject.id,
-          status: 'green',
+          condition: 'green',
           stage: deal.properties.dealstage,
           costModel: deal.properties.costModel,
           awardStage: deal.properties.awardStage,
@@ -299,12 +326,24 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           contacts: contactIDs
         }
 
-        const validData = await strapi.contentAPI.sanitize.output(project, projectSchema)
-
-        await strapi.services['api::project.project'].create(project)
+        // Check if all required fields are present
+        if(project.name &&
+           project.clockifyID &&
+           project.hubspotID &&
+           project.stage &&
+           project.costModel &&
+           project.awardStage &&
+           project.faculty &&
+           project.contacts.length)
+        {
+            await strapi.services['api::project.project'].create({ data: project })
+        }
+        else {
+            throw new Error('Missing required fields')
+        }
       }
-      catch (e) {
-        console.error(e)
+      catch (error) {
+        throw error
       }
 
       return hubspotID
