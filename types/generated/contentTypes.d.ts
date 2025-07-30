@@ -550,12 +550,14 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    account: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     documentNumber: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    email_for_signature: Schema.Attribute.Email;
     generated: Schema.Attribute.Date & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -580,16 +582,21 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       ]
     > &
       Schema.Attribute.Required;
-    price: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    notes: Schema.Attribute.String;
+    other_charges: Schema.Attribute.Decimal;
     processed: Schema.Attribute.Date;
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;
-    sent: Schema.Attribute.Date;
+    senior_price: Schema.Attribute.Decimal;
+    senior_units: Schema.Attribute.Integer;
+    sent_for_signature: Schema.Attribute.Date;
+    sent_to_finance: Schema.Attribute.Date;
+    standard_price: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    standard_units: Schema.Attribute.Integer & Schema.Attribute.Required;
     transaction: Schema.Attribute.Relation<
       'oneToOne',
       'api::transaction.transaction'
     >;
-    units: Schema.Attribute.Integer & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

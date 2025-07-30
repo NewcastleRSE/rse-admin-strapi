@@ -22,7 +22,7 @@
       "type": "date",
       "required": true
     },
-    "sent": {
+    "sent_for_signature": {
       "type": "date"
     },
     "transaction": {
@@ -60,13 +60,34 @@
       "required": true,
       "unique": true
     },
-    "price": {
+    "standard_price": {
       "type": "decimal",
       "required": true
     },
-    "units": {
+    "standard_units": {
       "type": "integer",
       "required": true
+    },
+    "senior_price": {
+      "type": "decimal"
+    },
+    "senior_units": {
+      "type": "integer"
+    },
+    "other_charges": {
+      "type": "decimal"
+    },
+    "account": {
+      "type": "string"
+    },
+    "sent_to_finance": {
+      "type": "date"
+    },
+    "email_for_signature": {
+      "type": "email"
+    },
+    "notes": {
+      "type": "string"
     }
   }
 }
