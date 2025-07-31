@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-07-30T08:31:44.549Z"
+    "x-generation-date": "2025-07-31T09:33:28.855Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6275,6 +6275,9 @@
                               "notes": {
                                 "type": "string"
                               },
+                              "description": {
+                                "type": "string"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -7526,6 +7529,9 @@
                               "notes": {
                                 "type": "string"
                               },
+                              "description": {
+                                "type": "string"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -8714,6 +8720,9 @@
                         "format": "email"
                       },
                       "notes": {
+                        "type": "string"
+                      },
+                      "description": {
                         "type": "string"
                       },
                       "createdAt": {
@@ -9985,6 +9994,9 @@
               "notes": {
                 "type": "string"
               },
+              "description": {
+                "type": "string"
+              },
               "locale": {
                 "type": "string"
               },
@@ -10525,6 +10537,9 @@
                       "format": "email"
                     },
                     "notes": {
+                      "type": "string"
+                    },
+                    "description": {
                       "type": "string"
                     },
                     "createdAt": {
@@ -11184,6 +11199,9 @@
             "format": "email"
           },
           "notes": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "createdAt": {
@@ -12485,6 +12503,9 @@
                 "notes": {
                   "type": "string"
                 },
+                "description": {
+                  "type": "string"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -13601,6 +13622,9 @@
                             "format": "email"
                           },
                           "notes": {
+                            "type": "string"
+                          },
+                          "description": {
                             "type": "string"
                           },
                           "createdAt": {

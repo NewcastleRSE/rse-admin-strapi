@@ -88,6 +88,9 @@
     },
     "notes": {
       "type": "string"
+    },
+    "description": {
+      "type": "string"
     }
   }
 }
