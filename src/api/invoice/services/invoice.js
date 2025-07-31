@@ -38,10 +38,27 @@ const clockifyConfig = {
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
 
+        // get facility rate projects where the cost model is facility and the stage is 'Awaiting allocation', "Allocated', or 'Completed'
+        const facilityRateProjects = await strapi.db.query('api::project.project').findMany({
+            where: {
+                costModel: 'facility',
+                stage: {
+                    $in: ['Awaiting Allocation', 'Funded & Awaiting Allocated', 'Allocated', 'Completed']
+                }
+            }
+            
+        })
+
         // todo create start and end date dynamically
 
         // Calling Clockify
         const response = await axios.get('/projects?hydrated=true&page-size=5000', clockifyConfig)
+
+        // Filtering the clockify projects that are in the project list
+        const clockifyFacilityProjects = response.data.filter(p => facilityRateProjects.map(pr => pr.clockifyID).includes(p.id))
+console.log(clockifyFacilityProjects.length)
+
+
         // console.log(response.data[0])
         response.data.forEach(async element => {
 
@@ -65,16 +82,16 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             };
 
             const headers = {
-                "x-api-key": "MDA1M2NhY2UtNjM0Mi00ZjM3LTllNDUtODE3ZWNkZmE2ZGE4",
+                "x-api-key": process.env.CLOCKIFY_KEY,
                 "Content-Type": "application/json"
             };
 
             axios.post(url, data, { headers: headers })
                 .then(response => {
-                    console.log(response.data.totals); // Axios automatically parses JSON responses
+                   // console.log(response.data.totals); // Axios automatically parses JSON responses
                 })
                 .catch(error => {
-                    console.error(error);
+                    //console.error(error);
                 });
 
 
