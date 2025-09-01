@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-06-28T06:35:32.056Z"
+    "x-generation-date": "2025-07-31T09:47:59.847Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -5852,7 +5852,7 @@
                                 "type": "string",
                                 "format": "date"
                               },
-                              "sent": {
+                              "sent_for_signature": {
                                 "type": "string",
                                 "format": "date"
                               },
@@ -6243,12 +6243,40 @@
                               "documentNumber": {
                                 "type": "string"
                               },
-                              "price": {
+                              "standard_price": {
                                 "type": "number",
                                 "format": "float"
                               },
-                              "units": {
+                              "standard_units": {
                                 "type": "integer"
+                              },
+                              "senior_price": {
+                                "type": "number",
+                                "format": "float"
+                              },
+                              "senior_units": {
+                                "type": "integer"
+                              },
+                              "other_charges": {
+                                "type": "number",
+                                "format": "float"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "sent_to_finance": {
+                                "type": "string",
+                                "format": "date"
+                              },
+                              "email_for_signature": {
+                                "type": "string",
+                                "format": "email"
+                              },
+                              "notes": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -7078,7 +7106,7 @@
                                 "type": "string",
                                 "format": "date"
                               },
-                              "sent": {
+                              "sent_for_signature": {
                                 "type": "string",
                                 "format": "date"
                               },
@@ -7469,12 +7497,40 @@
                               "documentNumber": {
                                 "type": "string"
                               },
-                              "price": {
+                              "standard_price": {
                                 "type": "number",
                                 "format": "float"
                               },
-                              "units": {
+                              "standard_units": {
                                 "type": "integer"
+                              },
+                              "senior_price": {
+                                "type": "number",
+                                "format": "float"
+                              },
+                              "senior_units": {
+                                "type": "integer"
+                              },
+                              "other_charges": {
+                                "type": "number",
+                                "format": "float"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "sent_to_finance": {
+                                "type": "string",
+                                "format": "date"
+                              },
+                              "email_for_signature": {
+                                "type": "string",
+                                "format": "email"
+                              },
+                              "notes": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -8243,7 +8299,7 @@
                         "type": "string",
                         "format": "date"
                       },
-                      "sent": {
+                      "sent_for_signature": {
                         "type": "string",
                         "format": "date"
                       },
@@ -8634,12 +8690,40 @@
                       "documentNumber": {
                         "type": "string"
                       },
-                      "price": {
+                      "standard_price": {
                         "type": "number",
                         "format": "float"
                       },
-                      "units": {
+                      "standard_units": {
                         "type": "integer"
+                      },
+                      "senior_price": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "senior_units": {
+                        "type": "integer"
+                      },
+                      "other_charges": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "account": {
+                        "type": "string"
+                      },
+                      "sent_to_finance": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "email_for_signature": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "notes": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
                       },
                       "createdAt": {
                         "type": "string",
@@ -9816,8 +9900,8 @@
               "year",
               "month",
               "documentNumber",
-              "price",
-              "units"
+              "standard_price",
+              "standard_units"
             ],
             "type": "object",
             "properties": {
@@ -9836,7 +9920,7 @@
                 "type": "string",
                 "format": "date"
               },
-              "sent": {
+              "sent_for_signature": {
                 "type": "string",
                 "format": "date"
               },
@@ -9878,12 +9962,40 @@
               "documentNumber": {
                 "type": "string"
               },
-              "price": {
+              "standard_price": {
                 "type": "number",
                 "format": "float"
               },
-              "units": {
+              "standard_units": {
                 "type": "integer"
+              },
+              "senior_price": {
+                "type": "number",
+                "format": "float"
+              },
+              "senior_units": {
+                "type": "integer"
+              },
+              "other_charges": {
+                "type": "number",
+                "format": "float"
+              },
+              "account": {
+                "type": "string"
+              },
+              "sent_to_finance": {
+                "type": "string",
+                "format": "date"
+              },
+              "email_for_signature": {
+                "type": "string",
+                "format": "email"
+              },
+              "notes": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
               },
               "locale": {
                 "type": "string"
@@ -9948,8 +10060,8 @@
           "year",
           "month",
           "documentNumber",
-          "price",
-          "units"
+          "standard_price",
+          "standard_units"
         ],
         "properties": {
           "id": {
@@ -10004,7 +10116,7 @@
                       "type": "string",
                       "format": "date"
                     },
-                    "sent": {
+                    "sent_for_signature": {
                       "type": "string",
                       "format": "date"
                     },
@@ -10395,12 +10507,40 @@
                     "documentNumber": {
                       "type": "string"
                     },
-                    "price": {
+                    "standard_price": {
                       "type": "number",
                       "format": "float"
                     },
-                    "units": {
+                    "standard_units": {
                       "type": "integer"
+                    },
+                    "senior_price": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "senior_units": {
+                      "type": "integer"
+                    },
+                    "other_charges": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "account": {
+                      "type": "string"
+                    },
+                    "sent_to_finance": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "email_for_signature": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "notes": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
                     },
                     "createdAt": {
                       "type": "string",
@@ -10987,7 +11127,7 @@
             "type": "string",
             "format": "date"
           },
-          "sent": {
+          "sent_for_signature": {
             "type": "string",
             "format": "date"
           },
@@ -11029,12 +11169,40 @@
           "documentNumber": {
             "type": "string"
           },
-          "price": {
+          "standard_price": {
             "type": "number",
             "format": "float"
           },
-          "units": {
+          "standard_units": {
             "type": "integer"
+          },
+          "senior_price": {
+            "type": "number",
+            "format": "float"
+          },
+          "senior_units": {
+            "type": "integer"
+          },
+          "other_charges": {
+            "type": "number",
+            "format": "float"
+          },
+          "account": {
+            "type": "string"
+          },
+          "sent_to_finance": {
+            "type": "string",
+            "format": "date"
+          },
+          "email_for_signature": {
+            "type": "string",
+            "format": "email"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -12164,7 +12332,7 @@
                   "type": "string",
                   "format": "date"
                 },
-                "sent": {
+                "sent_for_signature": {
                   "type": "string",
                   "format": "date"
                 },
@@ -12303,12 +12471,40 @@
                 "documentNumber": {
                   "type": "string"
                 },
-                "price": {
+                "standard_price": {
                   "type": "number",
                   "format": "float"
                 },
-                "units": {
+                "standard_units": {
                   "type": "integer"
+                },
+                "senior_price": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "senior_units": {
+                  "type": "integer"
+                },
+                "other_charges": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "account": {
+                  "type": "string"
+                },
+                "sent_to_finance": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "email_for_signature": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
                 },
                 "createdAt": {
                   "type": "string",
@@ -13257,7 +13453,7 @@
                             "type": "string",
                             "format": "date"
                           },
-                          "sent": {
+                          "sent_for_signature": {
                             "type": "string",
                             "format": "date"
                           },
@@ -13396,12 +13592,40 @@
                           "documentNumber": {
                             "type": "string"
                           },
-                          "price": {
+                          "standard_price": {
                             "type": "number",
                             "format": "float"
                           },
-                          "units": {
+                          "standard_units": {
                             "type": "integer"
+                          },
+                          "senior_price": {
+                            "type": "number",
+                            "format": "float"
+                          },
+                          "senior_units": {
+                            "type": "integer"
+                          },
+                          "other_charges": {
+                            "type": "number",
+                            "format": "float"
+                          },
+                          "account": {
+                            "type": "string"
+                          },
+                          "sent_to_finance": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "email_for_signature": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "notes": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
                           },
                           "createdAt": {
                             "type": "string",
