@@ -340,6 +340,7 @@ module.exports = ({ strapi }) =>  ({
     }
     catch(ex) {
       console.error(ex)
+      return { data: [] }
     }
   },
 
