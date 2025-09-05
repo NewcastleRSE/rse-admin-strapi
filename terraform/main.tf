@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=3.27.0"
+      version = "=4.43.0"
     }
   }
 }
@@ -104,16 +104,10 @@ resource "azurerm_linux_web_app" "as" {
   service_plan_id     = azurerm_service_plan.asp.id
   https_only          = "true"
 
-  # site_config {
-  #   scm_type  = "VSTSRM"
-  #   always_on = "true"
-  #   linux_fx_version  = join("|", ["DOCKER", join("/", [azurerm_container_registry.acr.login_server, "api:latest"])])
-  #   health_check_path = "/health" # health check required in order that internal app service plan loadbalancer do not loadbalance on instance down
-  # }
   site_config {
     application_stack {
-      docker_image      = "${azurerm_container_registry.acr.login_server}/api"
-      docker_image_tag  = "latest"
+      docker_image_name = "/api:latest"
+      docker_registry_url = azurerm_container_registry.acr.login_server
     }
   }
 
