@@ -111,6 +111,14 @@ resource "azurerm_linux_web_app" "as" {
     }
   }
 
+  storage_account {
+    name = "persistant-storage"
+    access_key = azurerm_storage_account.storage.primary_access_key
+    account_name = azurerm_storage_account.storage.name
+    share_name = "persistant-storage"
+    mount_path = "/mnt/storage"
+    type       = "AzureFiles"
+  }
   identity {
     type = "SystemAssigned"
   }
