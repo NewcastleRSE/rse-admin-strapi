@@ -7,7 +7,8 @@
     "dev": "strapi develop",
     "start": "strapi start",
     "build": "strapi build",
-    "strapi": "strapi"
+    "strapi": "strapi",
+    "test": "jest --forceExit --detectOpenHandles"
   },
   "dependencies": {
     "@hubspot/api-client": "~13.0.0",
@@ -30,6 +31,12 @@
     "react-router-dom": "^6.0.0",
     "styled-components": "^6.0.0"
   },
+  "devDependencies": {
+    "better-sqlite3": "^12.2.0",
+    "jest": "^30.1.3",
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.1.4"
+  },
   "author": {
     "name": "Mark Turner"
   },
@@ -40,5 +47,16 @@
     "node": ">=18.x.x <=22.x.x",
     "npm": ">=6.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      ".tmp",
+      ".cache",
+      "coverage"
+    ],
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "coverageReporters": ["json", "html"]
+  }
 }
