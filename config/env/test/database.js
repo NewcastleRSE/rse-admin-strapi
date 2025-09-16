@@ -1,4 +1,3 @@
-
 module.exports = ({ env }) => ({
   connection: {
     client: 'sqlite',
