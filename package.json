@@ -57,7 +57,8 @@
     ],
     "testEnvironment": "node",
     "collectCoverage": true,
-    "coverageReporters": ["json", "html"],
+    "collectCoverageFrom": ["./src/api/**"],
+    "coverageReporters": ["text"],
     "globalSetup": "<rootDir>/test/global-setup.js",
     "globalTeardown": "<rootDir>/test/global-teardown.js"
   }
