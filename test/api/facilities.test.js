@@ -1,15 +1,29 @@
 const request = require('supertest')
 
-module.exports = function(JWT) {
+let JWT
 
-describe("Facilities API", () => {
-  let facility;
+beforeAll(async () => {
+  await request(strapi.server.httpServer) // app server is an instance of Class: http.Server
+        .post('/api/auth/local')
+        .set('accept', 'application/json')
+        .set('Content-Type', 'application/json')
+        .send({
+          identifier: 'tester@strapi.com',
+          password: '1234abcd',
+        })
+        .then((data) => {
+          JWT = data.body.jwt
+        })
+})
 
-  console.log(JWT)
+describe('Facilities API', () => {
 
-  it("should create a new facility", async () => {
+  let facility
+
+  it('should create a new facility', async () => {
+
     const res = await request(strapi.server.httpServer)
-      .post("api/facilities?pagination[page]=0&pagination[pageSize]=100")
+      .post('/api/facilities')
       .set('Authorization', `Bearer ${JWT}`)
       .send({
         data: {
@@ -17,47 +31,61 @@ describe("Facilities API", () => {
           nonSalaryCosts: 100000,
           estatesCosts: 50000,
           dayRate: 450,
-          utilisationRate: 75,
+          utilisationRate: 0.75,
           incomeTarget: 1000000
         }
-      });
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.data).toHaveProperty("id");
-    expect(res.body.data.attributes.year).toBe(2025);
-    facility = res.body.data;
-  });
-/*
-  it("should fetch all facilities", async () => {
-    const res = await request(app).get("/api/facilities");
-    expect(res.statusCode).toEqual(200);
-    expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBeGreaterThan(0);
-  });
+      })
+    
+    expect(res.statusCode).toEqual(201)
+    expect(res.body.data).toHaveProperty('id')
+    expect(res.body.data.year).toBe(2025)
+    facility = res.body.data
+  })
 
-  it("should fetch a single facility", async () => {
-    const res = await request(app).get(`/api/facilities/${facility.id}`);
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.data.id).toBe(facility.id);
-  });
+  it('should fetch all facilities', async () => {
+    const res = await request(strapi.server.httpServer)
+    .get('/api/facilities')
+    .set('Authorization', `Bearer ${JWT}`)
 
-  it("should update a facility", async () => {
-    const res = await request(app)
-      .put(`/api/facilities/${facility.id}`)
+    expect(res.statusCode).toEqual(200)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBeGreaterThan(0)
+  })
+
+  it('should fetch a single facility', async () => {
+    const res = await request(strapi.server.httpServer)
+    .get(`/api/facilities/${facility.documentId}`)
+    .set('Authorization', `Bearer ${JWT}`)
+
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data.documentId).toBe(facility.documentId)
+  })
+
+  it('should update a facility', async () => {
+    const res = await request(strapi.server.httpServer)
+      .put(`/api/facilities/${facility.documentId}`)
+      .set('Authorization', `Bearer ${JWT}`)
       .send({
         data: {
-          name: "Updated Test Facility"
+          incomeTarget: 1500000
         }
-      });
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.data.attributes.name).toBe("Updated Test Facility");
-  });
+      })
 
-  it("should delete a facility", async () => {
-    const res = await request(app).delete(`/api/facilities/${facility.id}`);
-    expect(res.statusCode).toEqual(200);
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data.incomeTarget).toBe(1500000)
+  })
 
-    const fetchRes = await request(app).get(`/api/facilities/${facility.id}`);
-    expect(fetchRes.statusCode).toEqual(404);
-  });*/
-});
-}
+  it('should delete a facility', async () => {
+    const res = await request(strapi.server.httpServer)
+    .delete(`/api/facilities/${facility.documentId}`)
+    .set('Authorization', `Bearer ${JWT}`)
+
+    expect(res.statusCode).toEqual(204)
+
+    const fetchRes = await request(strapi.server.httpServer)
+    .get(`/api/facilities/${facility.documentId}`)
+    .set('Authorization', `Bearer ${JWT}`)
+
+    expect(fetchRes.statusCode).toEqual(404)
+  })
+})
