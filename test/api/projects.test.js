@@ -83,5 +83,46 @@ describe('Projects API', () => {
     expect(res.body.data.length).toBeGreaterThan(0)
   })
 
-  
+  it('should return a single project by documentId', async () => {
+    const res = await request(strapi.server.httpServer)
+      .get(`/api/projects/${project.documentId}`)
+      .set('accept', 'application/json')
+      .set('Authorization', `Bearer ${JWT}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.documentId).toBe(project.documentId)
+  })
+
+  it('should update a project', async () => {
+    const res = await request(strapi.server.httpServer)
+      .put(`/api/projects/${project.documentId}`)
+      .set('accept', 'application/json')
+      .set('Authorization', `Bearer ${JWT}`)
+      .send({
+        data: {
+          name: 'Updated Test Project',
+          amount: 2000000
+        }
+      })
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.name).toBe('Updated Test Project')
+    expect(res.body.data.amount).toBe(2000000)
+  })
+
+  it('should delete a project', async () => {
+    const res = await request(strapi.server.httpServer)
+      .delete(`/api/projects/${project.documentId}`)
+      .set('accept', 'application/json')
+      .set('Authorization', `Bearer ${JWT}`)
+
+    expect(res.status).toBe(204)
+
+    const fetchRes = await request(strapi.server.httpServer)
+      .get(`/api/projects/${project.documentId}`)
+      .set('accept', 'application/json')
+      .set('Authorization', `Bearer ${JWT}`)
+
+    expect(fetchRes.status).toBe(404)
+  })
 })
