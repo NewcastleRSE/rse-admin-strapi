@@ -3,7 +3,7 @@ const request = require('supertest')
 let JWT
 
 beforeAll(async () => {
-  await request(strapi.server.httpServer) // app server is an instance of Class: http.Server
+  await request(strapi.server.httpServer)
         .post('/api/auth/local')
         .set('accept', 'application/json')
         .set('Content-Type', 'application/json')
