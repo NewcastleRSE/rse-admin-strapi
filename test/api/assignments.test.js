@@ -19,7 +19,7 @@ beforeAll(async () => {
           JWT = data.body.jwt
         })
 
-    const scope = nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
         .get('/projects?hydrated=true&page-size=5000')
         .reply(200, clockifyProjects)
 

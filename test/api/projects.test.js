@@ -1,4 +1,5 @@
 const request = require('supertest')
+const nock = require('nock')
 
 let JWT
 
@@ -73,12 +74,19 @@ describe('Projects API', () => {
   })
 
   it('should return a list of projects', async () => {
+
+    const clockifyProjects = require('/test/mocks/data/clockifyProjects.json')
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .get('/projects?hydrated=true&page-size=5000')
+      .reply(200, clockifyProjects)
+
     const res = await request(strapi.server.httpServer)
       .get('/api/projects')
       .set('accept', 'application/json')
       .set('Authorization', `Bearer ${JWT}`)
+      .expect(200)
 
-    expect(res.status).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
     expect(res.body.data.length).toBeGreaterThan(0)
   })

@@ -227,8 +227,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         results.forEach(result => {
             try {
                 const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
-                result.estimate = clockifyProject.estimate.estimate
-                result.spent = clockifyProject.duration
+                result.estimate = clockifyProject?.estimate?.estimate
+                result.spent = clockifyProject?.duration
             }
             catch (error) {
                 console.error(error)
