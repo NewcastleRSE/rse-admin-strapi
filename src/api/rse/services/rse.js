@@ -121,6 +121,8 @@ module.exports = createCoreService('api::rse.rse', () => ({
     }
    
     const result = await super.findOne(documentId, params)
+
+    if(!result) { return null }
     
     let rse = result
 
