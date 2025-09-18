@@ -388,9 +388,7 @@ export interface ApiAssignmentAssignment extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    end: Schema.Attribute.Date &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'2025-01-01'>;
+    end: Schema.Attribute.Date & Schema.Attribute.Required;
     fte: Schema.Attribute.Integer &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -410,9 +408,7 @@ export interface ApiAssignmentAssignment extends Struct.CollectionTypeSchema {
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;
     rse: Schema.Attribute.Relation<'manyToOne', 'api::rse.rse'>;
-    start: Schema.Attribute.Date &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'2022-02-01'>;
+    start: Schema.Attribute.Date & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

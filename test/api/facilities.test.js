@@ -20,6 +20,14 @@ describe('Facilities API', () => {
 
   let facility
 
+  it('should return 403 if no JWT is provided', async () => {
+    const res = await request(strapi.server.httpServer)
+      .get('/api/facilities')
+      .set('accept', 'application/json')
+
+    expect(res.status).toBe(403)
+  })
+
   it('should create a new facility', async () => {
 
     const res = await request(strapi.server.httpServer)
@@ -27,7 +35,7 @@ describe('Facilities API', () => {
       .set('Authorization', `Bearer ${JWT}`)
       .send({
         data: {
-          year: 2025,
+          year: 2022,
           nonSalaryCosts: 100000,
           estatesCosts: 50000,
           dayRate: 450,
@@ -38,7 +46,7 @@ describe('Facilities API', () => {
     
     expect(res.statusCode).toEqual(201)
     expect(res.body.data).toHaveProperty('id')
-    expect(res.body.data.year).toBe(2025)
+    expect(res.body.data.year).toBe(2022)
     facility = res.body.data
   })
 
