@@ -87,9 +87,7 @@ async function fetchBankHolidays(year) {
   return [...closures, ...bankHolidays]
 }
 
-async function fetchSummaryReport(year, userIDs, projectIDs) {
-    let startDate = DateTime.utc(year, 8),
-        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+async function fetchSummaryReport(startDate, endDate, userIDs, projectIDs) {
 
     let payload = {
       dateRangeStart: startDate.toISO(),
@@ -115,7 +113,7 @@ async function fetchSummaryReport(year, userIDs, projectIDs) {
       }
     }
 
-    return await axios.post('/summary', payload, clockifyConfig)
+    return (await axios.post('/summary', payload, clockifyConfig)).data
 }
 
 async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntries = []) {
@@ -291,6 +289,32 @@ module.exports = ({ strapi }) =>  ({
           }
         }
       }
+    } catch (error) {
+      console.error(error)
+    }
+  },
+
+  findOne: async(id, ...args) => {
+    try {
+      const query = args[0]
+
+      if(!query.year) { throw 'A year must be specified in the query' }
+
+      let startDate, endDate
+
+      if(query.month) {
+        startDate = DateTime.fromFormat(`${query.month} 1, ${query.year}`, 'DDD').startOf('day')
+        endDate = startDate.endOf('month')
+      }
+      else {
+        startDate = DateTime.utc(query.year, 8)
+        endDate = startDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+      }
+
+      clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
+
+      return { data: await fetchSummaryReport(startDate.toUTC(), endDate.toUTC(), null, [id]) }
+
     } catch (error) {
       console.error(error)
     }
@@ -619,7 +643,10 @@ module.exports = ({ strapi }) =>  ({
 
     clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
 
-    const summary = await fetchSummaryReport(year, userIDs, projectIDs),
+    let utcStartDate = DateTime.utc(year, 8),
+        utcEndDate = utcStartDate.plus({ year: 1 }).minus({ days: 1 }).endOf('day')
+
+    const summary = await fetchSummaryReport(utcStartDate, utcEndDate, userIDs, projectIDs),
           annuaLeave = await strapi.service('api::timesheet.timesheet').leave(query),
           holidays = await fetchBankHolidays(year),
           rses = await strapi.service('api::rse.rse').find({populate: { capacities: { filters: dateRangeFilter } } })

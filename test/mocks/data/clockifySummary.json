@@ -1,0 +1,28 @@
+{
+    "totals": [
+        {
+            "totalTime": 144000,
+            "totalBillableTime": 144000,
+            "entriesCount": 19,
+            "amounts": [],
+            "numOfCurrencies": 1,
+            "_id": "",
+            "totalAmount": 225040,
+            "totalAmountByCurrency": []
+        }
+    ],
+    "groupOne": [
+        {
+            "duration": 144000,
+            "amounts": [],
+            "amount": 225040,
+            "hasMembership": true,
+            "_id": "64fef1f03a7c924dae56fb87",
+            "name": "Gabrielle Schroeder",
+            "nameLowerCase": "gabrielle schroeder",
+            "sortingField": "1-name",
+            "color": "#536DFE",
+            "children": []
+        }
+    ]
+}
