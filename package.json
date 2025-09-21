@@ -17,7 +17,7 @@
     "@strapi/plugin-sentry": "~5.23.4",
     "@strapi/plugin-users-permissions": "~5.23.4",
     "@strapi/strapi": "~5.23.4",
-    "axios": "~1.10.0",
+    "axios": "~1.12.2",
     "axios-cache-interceptor": "~1.8.0",
     "camelcase": "5.2.0",
     "camelcase-keys": "5.2.0",
