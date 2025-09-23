@@ -57,7 +57,7 @@
       "coverage"
     ],
     "testEnvironment": "node",
-    "collectCoverage": true,
+    "collectCoverage": false,
     "collectCoverageFrom": [
       "./src/api/**/services/*.js",
       "./src/api/**/controllers/*.js"

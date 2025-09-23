@@ -139,7 +139,7 @@ describe('Timesheets API', () => {
     // Use ID of the test user Ben Carter 
 
     const res = await request(strapi.server.httpServer)
-      .get('/api/rses/swosoie5u3vml0xvfvabbijp/calendar')
+      .get('/api/rses/jwo6u5uil5wbvqh76dxp1kq0/calendar')
       .set('accept', 'application/json')
       .set('Authorization', `Bearer ${JWT}`)
 
