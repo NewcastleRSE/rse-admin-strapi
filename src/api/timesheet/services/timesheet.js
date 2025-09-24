@@ -113,7 +113,7 @@ async function fetchSummaryReport(startDate, endDate, userIDs, projectIDs) {
       }
     }
 
-    return (await axios.post('/summary', payload, clockifyConfig)).data
+    return await axios.post('/summary', payload, clockifyConfig)
 }
 
 async function fetchDetailedReport(year, userIDs, projectIDs, page = 1, timeEntries = []) {
@@ -290,7 +290,7 @@ module.exports = ({ strapi }) =>  ({
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error('Error fetching timesheets:', error.message)
     }
   },
 
@@ -414,27 +414,29 @@ module.exports = ({ strapi }) =>  ({
     }
   
     const rsePopulate = {
-      populate: {
-        assignments: {
-          populate: {
-            project: {
-              fields: ['name']
+      populate: 
+        {
+          assignments: {
+            populate: {
+              project: {
+                fields: ['name']
+              }
             }
-          }
+          },
+          capacities: true
         },
-        capacities: true
-      },
-      filters: {
-        assignments: dateRangeFilter,
-        capacities: dateRangeFilter
-      }
+      // filters: {
+      //   assignments: dateRangeFilter,
+      //   capacities: dateRangeFilter
+      // }
     }
 
     const rse = await strapi.service('api::rse.rse').findOne(rseId, rsePopulate)
 
-    const holidays = await fetchBankHolidays(args[0].filters.year.$eq),
-          leave = await strapi.service('api::timesheet.timesheet').leave({ filters: {...args[0].filters, username: [rse.username]} }),
-          timesheets = await strapi.service('api::timesheet.timesheet').find({ filters: {...args[0].filters, userIDs: [rse.clockifyID]} })
+    const holidays = await fetchBankHolidays(args[0].filters.year.$eq)
+
+    const leave = await strapi.service('api::timesheet.timesheet').leave({ filters: {...args[0].filters, username: { $eq: rse.username } } })
+    const timesheets = await strapi.service('api::timesheet.timesheet').find({ filters: {...args[0].filters, userIDs: { $in: [rse.clockifyID] } } })
 
     const calendar = createCalendar(rse, holidays, leave.data, rse.assignments, rse.capacities, timesheets.data, startDate, endDate)
     
@@ -654,7 +656,7 @@ module.exports = ({ strapi }) =>  ({
 
     const holidayDates = holidays.map(holiday => DateTime.fromISO(holiday.date).toISODate())
 
-    let data = {
+    let utilisation = {
       total: {
         billable: summary.data.totals[0].totalBillableTime,
         nonBillable: summary.data.totals[0].totalTime - summary.data.totals[0].totalBillableTime,
@@ -668,7 +670,7 @@ module.exports = ({ strapi }) =>  ({
 
       let profile = rses.results.find(r => r.clockifyID === rse._id)
 
-      if(!profile) console.log(rse)
+      if(!profile) console.log(`RSE not found for ID: ${rse._id}`)
 
       const rseLeave = annuaLeave.data.filter(leave => leave.ID === profile.username)
 
@@ -714,8 +716,8 @@ module.exports = ({ strapi }) =>  ({
           capacity: Number(monthlyCapacity.toFixed(0))
         })
 
-        if(!data.months[`${start.toFormat('MMMM')}`]) { 
-          data.months[`${start.toFormat('MMMM')}`] = {
+        if(!utilisation.months[`${start.toFormat('MMMM')}`]) { 
+          utilisation.months[`${start.toFormat('MMMM')}`] = {
             recorded: 0,
             billable: 0,
             nonBillable: 0,
@@ -723,13 +725,13 @@ module.exports = ({ strapi }) =>  ({
           }
         }
 
-        data.months[`${start.toFormat('MMMM')}`].recorded += month.duration
-        data.months[`${start.toFormat('MMMM')}`].billable += billableTime
-        data.months[`${start.toFormat('MMMM')}`].nonBillable += (month.duration - billableTime)
-        data.months[`${start.toFormat('MMMM')}`].capacity += Number(monthlyCapacity.toFixed(0))
+        utilisation.months[`${start.toFormat('MMMM')}`].recorded += month.duration
+        utilisation.months[`${start.toFormat('MMMM')}`].billable += billableTime
+        utilisation.months[`${start.toFormat('MMMM')}`].nonBillable += (month.duration - billableTime)
+        utilisation.months[`${start.toFormat('MMMM')}`].capacity += Number(monthlyCapacity.toFixed(0))
       })
 
-      data.rses[profile.id] = {
+      utilisation.rses[profile.id] = {
         name: profile.displayName,
         total: {
           recorded: rse.duration,
@@ -741,8 +743,8 @@ module.exports = ({ strapi }) =>  ({
       }
     })
 
-    data.total.capacity = Object.values(data.rses).reduce((total, rse) => total + rse.total.capacity, 0)
+    utilisation.total.capacity = Object.values(utilisation.rses).reduce((total, rse) => total + rse.total.capacity, 0)
 
-    return data
+    return { data: utilisation }
   }
 })

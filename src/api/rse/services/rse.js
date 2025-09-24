@@ -101,10 +101,10 @@ module.exports = createCoreService('api::rse.rse', () => ({
     }
 
     // Check if params and params.populate exist and is an array
-    if(params && params.hasOwnProperty('populate') && Array.isArray(params.populate)) {
+    if(params && params.hasOwnProperty('populate')) {
 
       // If assignments are included in the populate array, set to true
-      if(params.populate.includes('assignments') || params.populate.find(populate => Object.keys(populate).includes('assignments'))) {
+      if((Array.isArray(params.populate) && (params.populate.includes('assignments')) || params.populate.hasOwnProperty('assignments'))) {
         populate.assignments = true
       }
       else {
@@ -113,7 +113,7 @@ module.exports = createCoreService('api::rse.rse', () => ({
       }
 
       // If capacities are included in the populate array, set to true
-      if(params.populate.includes('capacities') || params.populate.find(populate => Object.keys(populate).includes('capacities'))) {
+      if((Array.isArray(params.populate) && (params.populate.includes('capacities')) || params.populate.hasOwnProperty('capacities'))) {
         populate.capacities = true
       }
       else {
