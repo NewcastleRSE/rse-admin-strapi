@@ -313,10 +313,10 @@ module.exports = ({ strapi }) =>  ({
 
       clockifyConfig.cache.override = query.clearCache && query.clearCache === 'true'
 
-      return { data: await fetchSummaryReport(startDate.toUTC(), endDate.toUTC(), null, [id]) }
+      return await fetchSummaryReport(startDate.toUTC(), endDate.toUTC(), null, [id])
 
     } catch (error) {
-      console.error(error)
+      console.error(error.message)
     }
   },
 
