@@ -20,20 +20,18 @@
     },
     "start": {
       "type": "date",
-      "required": true,
-      "default": "2022-02-01"
+      "required": true
     },
     "end": {
       "type": "date",
-      "required": true,
-      "default": "2025-01-01"
+      "required": true
     },
     "fte": {
       "type": "integer",
-      "default": 50,
       "required": true,
-      "max": 100,
-      "min": 0
+      "default": 50,
+      "min": 0,
+      "max": 100
     },
     "project": {
       "type": "relation",

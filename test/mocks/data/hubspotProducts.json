@@ -1,0 +1,33 @@
+{
+  "total": 2,
+  "results": [
+    {
+      "createdAt": "2025-01-31T10:11:18.719Z",
+      "archived": false,
+      "id": "19385593899",
+      "properties": {
+        "createdate": "2025-01-31T10:11:18.719Z",
+        "description": null,
+        "hs_lastmodifieddate": "2025-01-31T10:13:26.187Z",
+        "hs_object_id": "19385593899",
+        "name": "Senior Day Rate 25/26",
+        "price": "483.92"
+      },
+      "updatedAt": "2025-01-31T10:13:26.187Z"
+    },
+    {
+      "createdAt": "2025-01-31T10:10:45.118Z",
+      "archived": false,
+      "id": "19385593898",
+      "properties": {
+        "createdate": "2025-01-31T10:10:45.118Z",
+        "description": null,
+        "hs_lastmodifieddate": "2025-01-31T10:13:26.187Z",
+        "hs_object_id": "19385593898",
+        "name": "Standard Day Rate 25/26",
+        "price": "416.32"
+      },
+      "updatedAt": "2025-01-31T10:13:26.187Z"
+    }
+  ]
+}

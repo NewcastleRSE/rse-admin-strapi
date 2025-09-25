@@ -1,0 +1,993 @@
+{
+    "totals": [
+        {
+            "totalTime": 9800340,
+            "totalBillableTime": 2055600,
+            "entriesCount": 635,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 10840739.4,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 10840739
+                        }
+                    ]
+                }
+            ],
+            "numOfCurrencies": 1,
+            "_id": "",
+            "totalAmount": 10840739.4,
+            "totalAmountByCurrency": [
+                {
+                    "currency": "GBP",
+                    "amount": 10840739.4
+                }
+            ]
+        }
+    ],
+    "groupOne": [
+        {
+            "duration": 581400,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 576665,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 576665
+                        }
+                    ]
+                }
+            ],
+            "amount": 576665,
+            "hasMembership": true,
+            "_id": "5f8f8c8c8c8c8c8c8c8c8c8c",
+            "name": "Eleanor Vance",
+            "nameLowerCase": "eleanor vance",
+            "sortingField": "1-name",
+            "color": "#1DE9B6",
+            "children": [
+                {
+                    "duration": 286200,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 241918,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 241918
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 241918,
+                    "_id": "Sep 2025",
+                    "name": "Sep 2025",
+                    "color": "#CE93D8",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 1800,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "649992a6edaf60359b70e34b",
+                            "name": "Volunteering",
+                            "nameLowerCase": "volunteering",
+                            "color": "#FF9800",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 129600,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f1f988d867972a809df",
+                            "name": "Management",
+                            "nameLowerCase": "management",
+                            "color": "#03A9F4",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 81000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 126585,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 126585
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 126585,
+                            "_id": "6880370c5cdfe7019c1e83b3",
+                            "name": "Great British Chemicals",
+                            "nameLowerCase": "great british chemicals",
+                            "color": "#5C6BC0",
+                            "clientName": "Elizabeth Gibson"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 73800,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 115333,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 115333
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 115333,
+                            "_id": "61f3b79f5bc60c3ad37f522e",
+                            "name": "Bee-ing Human",
+                            "nameLowerCase": "bee-ing human",
+                            "color": "#F44336",
+                            "clientName": "Jennifer Richards"
+                        }
+                    ],
+                    "monthSortValue": "2025-09"
+                },
+                {
+                    "duration": 295200,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 334747,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 334747
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 334747,
+                    "_id": "Aug 2025",
+                    "name": "Aug 2025",
+                    "color": "#D500F9",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 81000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f1f988d867972a809df",
+                            "name": "Management",
+                            "nameLowerCase": "management",
+                            "color": "#03A9F4",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 214200,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 334747,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 334747
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 334747,
+                            "_id": "61f3b79f5bc60c3ad37f522e",
+                            "name": "Bee-ing Human",
+                            "nameLowerCase": "bee-ing human",
+                            "color": "#F44336",
+                            "clientName": "Jennifer Richards"
+                        }
+                    ],
+                    "monthSortValue": "2025-08"
+                }
+            ]
+        },
+        {
+            "duration": 590940,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 4220,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 4220
+                        }
+                    ]
+                }
+            ],
+            "amount": 4219.5,
+            "hasMembership": true,
+            "_id": "5f8f8c8c8c8c8c8c8c8c8c8d",
+            "name": "Marcus Thorne",
+            "nameLowerCase": "marcus thorne",
+            "sortingField": "1-name",
+            "color": "#006FA1",
+            "children": [
+                {
+                    "duration": 236340,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 0,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 0
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 0,
+                    "_id": "Sep 2025",
+                    "name": "Sep 2025",
+                    "color": "#CE93D8",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 216540,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f113c2c4542c20b990e",
+                            "name": "Non-Project Event",
+                            "nameLowerCase": "non-project event",
+                            "color": "#8BC34A",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 19800,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f1f988d867972a809df",
+                            "name": "Management",
+                            "nameLowerCase": "management",
+                            "color": "#03A9F4",
+                            "clientName": "Mark Turner"
+                        }
+                    ],
+                    "monthSortValue": "2025-09"
+                },
+                {
+                    "duration": 354600,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 4220,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 4220
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 4219.5,
+                    "_id": "Aug 2025",
+                    "name": "Aug 2025",
+                    "color": "#D500F9",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 343800,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f113c2c4542c20b990e",
+                            "name": "Non-Project Event",
+                            "nameLowerCase": "non-project event",
+                            "color": "#8BC34A",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 8100,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f1f988d867972a809df",
+                            "name": "Management",
+                            "nameLowerCase": "management",
+                            "color": "#03A9F4",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 2700,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 4220,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 4220
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 4219.5,
+                            "_id": "687e396346c94c677c356eef",
+                            "name": "5GIR - Agritech Regional Bid Extension",
+                            "nameLowerCase": "5gir - agritech regional bid extension",
+                            "color": "#009688",
+                            "clientName": "James Standen"
+                        }
+                    ],
+                    "monthSortValue": "2025-08"
+                }
+            ]
+        },
+        {
+            "duration": 621000,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 928290,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 928290
+                        }
+                    ]
+                }
+            ],
+            "amount": 928290,
+            "hasMembership": true,
+            "_id": "5f8f8c8c8c8c8c8c8c8c8c8e",
+            "name": "Anya Sharma",
+            "nameLowerCase": "anya sharma",
+            "sortingField": "1-name",
+            "color": "#F44336",
+            "children": [
+                {
+                    "duration": 216000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 295365,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 295365
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 295365,
+                    "_id": "Sep 2025",
+                    "name": "Sep 2025",
+                    "color": "#CE93D8",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 81000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 126585,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 126585
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 126585,
+                            "_id": "675a379990e7b402bd0df9a7",
+                            "name": "Randomised clinical trial of OrQA AI software to increase organ utilisation in the NHS (OrQA-UK study)",
+                            "nameLowerCase": "randomised clinical trial of orqa ai software to increase organ utilisation in the nhs (orqa-uk study)",
+                            "color": "#FF9800",
+                            "clientName": "Colin Wilson"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 108000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 168780,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 168780
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 168780,
+                            "_id": "66016fc8b094281abca2e887",
+                            "name": "H2GEAR",
+                            "nameLowerCase": "h2gear",
+                            "color": "#673AB7",
+                            "clientName": "Nick Wright"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 27000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "61f7e01bba97e77c50beb7c9",
+                            "name": "Carpentries",
+                            "nameLowerCase": "carpentries",
+                            "color": "#9C27B0",
+                            "clientName": "Mark Turner"
+                        }
+                    ],
+                    "monthSortValue": "2025-09"
+                },
+                {
+                    "duration": 405000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 632925,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 632925
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 632925,
+                    "_id": "Aug 2025",
+                    "name": "Aug 2025",
+                    "color": "#D500F9",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 297000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 464145,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 464145
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 464145,
+                            "_id": "675a379990e7b402bd0df9a7",
+                            "name": "Randomised clinical trial of OrQA AI software to increase organ utilisation in the NHS (OrQA-UK study)",
+                            "nameLowerCase": "randomised clinical trial of orqa ai software to increase organ utilisation in the nhs (orqa-uk study)",
+                            "color": "#FF9800",
+                            "clientName": "Colin Wilson"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 108000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 168780,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 168780
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 168780,
+                            "_id": "66016fc8b094281abca2e887",
+                            "name": "H2GEAR",
+                            "nameLowerCase": "h2gear",
+                            "color": "#673AB7",
+                            "clientName": "Nick Wright"
+                        }
+                    ],
+                    "monthSortValue": "2025-08"
+                }
+            ]
+        },
+        {
+            "duration": 783000,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 817177,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 817177
+                        }
+                    ]
+                }
+            ],
+            "amount": 817176.5,
+            "hasMembership": true,
+            "_id": "5f8f8c8c8c8c8c8c8c8c8c8f",
+            "name": "Ben Carter",
+            "nameLowerCase": "ben carter",
+            "sortingField": "1-name",
+            "color": "#009688",
+            "children": [
+                {
+                    "duration": 540000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 500714,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 500714
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 500714,
+                    "_id": "Sep 2025",
+                    "name": "Sep 2025",
+                    "color": "#CE93D8",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 162000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 253170,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 253170
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 253170,
+                            "_id": "631350e5aee6390995ca0ae4",
+                            "name": "Statistical and Computational Genetics Group",
+                            "nameLowerCase": "statistical and computational genetics group",
+                            "color": "#FF9800",
+                            "clientName": "Heather Cordell"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 135000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "64c24f113c2c4542c20b990e",
+                            "name": "Non-Project Event",
+                            "nameLowerCase": "non-project event",
+                            "color": "#8BC34A",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 57600,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "6707a933716e763b41c18ab7",
+                            "name": "HPC Service",
+                            "nameLowerCase": "hpc service",
+                            "color": "#689F38",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 158400,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 247544,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 247544
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 247544,
+                            "_id": "6345ddcca6c9583185671a54",
+                            "name": "Harnessing the Power of Stein Discrepancies in Bayesian Computation",
+                            "nameLowerCase": "harnessing the power of stein discrepancies in bayesian computation",
+                            "color": "#E91E63",
+                            "clientName": "Chris Oates"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 27000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "61f7e01bba97e77c50beb7c9",
+                            "name": "Carpentries",
+                            "nameLowerCase": "carpentries",
+                            "color": "#9C27B0",
+                            "clientName": "Mark Turner"
+                        }
+                    ],
+                    "monthSortValue": "2025-09"
+                },
+                {
+                    "duration": 243000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 316463,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 316463
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 316462.5,
+                    "_id": "Aug 2025",
+                    "name": "Aug 2025",
+                    "color": "#D500F9",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 108000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 168780,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 168780
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 168780,
+                            "_id": "631350e5aee6390995ca0ae4",
+                            "name": "Statistical and Computational Genetics Group",
+                            "nameLowerCase": "statistical and computational genetics group",
+                            "color": "#FF9800",
+                            "clientName": "Heather Cordell"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 40500,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 0,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 0
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 0,
+                            "_id": "6707a933716e763b41c18ab7",
+                            "name": "HPC Service",
+                            "nameLowerCase": "hpc service",
+                            "color": "#689F38",
+                            "clientName": "Mark Turner"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 94500,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 147683,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 147683
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 147682.5,
+                            "_id": "6345ddcca6c9583185671a54",
+                            "name": "Harnessing the Power of Stein Discrepancies in Bayesian Computation",
+                            "nameLowerCase": "harnessing the power of stein discrepancies in bayesian computation",
+                            "color": "#E91E63",
+                            "clientName": "Chris Oates"
+                        }
+                    ],
+                    "monthSortValue": "2025-08"
+                }
+            ]
+        },
+        {
+            "duration": 567000,
+            "amounts": [
+                {
+                    "type": "EARNED",
+                    "value": 886095,
+                    "amountByCurrency": [
+                        {
+                            "currency": "GBP",
+                            "amount": 886095
+                        }
+                    ]
+                }
+            ],
+            "amount": 886095,
+            "hasMembership": true,
+            "_id": "5f8f8c8c8c8c8c8c8c8c8c9a",
+            "name": "Sofia Rossi",
+            "nameLowerCase": "sofia rossi",
+            "sortingField": "1-name",
+            "color": "#D500F9",
+            "children": [
+                {
+                    "duration": 27000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 42195,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 42195
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 42195,
+                    "_id": "Sep 2025",
+                    "name": "Sep 2025",
+                    "color": "#CE93D8",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 27000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 42195,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 42195
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 42195,
+                            "_id": "63b92a59c77cdb55f83f245d",
+                            "name": "Patient Registry Platform",
+                            "nameLowerCase": "patient registry platform",
+                            "color": "#673AB7",
+                            "clientName": "Fai Ng"
+                        }
+                    ],
+                    "monthSortValue": "2025-09"
+                },
+                {
+                    "duration": 540000,
+                    "amounts": [
+                        {
+                            "type": "EARNED",
+                            "value": 843900,
+                            "amountByCurrency": [
+                                {
+                                    "currency": "GBP",
+                                    "amount": 843900
+                                }
+                            ]
+                        }
+                    ],
+                    "amount": 843900,
+                    "_id": "Aug 2025",
+                    "name": "Aug 2025",
+                    "color": "#D500F9",
+                    "children": [
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 162000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 253170,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 253170
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 253170,
+                            "_id": "675a379990e7b402bd0df9a7",
+                            "name": "Randomised clinical trial of OrQA AI software to increase organ utilisation in the NHS (OrQA-UK study)",
+                            "nameLowerCase": "randomised clinical trial of orqa ai software to increase organ utilisation in the nhs (orqa-uk study)",
+                            "color": "#FF9800",
+                            "clientName": "Colin Wilson"
+                        },
+                        {
+                            "currency": "GBP",
+                            "workspaceCurrencyCode": null,
+                            "duration": 378000,
+                            "amounts": [
+                                {
+                                    "type": "EARNED",
+                                    "value": 590730,
+                                    "amountByCurrency": [
+                                        {
+                                            "currency": "GBP",
+                                            "amount": 590730
+                                        }
+                                    ]
+                                }
+                            ],
+                            "amount": 590730,
+                            "_id": "63b92a59c77cdb55f83f245d",
+                            "name": "Patient Registry Platform",
+                            "nameLowerCase": "patient registry platform",
+                            "color": "#673AB7",
+                            "clientName": "Fai Ng"
+                        }
+                    ],
+                    "monthSortValue": "2025-08"
+                }
+            ]
+        }
+    ]
+}

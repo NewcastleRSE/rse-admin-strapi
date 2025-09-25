@@ -1,14 +1,9 @@
-module.exports = ({ env }) => ({
-   'transformer': {
-      enabled: true,
+module.exports = () => ({
+    'users-permissions': {
       config: {
-        responseTransforms: {
-          removeAttributesKey: true,
-          removeDataKey: true
-        }
-      }
+        jwt: {
+          expiresIn: '12h',
+        },
+      },
     },
-    'import-export-entries': {
-      enabled: true,
-    }
   });

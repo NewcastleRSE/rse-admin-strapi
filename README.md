@@ -30,7 +30,7 @@ The application uses Strapi to create a role-based middleware app to fetch data 
 
 ### Prerequisites
 
-A local version of NodeJS ([nvm](https://github.com/nvm-sh/nvm) is recommended) between `12.x.x` and `16.x.x`.  
+A local version of NodeJS ([nvm](https://github.com/nvm-sh/nvm) is recommended) between `18.x.x` and `20.x.x`.  
 
 A local [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) running for development. Whilst possible to interact with the database via an interactive shell, it is recommended to use a GUI tool such as [MySQL Workbench](https://dev.mysql.com/downloads/workbench/).
 
@@ -41,7 +41,7 @@ The `.env` file needs to be setup with the database credentials for the connecti
 Install dependencies
 
 ```
-yarn install
+npm install
 ```
 
 ### Running Locally
@@ -49,16 +49,38 @@ yarn install
 In order to use the admin portal the code needs to be built from source. To do that run
 
 ```
-yarn build
+npm run build
 ```
 
 Run with hot reload for development
 
 ```
-yarn develop
+npm run dev
 ```
 
 Once running, you may need to change the redirect URL that is used after you have authenticated. Strapi gets this value from the database and so, if using a database dump from production, it may redirect you to the production url. To change this, log into the Strapi admin UI, go to Settings > Providers, and edit the Microsoft provider. Change the redirect URL to `http://localhost:3000/auth/login`.
+
+### Testing
+
+There are integration tests against all the API endpoints. These use the [Jest](https://jestjs.io/) and [Supertest](https://github.com/forwardemail/supertest) frameworks. Calls to 3rd party APIs such as Hubspot and Clockify and mocked using the [nock](https://github.com/nock/nock) framework.
+
+To run all the tests
+```
+npm run test
+```
+
+To run tests against a specific API
+```
+npm run test -- assignments.test.js
+```
+
+#### Test Data
+
+The tests use two different sources of test data.
+
+Firstly, there is a SQLite database that contains a post-setup version of Strapi with a small amount of test data in it. This database is mounted for testing purposes and destroyed after all the tests have run. See the files `global-setup.js` and `global-teardown.js` in the `test` folder for this process.
+
+Secondly, the data returned from nock exists as JSON files in the `test/mocks/data` folder. This data is returned by the nock process when intercepting HTTP calls to the 3rd party APIs.
 
 ## Deployment
 
@@ -78,13 +100,6 @@ Deployment to production is handled by [GitHub Workflows](https://docs.github.co
 
 Any push to the `dev` branch will trigger a rebuild of the `latest` tag for the Docker image stored in the `rseadmin.azurecr.io` registry. Properly tagged images are generated via releases on the `main` branch and match the version number from the release. For example, a code release of version `1.2.3` will create a Docker image in the registry with name and tag of `rseadmin.azurecr.io/api:1.2.3`.
 
-## Roadmap
-
-- [x] Initial Research  
-- [x] Minimum viable product
-- [x] Alpha Release  
-- [ ] Feature-Complete Release  
-
 ## Contributing
 
 ### Main Branch
@@ -97,5 +112,3 @@ Should be considered fragile, code should compile and run but features may be pr
 A branch per feature being worked on.
 
 https://nvie.com/posts/a-successful-git-branching-model/
-
-## License

@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:20
 
 # Create directory for source code and set as working directory
 RUN mkdir -p /usr/local/src
@@ -24,10 +24,10 @@ COPY package.json ./
 COPY favicon.ico ./
 
 # Install from source
-RUN yarn install
+RUN npm install
 
 # Build app in production mode
-RUN NODE_ENV=production yarn build
+RUN NODE_ENV=production npm run build
 
 EXPOSE 8080 2222
 

@@ -32,7 +32,7 @@
       "target": "api::invoice.invoice",
       "mappedBy": "project"
     },
-    "status": {
+    "condition": {
       "type": "enumeration",
       "enum": [
         "red",

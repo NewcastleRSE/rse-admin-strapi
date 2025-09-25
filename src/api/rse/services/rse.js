@@ -93,34 +93,41 @@ module.exports = createCoreService('api::rse.rse', () => ({
 
     return { results, pagination }
   },
-  async findOne(entityId, params) {
+  async findOne(documentId, params) {
 
     let populate = {
-      assignments: true,
-      capacities: true
+      assignments: false,
+      capacities: false
     }
 
-    // If populate is not set, populate assignments and capacities
-    if(params.populate && !params.populate.isArray && params.populate.assignments && params.populate.capacities) {
-      params.populate = ['assignments', 'capacities']
-    }
-    else {
-      if(!params.populate || !params.populate.isArray) {
-        params.populate = []
+    // Check if params and params.populate exist and is an array
+    if(params && params.hasOwnProperty('populate')) {
+
+      // If assignments are included in the populate array, set to true
+      if((Array.isArray(params.populate) && (params.populate.includes('assignments')) || params.populate.hasOwnProperty('assignments'))) {
+        populate.assignments = true
       }
-  
-      if(!params.populate.includes('assignments')) {
-        populate.assignments = false
+      else {
+        // If not included, add to the populate array for availability calculations
         params.populate.push('assignments')
       }
-  
-      if(!params.populate.includes('capacities')) {
-        populate.capacities = false
+
+      // If capacities are included in the populate array, set to true
+      if((Array.isArray(params.populate) && (params.populate.includes('capacities')) || params.populate.hasOwnProperty('capacities'))) {
+        populate.capacities = true
+      }
+      else {
+        // If not included, add to the populate array for availability calculations
         params.populate.push('capacities')
       }
     }
-   
-    const result = await super.findOne(entityId, params)
+    else {
+      params.populate = ['assignments', 'capacities']
+    }
+
+    const result = await super.findOne(documentId, params)
+
+    if(!result) { return null }
     
     let rse = result
 
@@ -170,9 +177,9 @@ module.exports = createCoreService('api::rse.rse', () => ({
     }
 
     // cleanup if assignments and capacities are not requested
-    if(!populate.assignments) { delete result.assignments }
-    if(!populate.capacities) { delete result.capacities }
+    if(!populate.assignments) { delete rse.assignments }
+    if(!populate.capacities) { delete rse.capacities }
 
-    return result
+    return rse
   }
 }))

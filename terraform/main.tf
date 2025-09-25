@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=3.27.0"
+      version = "=4.43.0"
     }
   }
 }
@@ -31,7 +31,6 @@ resource "azurerm_storage_account" "storage" {
   location                  = azurerm_resource_group.rg.location
   account_tier              = "Standard"
   account_replication_type  = "LRS"
-  enable_https_traffic_only = true
 
   static_website {
     index_document     = "index.html"
@@ -105,19 +104,21 @@ resource "azurerm_linux_web_app" "as" {
   service_plan_id     = azurerm_service_plan.asp.id
   https_only          = "true"
 
-  # site_config {
-  #   scm_type  = "VSTSRM"
-  #   always_on = "true"
-  #   linux_fx_version  = join("|", ["DOCKER", join("/", [azurerm_container_registry.acr.login_server, "api:latest"])])
-  #   health_check_path = "/health" # health check required in order that internal app service plan loadbalancer do not loadbalance on instance down
-  # }
   site_config {
     application_stack {
-      docker_image      = "${azurerm_container_registry.acr.login_server}/api"
-      docker_image_tag  = "latest"
+      docker_image_name = "/api:latest"
+      docker_registry_url = azurerm_container_registry.acr.login_server
     }
   }
 
+  storage_account {
+    name = "persistant-storage"
+    access_key = azurerm_storage_account.storage.primary_access_key
+    account_name = azurerm_storage_account.storage.name
+    share_name = "persistant-storage"
+    mount_path = "/mnt/storage"
+    type       = "AzureFiles"
+  }
   identity {
     type = "SystemAssigned"
   }
