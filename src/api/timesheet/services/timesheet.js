@@ -731,7 +731,7 @@ module.exports = ({ strapi }) =>  ({
         utilisation.months[`${start.toFormat('MMMM')}`].capacity += Number(monthlyCapacity.toFixed(0))
       })
 
-      utilisation.rses[profile.id] = {
+      utilisation.rses[profile.documentId] = {
         name: profile.displayName,
         total: {
           recorded: rse.duration,
