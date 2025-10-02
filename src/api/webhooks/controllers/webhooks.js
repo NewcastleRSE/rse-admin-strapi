@@ -4,15 +4,20 @@ const camelcase = require('camelcase')
 const DateTime = require('luxon').DateTime
 
 const stages = {
+  meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
+  bidPreparation: process.env.HUBSPOT_DEAL_BID_PREPARATION,
+  grantWriting: process.env.HUBSPOT_DEAL_GRANT_WRITING,
+  submittedToFunder: process.env.HUBSPOT_DEAL_SUBMITTED_TO_FUNDER,
+  notFunded: process.env.HUBSPOT_DEAL_NOT_FUNDED,
   awaitingAllocation: process.env.HUBSPOT_DEAL_FUNDED_AWAITING_ALLOCATION,
   allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
-  completed: process.env.HUBSPOT_DEAL_COMPLETED,
+  completed: process.env.HUBSPOT_DEAL_COMPLETED
 }
 
 const propertyMap = {
   account_code: 'account',
   amount: 'amount',
-  award_stage: 'stage',
+  award_stage: 'awardStage',
   cost_model: 'costModel',
   dealname: 'name',
   dealstage: 'stage',
@@ -96,6 +101,9 @@ module.exports = {
           if(payload.propertyName === 'start_date' || payload.propertyName === 'end_date') {
             data[propertyMap[payload.propertyName]] = DateTime.fromMillis(Number(payload.propertyValue)).toISODate()
           }
+          else if(payload.propertyName === 'dealstage') {
+              data[propertyMap[payload.propertyName]] = formatDealStage(payload.propertyValue)
+            }
           // Otherwise, just set the value
           else {
             data[propertyMap[payload.propertyName]] = payload.propertyValue

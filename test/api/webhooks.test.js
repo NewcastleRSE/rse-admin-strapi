@@ -1,5 +1,6 @@
 const request = require('supertest')
 const nock = require('nock')
+const { DateTime } = require('luxon')
 
 const hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
       hubspotContacts = require('/test/mocks/data/hubspot/dealContacts.json'),
@@ -7,6 +8,34 @@ const hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
       hubspotNotes = require('/test/mocks/data/hubspot/dealNotes.json'),
       clockifyClients = require('/test/mocks/data/clockify/clients.json'),
       clockifyProject = require('/test/mocks/data/clockify/project.json')
+
+const propertyMap = {
+        account_code: 'account',
+        amount: 'amount',
+        award_stage: 'awardStage',
+        cost_model: 'costModel',
+        dealname: 'name',
+        dealstage: 'stage',
+        end_date: 'endDate',
+        faculty: 'faculty',
+        finance_contact: 'financeContact',
+        funding_body: 'funder',
+        hs_object_id: 'hsObjectId',
+        project_value: 'value',
+        school: 'school',
+        start_date: 'startDate',
+        nu_projects_number: 'nuProjects',
+      }
+
+const webhookPayload = {
+        appId: 1323067,
+        eventId: 100,
+        subscriptionId: 3191939,
+        portalId: 5251042,
+        occurredAt: 1759349822122,
+        attemptNumber: 0,
+        objectId: 29467931466
+      }
 
 afterEach(() => {
   nock.cleanAll()
@@ -20,39 +49,21 @@ describe('Webhooks API', () => {
 
   let newProjectId
 
+  const createProject = {
+    subscriptionType: 'deal.creation',
+    changeSource: 'CRM',
+    changeFlag: 'NEW'
+  }
+
   test('should return 403 without auth', async () => {
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
-    .send({
-      "appId": 1323067,
-      "eventId": 100,
-      "subscriptionId": 3191939,
-      "portalId": 5251042,
-      "occurredAt": 1759349822122,
-      "subscriptionType": "deal.creation",
-      "attemptNumber": 0,
-      "objectId": 123,
-      "changeSource": "CRM",
-      "changeFlag": "NEW"
-    })
+    .send({ ...webhookPayload, ...createProject })
 
     expect(res.statusCode).toEqual(403)
   })
 
   test('should return 201 when creating a project', async () => {
-
-    const webhookPayload = {
-        appId: 1323067,
-        eventId: 100,
-        subscriptionId: 3191939,
-        portalId: 5251042,
-        occurredAt: 1759349822122,
-        subscriptionType: 'deal.creation',
-        attemptNumber: 0,
-        objectId: 29467931466,
-        changeSource: 'CRM',
-        changeFlag: 'NEW'
-      }
 
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/deals/${webhookPayload.objectId}`)
@@ -86,10 +97,16 @@ describe('Webhooks API', () => {
       .post('/projects')
       .reply(201, clockifyProject[0])
 
+    const createProject = {
+      subscriptionType: 'deal.creation',
+      changeSource: 'CRM',
+      changeFlag: 'NEW'
+    }
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
       .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-      .send(webhookPayload)
+      .send({ ...webhookPayload, ...createProject })
 
     newProjectId = res.body.documentId
 
@@ -100,53 +117,62 @@ describe('Webhooks API', () => {
     expect(res.body).toHaveProperty('name', 'X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)')
   })
 
-  test('should update an existing project', async () => {
+  it.each([
+    ['account_code', 'RES/1234/5678/9'],
+    ['amount', 12345],
+    ['award_stage', 'Centrally Awarded'],
+    ['cost_model', 'Voluntary'],
+    ['dealname', 'Updated Project'],
+    ['dealstage', 'closedlost'],
+    ['end_date', '2026-05-31'],
+    ['faculty', 'Humanities & Social Sciences'],
+    ['finance_contact', 'John Doe'],
+    ['funding_body', 'EPSRC'],
+    ['nu_projects_number', 'NU-123456'],
+    ['project_value', 100000],
+    ['school', 'School of Test'],
+    ['start_date', '2023-06-01']
+  ])
+  (`should update %s`, async (property, value) => {
 
-    const webhookPayload = {
-      appId: 1323067,
-      eventId: 100,
-      subscriptionId: 3126292,
-      portalId: 5251042,
-      occurredAt: 1759350032444,
-      subscriptionType: 'deal.propertyChange',
-      attemptNumber: 0,
-      objectId: 29467931466,
+      const propertyChange = {
+        subscriptionType: 'deal.propertyChange',
+        changeSource: 'CRM',
+        propertyName: property,
+        propertyValue: property === 'start_date' || property === 'end_date' ? DateTime.fromFormat(value, 'yyyy-MM-dd').toMillis() : value
+      }
+
+      const dealStage = { closedlost: 'Not Funded'}
+
+      const res = await request(strapi.server.httpServer)
+        .post('/api/webhooks/hubspot')
+        .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+        .send({ ...webhookPayload, ...propertyChange })
+
+      expect(res.statusCode).toEqual(200)
+      expect(res.body).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
+
+      if(property === 'dealstage') {
+        expect(res.body).toHaveProperty(propertyMap[property], dealStage[value])
+      }
+      else {
+        expect(res.body).toHaveProperty(propertyMap[property], value)
+      }
+    })
+
+
+  test('should delete a project', async () => {
+
+    const deleteProject = {
+      subscriptionType: 'deal.deletion',
       changeSource: 'CRM',
-      propertyName: 'funding_body',
-      propertyValue: 'EPSRC'
+      changeFlag: 'DELETED'
     }
 
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
     .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-    .send(webhookPayload)
-
-    expect(res.statusCode).toEqual(200)
-    expect(res.body).toHaveProperty('documentId')
-    expect(res.body).toHaveProperty('clockifyID')
-    expect(res.body).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
-    expect(res.body).toHaveProperty('funder', 'EPSRC')
-  })
-
-  test('should archive a project', async () => {
-
-const webhookPayload = {
-      "appId": 1323067,
-      "eventId": 100,
-      "subscriptionId": 3191937,
-      "portalId": 5251042,
-      "occurredAt": 1759349997934,
-      "subscriptionType": "deal.deletion",
-      "attemptNumber": 0,
-      "objectId": 29467931466,
-      "changeSource": "CRM",
-      "changeFlag": "DELETED"
-    }
-
-    const res = await request(strapi.server.httpServer)
-    .post('/api/webhooks/hubspot')
-    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-    .send(webhookPayload)
+    .send({ ...webhookPayload, ...deleteProject })
 
     expect(res.statusCode).toEqual(204)
     
