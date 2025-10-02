@@ -32,20 +32,22 @@ function formatDealStage(stage) {
 
 module.exports = {
   hubspot: async (ctx) => {
+
     try {
 
       const payload = ctx.request.body
 
-      if(payload[0].attemptNumber > 0) {
+      if(payload.attemptNumber > 0) {
         ctx.status = 102
         return
       }
 
       // Create the project if the deal is created in HubSpot
-      if(payload[0].subscriptionType === 'deal.creation') {
+      if(payload.subscriptionType === 'deal.creation') {
         try {
-          await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
-          ctx.status = 200
+          const project = await strapi.service('api::project.project').createFromHubspot(payload.objectId)
+          ctx.body = project
+          ctx.status = 201
         }
         catch (err) {
           console.error(err)
@@ -54,10 +56,10 @@ module.exports = {
       }
 
       // If property changed
-      if(payload[0].subscriptionType === 'deal.propertyChange') {
+      if(payload.subscriptionType === 'deal.propertyChange') {
 
         // Find the project with the hubspotID
-        const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload[0].objectId } })
+        const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload.objectId } })
 
         // If the project exists
         if(project) {
@@ -65,12 +67,12 @@ module.exports = {
           const data = {}
                   
           // If the property is a date, convert it to ISO format
-          if(payload[0].propertyName === 'start_date' || payload[0].propertyName === 'end_date') {
-            data[camelcase(payload[0].propertyName)] = DateTime.fromMillis(Number(payload[0].propertyValue)).toISODate()
+          if(payload.propertyName === 'start_date' || payload.propertyName === 'end_date') {
+            data[camelcase(payload.propertyName)] = DateTime.fromMillis(Number(payload.propertyValue)).toISODate()
           }
           // Otherwise, just set the value
           else {
-            data[camelcase(payload[0].propertyName)] = payload[0].propertyValue
+            data[camelcase(payload.propertyName)] = payload.propertyValue
           }
 
           // Update the project with the new data
@@ -84,7 +86,7 @@ module.exports = {
         }
         else {
           try {
-            await strapi.service('api::project.project').createFromHubspot(payload[0].objectId)
+            await strapi.service('api::project.project').createFromHubspot(payload.objectId)
             ctx.status = 200; return
           }
           catch (err) {
@@ -101,8 +103,8 @@ module.exports = {
       } 
 
       // Delete the project if the deal is deleted in HubSpot
-      if(payload[0].subscriptionType === 'deal.deletion') {
-        const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload[0].objectId } })
+      if(payload.subscriptionType === 'deal.deletion') {
+        const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload.objectId } })
         if(project) {
           await strapi.documents('api::project.project').delete({ documentId: project.documentId })
           ctx.status = 200

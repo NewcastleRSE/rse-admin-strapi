@@ -1,14 +1,22 @@
 {
     "id": "29467931466",
     "properties": {
+        "account_code": null,
         "amount": "87467.29",
-        "closedate": "2025-11-22T15:43:39.743Z",
+        "award_stage": "Pre-Award",
+        "cost_model": "Facility",
         "createdate": "2024-11-22T15:46:08.793Z",
         "dealname": "X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)",
         "dealstage": "closedwon",
+        "end_date": "2029-12-31",
+        "faculty": "Science, Agriculture & Engineering",
+        "finance_contact": "eng.researchfinance@ncl.ac.uk",
+        "funding_body": "European Commission",
         "hs_lastmodifieddate": "2025-03-11T09:40:24.019Z",
         "hs_object_id": "29467931466",
-        "pipeline": "default"
+        "project_value": "123669.14",
+        "school": "Statistics and Physics",
+        "start_date": "2025-10-01"
     },
     "createdAt": "2024-11-22T15:46:08.793Z",
     "updatedAt": "2025-03-11T09:40:24.019Z",

@@ -133,7 +133,9 @@ async function createClockifyProject(hsProject) {
               throw new Error('Project has no contacts')
           }
 
-          const contact = hsProject.properties.contacts[0]
+          const contact = hsProject.properties.contacts[0].properties
+
+          console.log('Creating Clockify project for', hsProject.properties.dealname, 'owned by', contact.firstname, contact.lastname)
 
           const projectName = hsProject.properties.dealname,
                 projectOwner = `${contact.firstname} ${contact.lastname}`
@@ -141,13 +143,15 @@ async function createClockifyProject(hsProject) {
           let clientRequest = {
               params: {
                   name: projectOwner,
-                  'page-size': 200,
+                  hydrated: true,
+                  'page-size': 5000,
               },
           }
           let projectRequest = {
               params: {
                   name: projectName,
-                  'page-size': 200,
+                  hydrated: true,
+                  'page-size': 5000,
               },
           }
           let clientConfig = { ...clockifyConfig, ...clientRequest }
@@ -241,7 +245,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     async createFromHubspot(hubspotID) {
       
       // Get deal from HubSpot
-      const deal = await hubspotClient.crm.deals.basicApi.getById(hubspotID, dealProperties, null, ['contacts', 'line_items', 'notes'])
+      const deal = await hubspotClient.crm.deals.basicApi.getById(hubspotID, dealProperties, [], ['contacts', 'line_items', 'notes'])
 
       if(deal) {
         try {
@@ -262,14 +266,17 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
 
       // Populate line items
-      if(deal.associations.lineItems?.results.length) {
-        deal.properties.lineItems = await getHubSpotAssociations('lineItems', null, 100, lineItemProperties, deal.associations.lineItems.results.map(lineItem => lineItem.id), [])
+      if(deal.associations['line items']?.results.length) {
+        deal.properties.lineItems = await getHubSpotAssociations('lineItems', null, 100, lineItemProperties, deal.associations['line items'].results.map(lineItem => lineItem.id), [])
       }
 
       // Populate notes
       if(deal.associations.notes?.results.length) {
         deal.properties.notes = await getHubSpotAssociations('notes', null, 100, ['content'], deal.associations.notes.results.map(note => note.id), [])
       }
+
+      // clean up associations
+      delete deal.associations
 
       // Get contact emails
       const contactEmails = deal.properties.contacts.map(contact => contact.properties.email)
@@ -303,6 +310,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         console.error(e.details.errors)
       }
 
+      // Empty response object
+      let response
+
       try {
 
         const project = {
@@ -311,18 +321,18 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
           clockifyID: clockifyProject.id,
           condition: 'green',
           stage: deal.properties.dealstage,
-          costModel: deal.properties.costModel,
-          awardStage: deal.properties.awardStage,
-          startDate: DateTime.fromMillis(Number(deal.properties.startDate)).toISODate(),
-          endDate: DateTime.fromMillis(Number(deal.properties.endDate)).toISODate(),
-          funder: deal.properties.fundingBody,
+          costModel: deal.properties.cost_model,
+          awardStage: deal.properties.award_stage,
+          startDate: DateTime.fromMillis(Number(deal.properties.start_date)).toISODate(),
+          endDate: DateTime.fromMillis(Number(deal.properties.end_date)).toISODate(),
+          funder: deal.properties.funding_body,
           school: deal.properties.school,
           faculty: deal.properties.faculty,
           amount: deal.properties.amount,
-          value: deal.properties.value,
-          financeContact: deal.properties.financeContact,
+          value: deal.properties.project_value,
+          financeContact: deal.properties.finance_contact,
           account: deal.properties.account,
-          nuProjects: deal.properties.nuProjects,
+          nuProjects: deal.properties.nu_projects_number,
           contacts: contactIDs
         }
 
@@ -336,7 +346,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
            project.faculty &&
            project.contacts.length)
         {
-            await strapi.services['api::project.project'].create({ data: project })
+            response = await strapi.services['api::project.project'].create({ data: project })
         }
         else {
             throw new Error('Missing required fields')
@@ -346,6 +356,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
         throw error
       }
 
-      return hubspotID
+      return response
     }
 }))

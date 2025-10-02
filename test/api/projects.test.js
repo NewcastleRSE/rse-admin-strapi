@@ -1,6 +1,8 @@
 const request = require('supertest')
 const nock = require('nock')
 
+const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
+
 let JWT
 
 beforeAll(async () => {
@@ -74,8 +76,6 @@ describe('Projects API', () => {
   })
 
   it('should return a list of projects', async () => {
-
-    const clockifyProjects = require('/test/mocks/data/clockify/reportProjects.json')
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .get('/projects?hydrated=true&page-size=5000')
