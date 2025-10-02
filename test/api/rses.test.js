@@ -16,7 +16,7 @@ beforeAll(async () => {
         })
 })
 
-describe('Rses API', () => {
+describe('RSEs API', () => {
 
   let rse
 

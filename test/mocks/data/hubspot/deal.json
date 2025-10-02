@@ -1,0 +1,58 @@
+{
+    "id": "29467931466",
+    "properties": {
+        "amount": "87467.29",
+        "closedate": "2025-11-22T15:43:39.743Z",
+        "createdate": "2024-11-22T15:46:08.793Z",
+        "dealname": "X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)",
+        "dealstage": "closedwon",
+        "hs_lastmodifieddate": "2025-03-11T09:40:24.019Z",
+        "hs_object_id": "29467931466",
+        "pipeline": "default"
+    },
+    "createdAt": "2024-11-22T15:46:08.793Z",
+    "updatedAt": "2025-03-11T09:40:24.019Z",
+    "archived": false,
+    "associations": {
+        "notes": {
+            "results": [
+                {
+                    "id": "65197509249",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "65199126190",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "69525126233",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "69761079119",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "74700772680",
+                    "type": "deal_to_note"
+                }
+            ]
+        },
+        "line items": {
+            "results": [
+                {
+                    "id": "25440617024",
+                    "type": "deal_to_line_item"
+                }
+            ]
+        },
+        "contacts": {
+            "results": [
+                {
+                    "id": "21551",
+                    "type": "deal_to_contact"
+                }
+            ]
+        }
+    }
+}
