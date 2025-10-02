@@ -1,12 +1,30 @@
 'use strict';
 
-const camelcase = require('camelcase');
+const camelcase = require('camelcase')
 const DateTime = require('luxon').DateTime
 
 const stages = {
   awaitingAllocation: process.env.HUBSPOT_DEAL_FUNDED_AWAITING_ALLOCATION,
   allocated: process.env.HUBSPOT_DEAL_ALLOCATED,
   completed: process.env.HUBSPOT_DEAL_COMPLETED,
+}
+
+const propertyMap = {
+  account_code: 'account',
+  amount: 'amount',
+  award_stage: 'stage',
+  cost_model: 'costModel',
+  dealname: 'name',
+  dealstage: 'stage',
+  end_date: 'endDate',
+  faculty: 'faculty',
+  finance_contact: 'financeContact',
+  funding_body: 'funder',
+  hs_object_id: 'hsObjectId',
+  project_value: 'value',
+  school: 'school',
+  start_date: 'startDate',
+  nu_projects_number: 'nuProjects',
 }
 
 // Invert stages to key by HubSpot stage names
@@ -76,20 +94,20 @@ module.exports = {
                   
           // If the property is a date, convert it to ISO format
           if(payload.propertyName === 'start_date' || payload.propertyName === 'end_date') {
-            data[camelcase(payload.propertyName)] = DateTime.fromMillis(Number(payload.propertyValue)).toISODate()
+            data[propertyMap[payload.propertyName]] = DateTime.fromMillis(Number(payload.propertyValue)).toISODate()
           }
           // Otherwise, just set the value
           else {
-            data[camelcase(payload.propertyName)] = payload.propertyValue
+            data[propertyMap[payload.propertyName]] = payload.propertyValue
           }
 
           // Update the project with the new data
-          await strapi.documents('api::project.project').update({ 
+          const updatedProject = await strapi.documents('api::project.project').update({ 
               documentId: project.documentId,
               data: data
           })
 
-          ctx.body = project
+          ctx.body = updatedProject
           ctx.status = 200
         }
         else {
@@ -119,9 +137,11 @@ module.exports = {
         const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: payload.objectId } })
         if(project) {
           await strapi.documents('api::project.project').delete({ documentId: project.documentId })
-          ctx.status = 200
+          ctx.status = 204
+          return
         } else {
           ctx.status = 304
+          return
         }
       }
 

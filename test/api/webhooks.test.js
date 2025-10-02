@@ -18,6 +18,8 @@ afterAll(() => {
 
 describe('Webhooks API', () => {
 
+  let newProjectId
+
   test('should return 403 without auth', async () => {
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
@@ -89,6 +91,8 @@ describe('Webhooks API', () => {
       .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
       .send(webhookPayload)
 
+    newProjectId = res.body.documentId
+
     expect(res.statusCode).toEqual(201)
     expect(res.body).toHaveProperty('documentId')
     expect(res.body).toHaveProperty('clockifyID')
@@ -96,44 +100,61 @@ describe('Webhooks API', () => {
     expect(res.body).toHaveProperty('name', 'X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)')
   })
 
-  // test('should update a project', async () => {
-  //   const res = await request(strapi.server.httpServer)
-  //   .post('/webhooks/hubspot')
-  //   .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-  //   .send({
-  //     "appId": 1323067,
-  //     "eventId": 100,
-  //     "subscriptionId": 3126292,
-  //     "portalId": 5251042,
-  //     "occurredAt": 1759350032444,
-  //     "subscriptionType": "deal.propertyChange",
-  //     "attemptNumber": 0,
-  //     "objectId": 123,
-  //     "changeSource": "CRM",
-  //     "propertyName": "funding_body",
-  //     "propertyValue": "sample-value"
-  //   })
+  test('should update an existing project', async () => {
 
-  //   expect(res.statusCode).toEqual(200)
-  // })
+    const webhookPayload = {
+      appId: 1323067,
+      eventId: 100,
+      subscriptionId: 3126292,
+      portalId: 5251042,
+      occurredAt: 1759350032444,
+      subscriptionType: 'deal.propertyChange',
+      attemptNumber: 0,
+      objectId: 29467931466,
+      changeSource: 'CRM',
+      propertyName: 'funding_body',
+      propertyValue: 'EPSRC'
+    }
 
-  // test('should archive a project', async () => {
-  //   const res = await request(strapi.server.httpServer)
-  //   .post('/webhooks/hubspot')
-  //   .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-  //   .send({
-  //     "appId": 1323067,
-  //     "eventId": 100,
-  //     "subscriptionId": 3191937,
-  //     "portalId": 5251042,
-  //     "occurredAt": 1759349997934,
-  //     "subscriptionType": "deal.deletion",
-  //     "attemptNumber": 0,
-  //     "objectId": 123,
-  //     "changeSource": "CRM",
-  //     "changeFlag": "DELETED"
-  //   })
+    const res = await request(strapi.server.httpServer)
+    .post('/api/webhooks/hubspot')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+    .send(webhookPayload)
 
-  //   expect(res.statusCode).toEqual(200)
-  // })
+    expect(res.statusCode).toEqual(200)
+    expect(res.body).toHaveProperty('documentId')
+    expect(res.body).toHaveProperty('clockifyID')
+    expect(res.body).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
+    expect(res.body).toHaveProperty('funder', 'EPSRC')
+  })
+
+  test('should archive a project', async () => {
+
+const webhookPayload = {
+      "appId": 1323067,
+      "eventId": 100,
+      "subscriptionId": 3191937,
+      "portalId": 5251042,
+      "occurredAt": 1759349997934,
+      "subscriptionType": "deal.deletion",
+      "attemptNumber": 0,
+      "objectId": 29467931466,
+      "changeSource": "CRM",
+      "changeFlag": "DELETED"
+    }
+
+    const res = await request(strapi.server.httpServer)
+    .post('/api/webhooks/hubspot')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+    .send(webhookPayload)
+
+    expect(res.statusCode).toEqual(204)
+    
+    const fetchRes = await request(strapi.server.httpServer)
+    .get(`/api/projects/${newProjectId}`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+    
+    expect(fetchRes.status).toBe(404)
+  })
 })

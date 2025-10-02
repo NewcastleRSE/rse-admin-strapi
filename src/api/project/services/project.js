@@ -135,8 +135,6 @@ async function createClockifyProject(hsProject) {
 
           const contact = hsProject.properties.contacts[0].properties
 
-          console.log('Creating Clockify project for', hsProject.properties.dealname, 'owned by', contact.firstname, contact.lastname)
-
           const projectName = hsProject.properties.dealname,
                 projectOwner = `${contact.firstname} ${contact.lastname}`
 
