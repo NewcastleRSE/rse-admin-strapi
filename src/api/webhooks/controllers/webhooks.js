@@ -50,8 +50,16 @@ module.exports = {
           ctx.status = 201
         }
         catch (err) {
-          console.error(err)
-          ctx.status = 500
+          if(err.message === 'Missing required fields') {
+            ctx.body = { message: `Missing required fields`, error: err };
+            ctx.status = 422
+            return
+          }
+          else {
+            ctx.body = { message: `Error creating project`, error: err };
+            ctx.status = 500
+            return
+          }
         }
       }
 
@@ -81,22 +89,26 @@ module.exports = {
               data: data
           })
 
-          // Return 200
+          ctx.body = project
           ctx.status = 200
         }
         else {
           try {
-            await strapi.service('api::project.project').createFromHubspot(payload.objectId)
-            ctx.status = 200; return
+            const project = await strapi.service('api::project.project').createFromHubspot(payload.objectId)
+            ctx.body = project
+            ctx.status = 201
+            return
           }
           catch (err) {
             if(err.message === 'Missing required fields') {
               ctx.body = { message: `Missing required fields`, error: err };
-              ctx.status = 422; return
+              ctx.status = 422
+              return
             }
             else {
               ctx.body = { message: `Error creating project`, error: err };
-              ctx.status = 500; return
+              ctx.status = 500
+              return
             }
           }
         }
