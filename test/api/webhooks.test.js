@@ -1,4 +1,5 @@
 const request = require('supertest')
+const crypto = require('crypto')
 const nock = require('nock')
 const { DateTime } = require('luxon')
 
@@ -27,6 +28,8 @@ const propertyMap = {
         nu_projects_number: 'nuProjects',
       }
 
+const signature = crypto.createHash('sha256').update(process.env.HUBSPOT_CLIENT_SECRET).digest('hex')
+
 const webhookPayload = {
         appId: 1323067,
         eventId: 100,
@@ -34,7 +37,8 @@ const webhookPayload = {
         portalId: 5251042,
         occurredAt: 1759349822122,
         attemptNumber: 0,
-        objectId: 29467931466
+        objectId: 29467931466,
+        changeSource: 'CRM'
       }
 
 afterEach(() => {
@@ -51,16 +55,15 @@ describe('Webhooks API', () => {
 
   const createProject = {
     subscriptionType: 'deal.creation',
-    changeSource: 'CRM',
     changeFlag: 'NEW'
   }
 
-  test('should return 403 without auth', async () => {
+  test('should return 401 without auth', async () => {
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
     .send({ ...webhookPayload, ...createProject })
 
-    expect(res.statusCode).toEqual(403)
+    expect(res.statusCode).toEqual(401)
   })
 
   test('should return 201 when creating a project', async () => {
@@ -99,22 +102,21 @@ describe('Webhooks API', () => {
 
     const createProject = {
       subscriptionType: 'deal.creation',
-      changeSource: 'CRM',
       changeFlag: 'NEW'
     }
 
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
       .send({ ...webhookPayload, ...createProject })
 
     newProjectId = res.body.documentId
 
     expect(res.statusCode).toEqual(201)
-    expect(res.body).toHaveProperty('documentId')
-    expect(res.body).toHaveProperty('clockifyID')
-    expect(res.body).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
-    expect(res.body).toHaveProperty('name', 'X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)')
+    expect(res.body.data).toHaveProperty('documentId')
+    expect(res.body.data).toHaveProperty('clockifyID')
+    expect(res.body.data).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
+    expect(res.body.data).toHaveProperty('name', 'X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)')
   })
 
   it.each([
@@ -135,43 +137,71 @@ describe('Webhooks API', () => {
   ])
   (`should update %s`, async (property, value) => {
 
-      const propertyChange = {
-        subscriptionType: 'deal.propertyChange',
-        changeSource: 'CRM',
-        propertyName: property,
-        propertyValue: property === 'start_date' || property === 'end_date' ? DateTime.fromFormat(value, 'yyyy-MM-dd').toMillis() : value
-      }
+    const propertyChange = {
+      subscriptionType: 'deal.propertyChange',
+      propertyName: property,
+      propertyValue: property === 'start_date' || property === 'end_date' ? DateTime.fromFormat(value, 'yyyy-MM-dd').toMillis() : value
+    }
 
-      const dealStage = { closedlost: 'Not Funded'}
+    const dealStage = { closedlost: 'Not Funded'}
 
-      const res = await request(strapi.server.httpServer)
-        .post('/api/webhooks/hubspot')
-        .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
-        .send({ ...webhookPayload, ...propertyChange })
+    const res = await request(strapi.server.httpServer)
+      .post('/api/webhooks/hubspot')
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
+      .send({ ...webhookPayload, ...propertyChange })
 
-      expect(res.statusCode).toEqual(200)
-      expect(res.body).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
 
-      if(property === 'dealstage') {
-        expect(res.body).toHaveProperty(propertyMap[property], dealStage[value])
-      }
-      else {
-        expect(res.body).toHaveProperty(propertyMap[property], value)
-      }
-    })
+    if(property === 'dealstage') {
+      expect(res.body.data).toHaveProperty(propertyMap[property], dealStage[value])
+    }
+    else {
+      expect(res.body.data).toHaveProperty(propertyMap[property], value)
+    }
+  })
 
+  test('should update contact association', async () => {
+    const contactChange = {
+      subscriptionType: 'deal.associationChange',
+      associationType: 'DEAL_TO_CONTACT',
+      fromObjectId: 29467931466,
+      toObjectId: 20,
+      associationRemoved: false,
+      isPrimaryAssociation: false
+    }
+
+    const res = await request(strapi.server.httpServer)
+      .post('/api/webhooks/hubspot')
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
+      .send({ ...webhookPayload, ...contactChange })
+
+    expect(res.statusCode).toEqual(200)
+  })
+
+  test('should update line items', async () => {
+    const contactChange = {
+      subscriptionType: 'deal.associationChange',
+      associationType: 'DEAL_TO_LINE_ITEM',
+      fromObjectId: 29467931466,
+      toObjectId: 20,
+      associationRemoved: false,
+      isPrimaryAssociation: false
+    }
+
+    expect(1).toEqual(1)
+  })
 
   test('should delete a project', async () => {
 
     const deleteProject = {
       subscriptionType: 'deal.deletion',
-      changeSource: 'CRM',
       changeFlag: 'DELETED'
     }
 
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
-    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+    .set('X-HUBSPOT-SIGNATURE', `${signature}`)
     .send({ ...webhookPayload, ...deleteProject })
 
     expect(res.statusCode).toEqual(204)

@@ -6,7 +6,7 @@ module.exports = {
      handler: 'webhooks.hubspot',
      config: {
        policies: [],
-       middlewares: [],
+       middlewares: ['api::webhooks.hubspot'],
      },
     },
   ],
