@@ -2,6 +2,23 @@
 
 const camelcase = require('camelcase')
 const DateTime = require('luxon').DateTime
+const { setupCache } = require('axios-cache-interceptor')
+let axios = require('axios')
+
+const instance = axios.create()
+axios = setupCache(instance, {
+    methods: ['get', 'post']
+})
+
+const clockifyConfig = {
+    baseURL: `https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`,
+    headers: {
+        'X-Api-Key': process.env.CLOCKIFY_KEY
+    },
+    cache: {
+        maxAge: 60 * 60 * 1000
+    }
+}
 
 const stages = {
   meetingScheduled: process.env.HUBSPOT_DEAL_MEETING_SCHEDULED,
@@ -104,6 +121,15 @@ module.exports = {
           // Otherwise, just set the value
           else {
             data[propertyMap[payload.propertyName]] = payload.propertyValue
+          }
+
+          if(payload.propertyName === 'dealname' && project.clockifyID) {
+            const response = await axios.put(`/projects/${project.clockifyID}`, { name: data.name }, clockifyConfig)
+            if(response.status !== 200) {
+              result.data = `Error updating Clockify project name: ${response.statusText}`
+              result.status = response.status
+              return result
+            }
           }
 
           // Update the project with the new data

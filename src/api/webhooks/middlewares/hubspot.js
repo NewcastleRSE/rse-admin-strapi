@@ -16,9 +16,6 @@ module.exports = (config, { strapi }) => {
 
         const hash = crypto.createHash('sha256').update(secret).digest('hex')
 
-        console.log('Signature:', signature)
-        console.log('Hash:', hash)
-
         if (signature === hash) {
             await next()
         } else {
