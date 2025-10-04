@@ -8,8 +8,9 @@ const hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
       hubspotLineItems = require('/test/mocks/data/hubspot/dealLineItems.json'),
       hubspotNotes = require('/test/mocks/data/hubspot/dealNotes.json'),
       clockifyClients = require('/test/mocks/data/clockify/clients.json'),
-      clockifyProject = require('/test/mocks/data/clockify/project.json'),
-      updatedProject = require('/test/mocks/data/clockify/updatedProject.json')
+      clockifyProject = require('/test/mocks/data/clockify/project.json')
+
+let updatedProject = require('/test/mocks/data/clockify/updatedProject.json')
 
 const propertyMap = {
         account_code: 'account',
@@ -145,6 +146,14 @@ describe('Webhooks API', () => {
     }
 
     const dealStage = { closedlost: 'Not Funded'}
+
+    if(property === 'dealname') {
+      updatedProject.name = value
+    }
+
+    if(property === 'dealstage') {
+      updatedProject.archived = true
+    }
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .put(`/projects/${updatedProject.id}`)

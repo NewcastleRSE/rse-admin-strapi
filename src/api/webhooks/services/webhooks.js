@@ -110,23 +110,48 @@ module.exports = {
         if(project) {
           // Initialize the data payload
           const data = {}
+
+          let clockifyUpdates = {}
                   
           // If the property is a date, convert it to ISO format
           if(payload.propertyName === 'start_date' || payload.propertyName === 'end_date') {
             data[propertyMap[payload.propertyName]] = DateTime.fromMillis(Number(payload.propertyValue)).toISODate()
           }
+          // If the property is dealname, prepare Clockify update
+          else if(payload.propertyName === 'dealname') {
+            data[propertyMap[payload.propertyName]] = payload.propertyValue
+            clockifyUpdates = { name: data }
+          }
+          // If the property is dealstage, map it to the correct stage name and prepare Clockify update
           else if(payload.propertyName === 'dealstage') {
-              data[propertyMap[payload.propertyName]] = formatDealStage(payload.propertyValue)
+
+            const stage = formatDealStage(payload.propertyValue)
+
+            if(!stage) {
+              result.data = { message: `Invalid deal stage: ${payload.propertyValue}` }
+              result.status = 400
             }
+            else {
+              data[propertyMap[payload.propertyName]] = stage
+
+              // If the stage is anything other than in progress, archive the project in Clockify
+              if(stage === 'Awaiting Allocation' || stage === 'Allocated') {
+                clockifyUpdates = { archived: true }
+              }
+              else {
+                clockifyUpdates = { archived: true }
+              }
+            }
+          }
           // Otherwise, just set the value
           else {
             data[propertyMap[payload.propertyName]] = payload.propertyValue
           }
 
-          if(payload.propertyName === 'dealname' && project.clockifyID) {
-            const response = await axios.put(`/projects/${project.clockifyID}`, { name: data.name }, clockifyConfig)
+          if(Object.keys(clockifyUpdates).length && project.clockifyID) {
+            const response = await axios.put(`/projects/${project.clockifyID}`, clockifyUpdates, clockifyConfig)
             if(response.status !== 200) {
-              result.data = `Error updating Clockify project name: ${response.statusText}`
+              result.data = `Error updating Clockify project: ${response.statusText}`
               result.status = response.status
               return result
             }
