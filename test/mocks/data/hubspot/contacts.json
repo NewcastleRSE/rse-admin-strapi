@@ -1,0 +1,30 @@
+[
+    {
+        "id": "92181619352",
+        "properties": {
+            "createdate": "2025-01-16T21:26:51.976Z",
+            "email": "jane.doe@example.com",
+            "firstname": "Jane",
+            "hs_object_id": "92181619352",
+            "lastmodifieddate": "2025-10-05T15:17:50.352Z",
+            "lastname": "Doe"
+        },
+        "createdAt": "2025-01-16T21:26:51.976Z",
+        "updatedAt": "2025-10-05T15:17:50.352Z",
+        "archived": false
+    },
+    {
+        "id": "66343698548",
+        "properties": {
+            "createdate": "2025-01-16T21:26:51.976Z",
+            "email": "john.doe@example.com",
+            "firstname": "John",
+            "hs_object_id": "66343698548",
+            "lastmodifieddate": "2025-10-05T15:17:50.352Z",
+            "lastname": "Doe"
+        },
+        "createdAt": "2025-01-16T21:26:51.976Z",
+        "updatedAt": "2025-10-05T15:17:50.352Z",
+        "archived": false
+    }
+]

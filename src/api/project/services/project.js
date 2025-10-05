@@ -300,6 +300,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
             displayName: contact.properties.firstname + ' ' + contact.properties.lastname,
             jobTitle: contact.properties.jobtitle,
             department: contact.properties.department,
+            hubspotID: contact.id
           }
 
           contactIDs.push((await strapi.services['api::contact.contact'].create({ data: newContact })).id)

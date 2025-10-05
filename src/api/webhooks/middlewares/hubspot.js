@@ -17,6 +17,11 @@ module.exports = (config, { strapi }) => {
         const hash = crypto.createHash('sha256').update(secret).digest('hex')
 
         if (signature === hash) {
+            if(ctx.request.body.attemptNumber && ctx.request.body.attemptNumber > 0) {
+                ctx.status = 102
+                ctx.body = { message: 'Processing retry attempt' }
+                return
+            }
             await next()
         } else {
             ctx.status = 401

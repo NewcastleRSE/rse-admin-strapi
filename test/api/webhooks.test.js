@@ -3,8 +3,9 @@ const crypto = require('crypto')
 const nock = require('nock')
 const { DateTime } = require('luxon')
 
-const hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
-      hubspotContacts = require('/test/mocks/data/hubspot/dealContacts.json'),
+const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json'),
+      hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
+      hubspotDealContacts = require('/test/mocks/data/hubspot/dealContacts.json'),
       hubspotLineItems = require('/test/mocks/data/hubspot/dealLineItems.json'),
       hubspotNotes = require('/test/mocks/data/hubspot/dealNotes.json'),
       clockifyClients = require('/test/mocks/data/clockify/clients.json'),
@@ -78,7 +79,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .post('/contacts/search')
       .query(true)
-      .reply(200, hubspotContacts)
+      .reply(200, hubspotDealContacts)
 
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .post('/line_items/search')
@@ -175,22 +176,160 @@ describe('Webhooks API', () => {
     }
   })
 
-  test('should update contact association', async () => {
+  test('should add contact association from deal', async () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'DEAL_TO_CONTACT',
       fromObjectId: 29467931466,
-      toObjectId: 20,
+      toObjectId: 92181619352,
       associationRemoved: false,
       isPrimaryAssociation: false
     }
+
+    nock(`https://api.hubapi.com/crm/v3/objects`)
+      .get(`/contacts/${contactChange.toObjectId}`)
+      .query(true)
+      .reply(200, hubspotContacts[0])
+
+    const project = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    // Check if project exists and is unique
+    expect(project.status).toBe(200)
+    expect(Array.isArray(project.body.data)).toBe(true)
+    expect(project.body.data.length).toEqual(1)
+    
+    // Store current contact count
+    const contactCount = project.body.data[0].contacts.length
 
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
       .set('X-HUBSPOT-SIGNATURE', `${signature}`)
       .send({ ...webhookPayload, ...contactChange })
 
+    // Check if contact was added
     expect(res.statusCode).toEqual(200)
+    expect(res.body.data.contacts.length).toEqual(contactCount + 1)
+    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.toObjectId.toString()).length).toEqual(1)
+  })
+
+  test('should add deal association from contact', async () => {
+    const contactChange = {
+      subscriptionType: 'deal.associationChange',
+      associationType: 'CONTACT_TO_DEAL',
+      fromObjectId: 66343698548,
+      toObjectId: 29467931466,
+      associationRemoved: false,
+      isPrimaryAssociation: false
+    }
+
+    nock(`https://api.hubapi.com/crm/v3/objects`)
+      .get(`/contacts/${contactChange.fromObjectId}`)
+      .query(true)
+      .reply(200, hubspotContacts[1])
+
+    const project = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    // Check if project exists and is unique
+    expect(project.status).toBe(200)
+    expect(Array.isArray(project.body.data)).toBe(true)
+    expect(project.body.data.length).toEqual(1)
+    
+    // Store current contact count
+    const contactCount = project.body.data[0].contacts.length
+
+    const res = await request(strapi.server.httpServer)
+      .post('/api/webhooks/hubspot')
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
+      .send({ ...webhookPayload, ...contactChange })
+
+    // Check if contact was added
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data.contacts.length).toEqual(contactCount + 1)
+    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.fromObjectId.toString()).length).toEqual(1)
+  })
+
+  test('should remove contact association', async () => {
+    const contactChange = {
+      subscriptionType: 'deal.associationChange',
+      associationType: 'DEAL_TO_CONTACT',
+      fromObjectId: 29467931466,
+      toObjectId: 92181619352,
+      associationRemoved: true,
+      isPrimaryAssociation: false
+    }
+
+    nock(`https://api.hubapi.com/crm/v3/objects`)
+      .get(`/contacts/${contactChange.toObjectId}`)
+      .query(true)
+      .reply(200, hubspotContacts[0])
+
+    const project = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    // Check if project exists and is unique
+    expect(project.status).toBe(200)
+    expect(Array.isArray(project.body.data)).toBe(true)
+    expect(project.body.data.length).toEqual(1)
+    
+    // Store current contact count
+    const contactCount = project.body.data[0].contacts.length
+
+    const res = await request(strapi.server.httpServer)
+      .post('/api/webhooks/hubspot')
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
+      .send({ ...webhookPayload, ...contactChange })
+
+    // Check if contact was removed
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data.contacts.length).toEqual(contactCount - 1)
+    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.toObjectId.toString()).length).toEqual(0)
+  })
+
+  test('should remove deal association from contact', async () => {
+    const contactChange = {
+      subscriptionType: 'deal.associationChange',
+      associationType: 'CONTACT_TO_DEAL',
+      fromObjectId: 66343698548,
+      toObjectId: 29467931466,
+      associationRemoved: true,
+      isPrimaryAssociation: false
+    }
+
+    nock(`https://api.hubapi.com/crm/v3/objects`)
+      .get(`/contacts/${contactChange.fromObjectId}`)
+      .query(true)
+      .reply(200, hubspotContacts[1])
+
+    const project = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    // Check if project exists and is unique
+    expect(project.status).toBe(200)
+    expect(Array.isArray(project.body.data)).toBe(true)
+    expect(project.body.data.length).toEqual(1)
+    
+    // Store current contact count
+    const contactCount = project.body.data[0].contacts.length
+
+    const res = await request(strapi.server.httpServer)
+      .post('/api/webhooks/hubspot')
+      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
+      .send({ ...webhookPayload, ...contactChange })
+
+    // Check if contact was removed
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.data.contacts.length).toEqual(contactCount - 1)
+    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.fromObjectId.toString()).length).toEqual(0)
   })
 
   test('should update line items', async () => {
@@ -198,7 +337,7 @@ describe('Webhooks API', () => {
       subscriptionType: 'deal.associationChange',
       associationType: 'DEAL_TO_LINE_ITEM',
       fromObjectId: 29467931466,
-      toObjectId: 20,
+      toObjectId: 99,
       associationRemoved: false,
       isPrimaryAssociation: false
     }
