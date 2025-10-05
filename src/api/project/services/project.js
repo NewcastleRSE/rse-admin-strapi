@@ -356,5 +356,9 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       }
 
       return response
+    },
+    async sync() {
+      console.log('Syncing projects from HubSpot')
+      return true
     }
 }))

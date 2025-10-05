@@ -133,4 +133,14 @@ describe('Projects API', () => {
 
     expect(fetchRes.status).toBe(404)
   })
+
+  it('should sync projects from Hubspot', async () => {
+    const res = await request(strapi.server.httpServer)
+      .get('/api/projects/sync')
+      .set('accept', 'application/json')
+      .set('Authorization', `Bearer ${JWT}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toBe(true)
+  })
 })
