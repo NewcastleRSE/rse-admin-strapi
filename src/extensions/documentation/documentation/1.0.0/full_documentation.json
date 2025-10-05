@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-10-04T07:24:38.881Z"
+    "x-generation-date": "2025-10-05T20:12:29.035Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6459,6 +6459,11 @@
                                   }
                                 }
                               },
+                              "hubspotID": {
+                                "type": "string",
+                                "pattern": "^\\d*$",
+                                "example": "123456789"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -7713,6 +7718,11 @@
                                   }
                                 }
                               },
+                              "hubspotID": {
+                                "type": "string",
+                                "pattern": "^\\d*$",
+                                "example": "123456789"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -8118,7 +8128,8 @@
               "firstname",
               "email",
               "lastname",
-              "displayName"
+              "displayName",
+              "hubspotID"
             ],
             "type": "object",
             "properties": {
@@ -8157,6 +8168,11 @@
                   ],
                   "example": "string or id"
                 }
+              },
+              "hubspotID": {
+                "type": "string",
+                "pattern": "^\\d*$",
+                "example": "123456789"
               },
               "locale": {
                 "type": "string"
@@ -8220,7 +8236,8 @@
           "firstname",
           "email",
           "lastname",
-          "displayName"
+          "displayName",
+          "hubspotID"
         ],
         "properties": {
           "id": {
@@ -8906,6 +8923,11 @@
                           }
                         }
                       },
+                      "hubspotID": {
+                        "type": "string",
+                        "pattern": "^\\d*$",
+                        "example": "123456789"
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -9306,6 +9328,11 @@
                 }
               }
             }
+          },
+          "hubspotID": {
+            "type": "string",
+            "pattern": "^\\d*$",
+            "example": "123456789"
           },
           "createdAt": {
             "type": "string",
@@ -10723,6 +10750,11 @@
                         }
                       }
                     },
+                    "hubspotID": {
+                      "type": "string",
+                      "pattern": "^\\d*$",
+                      "example": "123456789"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -11675,6 +11707,11 @@
                                 }
                               }
                             }
+                          },
+                          "hubspotID": {
+                            "type": "string",
+                            "pattern": "^\\d*$",
+                            "example": "123456789"
                           },
                           "createdAt": {
                             "type": "string",
@@ -13807,6 +13844,11 @@
                                 }
                               }
                             }
+                          },
+                          "hubspotID": {
+                            "type": "string",
+                            "pattern": "^\\d*$",
+                            "example": "123456789"
                           },
                           "createdAt": {
                             "type": "string",
