@@ -35,21 +35,54 @@ const stages = {
     completed: process.env.HUBSPOT_DEAL_COMPLETED,
   }
   
-  // Invert stages to key by HubSpot stage names
-  const invert = (obj) => Object.fromEntries(Object.entries(obj).map((a) => a.reverse()))
-  const hsStages = invert(stages)
-  
-  function formatDealStage(stage) {
-    if (stage && hsStages[stage]) {
-        return hsStages[stage]
-            .replace(/([A-Z])/g, " $1")
-            .replace(/^./, function (str) {
-                return str.toUpperCase()
-            })
-    } else {
-        throw new Error(`${stage} is not in ${Object.keys(hsStages).join(', ')}`)
-    }
+// Invert stages to key by HubSpot stage names
+const invert = (obj) => Object.fromEntries(Object.entries(obj).map((a) => a.reverse()))
+const hsStages = invert(stages)
+
+function formatDealStage(stage) {
+  if (stage && hsStages[stage]) {
+      return hsStages[stage]
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, function (str) {
+              return str.toUpperCase()
+          })
+  } else {
+      throw new Error(`${stage} is not in ${Object.keys(hsStages).join(', ')}`)
   }
+}
+
+// Recursively fetch all HubSpot deals
+async function getDeals(after = 0, limit = 100, projectList = []) {
+    try {
+        const publicObjectSearchRequest = {
+            filterGroups: [
+                {
+                    filters: [
+                        { propertyName: 'dealstage', operator: 'IN', values: Object.keys(hsStages) },
+                    ],
+                },
+            ],
+            properties: dealProperties,
+            limit,
+            after,
+        }
+
+        let hsProjects = await hubspotClient.crm.deals.searchApi.doSearch(publicObjectSearchRequest)
+        projectList = projectList.concat(hsProjects.results)
+
+        if (hsProjects.paging) {
+            return getDeals(
+                hsProjects.paging.next.after,
+                limit,
+                projectList
+            )
+        } else {
+            return projectList
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
 
 // Recursively fetch all project associations (contacts, notes, etc.)
 async function getHubSpotAssociations(
@@ -359,6 +392,47 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
     },
     async sync() {
       console.log('Syncing projects from HubSpot')
+
+      // Get all projects from HubSpot
+      const hubspotProjects = await getDeals()
+      const projectIDs = hubspotProjects.map(p => p.id)
+
+      console.log(projectIDs)
+
+      // Get all projects from Strapi
+
+      try {
+        const strapiProjects = await strapi.documents('api::project.project').findMany({filters: { hubspotID: { $in: projectIDs } }, fields: ['hubspotID'],  populate: { contacts: true }})
+        const newProjects = hubspotProjects.filter(hsProject => !strapiProjects.find(sp => sp.hubspotID === hsProject.id))
+      
+        for(const project of newProjects) {
+          try {
+            const res = await this.createFromHubspot(project.id)
+            console.log(`Created project ${res.name} (${res.id})`)
+          } catch (e) {
+            console.error(`Error creating project from HubSpot ID ${project.id}: ${e.message}`)
+          }
+        }
+      } catch (e) {
+        console.error(e.message)
+      }
+
+      
+      
+
+      // Limit to 1000 for now - pagination can be added later if needed
+
+      // Only get projects at certain stages
+
+      // Separate out projects that need creating and updating
+
+      // Create new projects
+
+      // Update existing projects
+
+      // Update Clockify estimates if line items have changed
+
+      // Return summary of changes
       return true
     }
 }))

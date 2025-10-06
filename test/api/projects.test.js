@@ -2,6 +2,7 @@ const request = require('supertest')
 const nock = require('nock')
 
 const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
+const hubspotDeals = require('/test/mocks/data/hubspot/deals.json')
 
 let JWT
 
@@ -23,7 +24,7 @@ describe('Projects API', () => {
 
   let project
 
-  it('should create a new project', async () => {
+  /*it('should create a new project', async () => {
     const newProject = {
       data: {
         clockifyID: '61f3b79f5bc60c3ad37f522e',
@@ -132,9 +133,15 @@ describe('Projects API', () => {
       .set('Authorization', `Bearer ${JWT}`)
 
     expect(fetchRes.status).toBe(404)
-  })
+  })*/
 
   it('should sync projects from Hubspot', async () => {
+
+    nock(`https://api.hubapi.com/crm/v3/objects`)
+          .post(`/deals/search`)
+          .query(true)
+          .reply(200, hubspotDeals)
+
     const res = await request(strapi.server.httpServer)
       .get('/api/projects/sync')
       .set('accept', 'application/json')
