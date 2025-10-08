@@ -3,6 +3,10 @@ const nock = require('nock')
 
 const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
 const hubspotDeals = require('/test/mocks/data/hubspot/deals.json')
+const hubspotAssociations = require('/test/mocks/data/hubspot/associations.json')
+const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json')
+const allContacts = require('/test/mocks/data/hubspot/allContacts.json')
+const { all } = require('axios')
 
 let JWT
 
@@ -18,6 +22,14 @@ beforeAll(async () => {
         .then((data) => {
           JWT = data.body.jwt
         })
+})
+
+afterEach(() => {
+  nock.cleanAll()
+})
+
+afterAll(() => {
+  nock.restore()
 })
 
 describe('Projects API', () => {
@@ -137,17 +149,40 @@ describe('Projects API', () => {
 
   it('should sync projects from Hubspot', async () => {
 
-    nock(`https://api.hubapi.com/crm/v3/objects`)
-          .post(`/deals/search`)
+    nock(`https://api.hubapi.com/crm/v3/objects/deals`)
+          .post(`/search`)
           .query(true)
           .reply(200, hubspotDeals)
+
+    nock(`https://api.hubapi.com/crm/v3/associations/deals/contacts/batch`)
+          .post(`/read`)
+          .query(true)
+          .reply(200, hubspotAssociations)
+
+    nock(`https://api.hubapi.com/crm/v3/objects/contacts`)
+          .post(`/search`)
+          .query(true)
+          .reply(200, { total: 100, results: allContacts.results.slice(0, 100) })
+
+    // For second page of contacts
+    nock(`https://api.hubapi.com/crm/v3/objects/contacts`)
+          .post(`/search`)
+          .query(true)
+          .reply(200, { total: 46, results: allContacts.results.slice(100, 200) })
 
     const res = await request(strapi.server.httpServer)
       .get('/api/projects/sync')
       .set('accept', 'application/json')
       .set('Authorization', `Bearer ${JWT}`)
 
+    console.log(JSON.stringify(res.body, null, 2))
+
     expect(res.status).toBe(200)
-    expect(res.body).toBe(true)
+    expect(res.body).toHaveProperty('created')
+    expect(res.body).toHaveProperty('updated')
+    expect(res.body).toHaveProperty('errors')
+    expect(Array.isArray(res.body.created)).toBe(true)
+    expect(Array.isArray(res.body.updated)).toBe(true)
+    expect(Array.isArray(res.body.errors)).toBe(true)
   })
 })

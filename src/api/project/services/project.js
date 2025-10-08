@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs')
 const DateTime = require('luxon').DateTime
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
@@ -51,7 +52,7 @@ function formatDealStage(stage) {
   }
 }
 
-// Recursively fetch all HubSpot deals
+// Recursively fetch HubSpot deals
 async function getDeals(after = 0, limit = 100, projectList = []) {
     try {
         const publicObjectSearchRequest = {
@@ -78,6 +79,40 @@ async function getDeals(after = 0, limit = 100, projectList = []) {
             )
         } else {
             return projectList
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+// Recursively fetch all HubSpot deals
+async function getContacts(ids, after = 0, limit = 100, contactList = []) {
+    try {
+        const publicObjectSearchRequest = {
+            filterGroups: [
+                {
+                    filters: [
+                        { propertyName: 'hs_object_id', operator: 'IN', values: ids },
+                    ],
+                },
+            ],
+            properties: contactProperties,
+            limit,
+            after,
+        }
+
+        let hsContacts = await hubspotClient.crm.contacts.searchApi.doSearch(publicObjectSearchRequest)
+        contactList = contactList.concat(hsContacts.results)
+
+        if (hsContacts.paging) {
+            return getContacts(
+                ids,
+                hsContacts.paging.next.after,
+                limit,
+                contactList
+            )
+        } else {
+            return contactList
         }
     } catch (e) {
         console.error(e)
@@ -391,48 +426,163 @@ module.exports = createCoreService('api::project.project', ({ strapi }) =>  ({
       return response
     },
     async sync() {
-      console.log('Syncing projects from HubSpot')
+
+      const output = { 
+        created: [],
+        updated: [],
+        errors: [] }
 
       // Get all projects from HubSpot
       const hubspotProjects = await getDeals()
       const projectIDs = hubspotProjects.map(p => p.id)
 
-      console.log(projectIDs)
-
       // Get all projects from Strapi
-
-      try {
-        const strapiProjects = await strapi.documents('api::project.project').findMany({filters: { hubspotID: { $in: projectIDs } }, fields: ['hubspotID'],  populate: { contacts: true }})
-        const newProjects = hubspotProjects.filter(hsProject => !strapiProjects.find(sp => sp.hubspotID === hsProject.id))
+      const strapiProjects = await strapi.documents('api::project.project').findMany({filters: { hubspotID: { $in: projectIDs } }, fields: ['hubspotID'],  populate: { contacts: true }})
       
-        for(const project of newProjects) {
-          try {
-            const res = await this.createFromHubspot(project.id)
-            console.log(`Created project ${res.name} (${res.id})`)
-          } catch (e) {
-            console.error(`Error creating project from HubSpot ID ${project.id}: ${e.message}`)
-          }
-        }
-      } catch (e) {
-        console.error(e.message)
+      // Separate out new and existing project IDs
+      const newProjects = hubspotProjects.filter(hsProject => !strapiProjects.find(sp => sp.hubspotID === hsProject.id)).map(p => p.id)
+      const existingProjects = hubspotProjects.filter(hsProject => strapiProjects.find(sp => sp.hubspotID === hsProject.id)).map(p => p.id)
+
+      // Get contacts for all projects
+      const associations = await hubspotClient.crm.associations.batchApi.read('deals', 'contacts', { inputs: projectIDs.map(id => ({ id })) })
+
+      if (associations.errors > 0) {
+        // Report Errors
+        console.error('Errors fetching associations:', associations.results.filter(r => r.errors).map(r => ({ id: r.id, errors: r.errors })))
       }
 
-      
-      
+      // Get unique contact IDs
+      const contactIDs = [...new Set(associations.results.flatMap(r => r.to.map(t => t.id)))]
 
-      // Limit to 1000 for now - pagination can be added later if needed
+      // Fetch contacts in chunks of 100 (HubSpot limit)
+      const chunkSize = 100
+      let contacts = []
 
-      // Only get projects at certain stages
+      for (let i = 0; i < contactIDs.length; i += chunkSize) {
+          const chunk = contactIDs.slice(i, i + chunkSize)
+          contacts = contacts.concat(await getContacts(chunk))
+      }
 
-      // Separate out projects that need creating and updating
+      for (const hsProject of hubspotProjects.slice(0, 2)) {
 
-      // Create new projects
+          try {
+            // Set deal stage to formatted value
+            hsProject.properties.dealstage = formatDealStage(hsProject.properties.dealstage)
 
-      // Update existing projects
+            // Find associated contacts
+            const associatedContacts = associations.results.filter(r => r._from.id === hsProject.id)
 
-      // Update Clockify estimates if line items have changed
+            hsProject.properties.contacts = []
 
-      // Return summary of changes
-      return true
+            if(associatedContacts && associatedContacts.length) {
+
+              // Find contact IDs
+              let contactIDs = associatedContacts.map(a => a.to.map(t => t.id)).flat()
+
+              // Add contacts to project
+              hsProject.properties.contacts = contacts.filter(c => contactIDs.includes(c.id))
+            }
+
+            let contactRelations = []
+
+            for (const hsContact of hsProject.properties.contacts) {
+
+              const strapiContact = {
+                email: hsContact.properties.email,
+                firstname: hsContact.properties.firstname,
+                lastname: hsContact.properties.lastname,
+                displayName: hsContact.properties.firstname + ' ' + hsContact.properties.lastname,
+                jobTitle: hsContact.properties.jobtitle,
+                department: hsContact.properties.department,
+                hubspotID: hsContact.id
+              }
+
+              const existingContact = await strapi.documents('api::contact.contact').findFirst({ filters: { email: strapiContact.email } })
+
+              if(existingContact) {
+                // Update existing contact
+                await strapi.documents('api::contact.contact').update(existingContact.id, strapiContact)
+                contactRelations.push(existingContact.id)
+              } else {
+                // Create new contact
+                const newContact = await strapi.documents('api::contact.contact').create({data: strapiContact})
+                contactRelations.push(newContact.id)
+              }
+            }
+
+            // Create project in Strapi
+            const project = {
+              name: hsProject.properties.dealname,
+              hubspotID: hsProject.id,
+              clockifyID: '999',
+              condition: hsProject.properties.dealstage === 'Awaiting Allocation' ? 'amber' : 'green',
+              stage: hsProject.properties.dealstage,
+              costModel: hsProject.properties.cost_model,
+              awardStage: hsProject.properties.award_stage,
+              startDate: DateTime.fromMillis(Number(hsProject.properties.start_date)).toISODate(),
+              endDate: DateTime.fromMillis(Number(hsProject.properties.end_date)).toISODate(),
+              funder: hsProject.properties.funding_body,
+              school: hsProject.properties.school,
+              faculty: hsProject.properties.faculty,
+              amount: hsProject.properties.amount,
+              value: hsProject.properties.project_value,
+              financeContact: hsProject.properties.finance_contact,
+              account: hsProject.properties.account,
+              nuProjects: hsProject.properties.nu_projects_number,
+              contacts: contactRelations
+            }
+
+            // Check if all required fields are present
+            if(project.name && project.clockifyID && project.hubspotID && project.stage && project.costModel && project.awardStage && project.faculty && project.contacts.length)
+            {
+
+              if(existingProjects.includes(hsProject.id)) {
+
+                // Retrieve existing project
+                const existingProject = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hsProject.id } })
+
+                // Update existing project
+                const response = await strapi.documents('api::project.project').update(existingProject.id, { data: project })
+
+                // Add to output
+                output.updated.push({
+                  id: response.id,
+                  name: response.name,
+                  hubspotID: response.hubspotID
+                })
+
+              } else {
+
+                // Create new project
+                const response = await strapi.documents('api::project.project').create({ data: project })
+
+                // Add to output
+                output.created.push({
+                  id: response.id,
+                  name: response.name,
+                  hubspotID: response.hubspotID
+                })
+              }
+            }
+            else {
+                throw new Error('Missing required fields')
+            }
+          } catch (error) {
+
+            let errorOutput = []
+
+            if(error.details && error.details.errors) {
+              errorOutput = errorOutput.concat(error.details.errors)
+            }
+            else {
+              errorOutput.push(error.message)
+            }
+
+            output.errors.push({ name: hsProject.properties.dealname, hubspotID: hsProject.id, error: errorOutput })
+          }
+        
+      }
+
+      return output
     }
 }))
