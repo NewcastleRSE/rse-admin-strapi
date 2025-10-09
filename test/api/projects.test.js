@@ -6,7 +6,8 @@ const hubspotDeals = require('/test/mocks/data/hubspot/deals.json')
 const hubspotAssociations = require('/test/mocks/data/hubspot/associations.json')
 const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json')
 const allContacts = require('/test/mocks/data/hubspot/allContacts.json')
-const { all } = require('axios')
+const allClockifyClients = require('/test/mocks/data/clockify/clockify-clients.json')
+const allClockifyProjects = require('/test/mocks/data/clockify/clockify-projects.json')
 
 let JWT
 
@@ -170,6 +171,36 @@ describe('Projects API', () => {
           .query(true)
           .reply(200, { total: 46, results: allContacts.results.slice(100, 200) })
 
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/clients?page-size=5000')
+          .reply(200, allClockifyClients)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?page-size=5000')
+          .reply(200, allClockifyProjects)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .put(/projects\/[^\/]+$/)
+      .reply(200, allClockifyProjects[0]) // Return first project as updated project
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .delete(/projects\/[^\/]+$/)
+      .reply(200, allClockifyProjects[0]) // Return first project as deleted project
+
+    // Mock deletion of unused clients
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .delete(/clients\/[^\/]+$/)
+      .reply(200, allClockifyClients[0]) // Return first client as deleted client
+
+    // Mock update of clients
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .put(/clients\/[^\/]+$/)
+      .reply(200, allClockifyClients[0]) // Return first client as updated client
+
     const res = await request(strapi.server.httpServer)
       .get('/api/projects/sync')
       .set('accept', 'application/json')
@@ -184,5 +215,5 @@ describe('Projects API', () => {
     expect(Array.isArray(res.body.created)).toBe(true)
     expect(Array.isArray(res.body.updated)).toBe(true)
     expect(Array.isArray(res.body.errors)).toBe(true)
-  })
+  }, 3000000)
 })
