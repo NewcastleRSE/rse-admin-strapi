@@ -596,11 +596,51 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
             }
           }
 
+          let clockifyProjectID = ProjectMap.find(p => p.hubspotID === hsProject.id)?.clockifyID
+
+          if (!clockifyProjectID) {
+
+            const contactMapEntry = contactMap.find(c => c.hubspotID === hsProject.properties.contacts[0]?.id)
+
+            if (!contactMapEntry) {
+
+              // Create Clockify client
+              const clockifyClient = await axios.post('/clients', { 
+                name: hsProject.properties.contacts[0]?.properties.firstname + ' ' + hsProject.properties.contacts[0]?.properties.lastname,
+                email: hsProject.properties.contacts[0]?.properties.email
+              }, clockifyConfig)
+
+              // Add to contact map
+              contactMap.push({
+                clockifyID: clockifyClient.data.id,
+                hubspotID: hsProject.properties.contacts[0]?.id,
+                email: hsProject.properties.contacts[0]?.properties.email,
+                name: hsProject.properties.contacts[0]?.properties.firstname + ' ' + hsProject.properties.contacts[0]?.properties.lastname
+              })
+
+              // Use this new entry
+              contactMapEntry = contactMap.find(c => c.hubspotID === hsProject.properties.contacts[0]?.id)
+            }
+
+            // Create Clockify project
+
+            const payload = { 
+              name: hsProject.properties.dealname,
+              clientId: contactMapEntry.clockifyID,
+              isPublic: true,
+              billable: true
+            }
+
+            const clockifyProject = await axios.post('/projects', payload, clockifyConfig)
+
+            clockifyProjectID = clockifyProject.data.id
+          }
+
           // Create project in Strapi
           const project = {
             name: hsProject.properties.dealname,
             hubspotID: hsProject.id,
-            clockifyID: ProjectMap.find(p => p.hubspotID === hsProject.id)?.clockifyID || null,
+            clockifyID: clockifyProjectID,
             condition: hsProject.properties.dealstage === 'Awaiting Allocation' ? 'amber' : 'green',
             stage: hsProject.properties.dealstage,
             costModel: hsProject.properties.cost_model,
@@ -618,10 +658,23 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
             contacts: contactRelations
           }
 
-          // Check if all required fields are present
-          if (project.name && project.clockifyID && project.hubspotID && project.stage && project.costModel && project.awardStage && project.faculty && project.contacts.length) {
+          let missingFields = []
 
-            if (existingProjects.includes(hsProject.id)) {
+          // Check if all required fields are present
+          if (!project.name) missingFields.push('Name')
+          if (!project.clockifyID) missingFields.push('ClockifyID')
+          if (!project.hubspotID) missingFields.push('HubspotID')
+          if (!project.stage) missingFields.push('Stage')
+          if (!project.costModel) missingFields.push('Cost Model')
+          if (!project.awardStage) missingFields.push('Award Stage')
+          if (!project.faculty) missingFields.push('Faculty')
+          if (!project.contacts.length) missingFields.push('Contacts')
+
+          if (missingFields.length) {
+            throw new Error('Missing required fields: ' + missingFields.join(', '))
+          }
+
+          if (existingProjects.includes(hsProject.id)) {
 
               // Retrieve existing project
               const existingProject = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hsProject.id } })
@@ -636,8 +689,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
                 hubspotID: response.hubspotID
               })
 
-            } else {
-
+          } else {
               // Create new project
               const response = await strapi.documents('api::project.project').create({ data: project })
 
@@ -647,11 +699,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
                 name: response.name,
                 hubspotID: response.hubspotID
               })
-            }
           }
-          else {
-            throw new Error('Missing required fields')
-          }
+
         } catch (error) {
 
           let errorOutput = []

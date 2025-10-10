@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-10-09T21:12:23.609Z"
+    "x-generation-date": "2025-10-10T20:56:38.748Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6392,7 +6392,7 @@
                             "Science, Agriculture & Engineering",
                             "Medical Sciences",
                             "Humanities & Social Sciences",
-                            "Central"
+                            "Service Hubs"
                           ]
                         },
                         "amount": {
@@ -7651,7 +7651,7 @@
                             "Science, Agriculture & Engineering",
                             "Medical Sciences",
                             "Humanities & Social Sciences",
-                            "Central"
+                            "Service Hubs"
                           ]
                         },
                         "amount": {
@@ -8856,7 +8856,7 @@
                     "Science, Agriculture & Engineering",
                     "Medical Sciences",
                     "Humanities & Social Sciences",
-                    "Central"
+                    "Service Hubs"
                   ]
                 },
                 "amount": {
@@ -10683,7 +10683,7 @@
                   "Science, Agriculture & Engineering",
                   "Medical Sciences",
                   "Humanities & Social Sciences",
-                  "Central"
+                  "Service Hubs"
                 ]
               },
               "amount": {
@@ -11403,7 +11403,7 @@
                   "Science, Agriculture & Engineering",
                   "Medical Sciences",
                   "Humanities & Social Sciences",
-                  "Central"
+                  "Service Hubs"
                 ]
               },
               "amount": {
@@ -11641,7 +11641,7 @@
                         "Science, Agriculture & Engineering",
                         "Medical Sciences",
                         "Humanities & Social Sciences",
-                        "Central"
+                        "Service Hubs"
                       ]
                     },
                     "amount": {
@@ -12657,7 +12657,7 @@
               "Science, Agriculture & Engineering",
               "Medical Sciences",
               "Humanities & Social Sciences",
-              "Central"
+              "Service Hubs"
             ]
           },
           "amount": {
@@ -13778,7 +13778,7 @@
                         "Science, Agriculture & Engineering",
                         "Medical Sciences",
                         "Humanities & Social Sciences",
-                        "Central"
+                        "Service Hubs"
                       ]
                     },
                     "amount": {

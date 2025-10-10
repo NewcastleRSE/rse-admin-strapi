@@ -714,7 +714,7 @@ export interface ApiProjectProject extends Struct.CollectionTypeSchema {
         'Science, Agriculture & Engineering',
         'Medical Sciences',
         'Humanities & Social Sciences',
-        'Central',
+        'Service Hubs',
       ]
     > &
       Schema.Attribute.Required;
