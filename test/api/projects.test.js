@@ -1,13 +1,12 @@
 const request = require('supertest')
 const nock = require('nock')
 
-const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
 const hubspotDeals = require('/test/mocks/data/hubspot/deals.json')
 const hubspotAssociations = require('/test/mocks/data/hubspot/associations.json')
 const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json')
-const allContacts = require('/test/mocks/data/hubspot/allContacts.json')
-const allClockifyClients = require('/test/mocks/data/clockify/clockify-clients.json')
-const allClockifyProjects = require('/test/mocks/data/clockify/clockify-projects.json')
+
+const clockifyClients = require('/test/mocks/data/clockify/clients.json')
+const clockifyProjects = require('/test/mocks/data/clockify/clockify-projects.json')
 
 let JWT
 
@@ -37,7 +36,7 @@ describe('Projects API', () => {
 
   let project
 
-  /*it('should create a new project', async () => {
+  it('should create a new project', async () => {
     const newProject = {
       data: {
         clockifyID: '61f3b79f5bc60c3ad37f522e',
@@ -146,7 +145,7 @@ describe('Projects API', () => {
       .set('Authorization', `Bearer ${JWT}`)
 
     expect(fetchRes.status).toBe(404)
-  })*/
+  })
 
   it('should sync projects from Hubspot', async () => {
 
@@ -163,50 +162,55 @@ describe('Projects API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects/contacts`)
           .post(`/search`)
           .query(true)
-          .reply(200, { total: 100, results: allContacts.results.slice(0, 100) })
-
-    // For second page of contacts
-    nock(`https://api.hubapi.com/crm/v3/objects/contacts`)
-          .post(`/search`)
-          .query(true)
-          .reply(200, { total: 46, results: allContacts.results.slice(100, 200) })
+          .reply(200, hubspotContacts)
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
           .get('/clients?page-size=5000')
-          .reply(200, allClockifyClients)
+          .reply(200, clockifyClients)
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
           .get('/projects?page-size=5000')
-          .reply(200, allClockifyProjects)
+          .reply(200, clockifyProjects)
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .persist()
       .put(/projects\/[^\/]+$/)
-      .reply(200, allClockifyProjects[0]) // Return first project as updated project
+      .reply(200, clockifyProjects[0]) // Return first project as updated project
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .post('/projects')
+      .reply(200, clockifyProjects[0]) // Return first project as created project
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .persist()
       .delete(/projects\/[^\/]+$/)
-      .reply(200, allClockifyProjects[0]) // Return first project as deleted project
+      .reply(200, clockifyProjects[0]) // Return first project as deleted project
 
     // Mock deletion of unused clients
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .persist()
       .delete(/clients\/[^\/]+$/)
-      .reply(200, allClockifyClients[0]) // Return first client as deleted client
+      .reply(200, clockifyClients[0]) // Return first client as deleted client
 
     // Mock update of clients
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .persist()
       .put(/clients\/[^\/]+$/)
-      .reply(200, allClockifyClients[0]) // Return first client as updated client
+      .reply(200, clockifyClients[0]) // Return first client as updated client
+
+    // Mock creation of clients
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .persist()
+      .post(`/clients`)
+      .reply(201, clockifyClients[0]) // Return first client as created client
 
     const res = await request(strapi.server.httpServer)
       .get('/api/projects/sync')
       .set('accept', 'application/json')
       .set('Authorization', `Bearer ${JWT}`)
 
-    console.log(JSON.stringify(res.body, null, 2))
+    //console.log(JSON.stringify(res.body, null, 2))
 
     expect(res.status).toBe(200)
     expect(res.body).toHaveProperty('created')

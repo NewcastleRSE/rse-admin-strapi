@@ -680,13 +680,14 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
               const existingProject = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hsProject.id } })
 
               // Update existing project
-              const response = await strapi.documents('api::project.project').update(existingProject.id, { data: project })
+              const response = await strapi.documents('api::project.project').update({ documentId: existingProject.documentId, data: project })
 
               // Add to output
               output.updated.push({
-                id: response.id,
                 name: response.name,
-                hubspotID: response.hubspotID
+                documentId: response.documentId,
+                hubspotID: response.hubspotID,
+                clockifyID: response.clockifyID
               })
 
           } else {
@@ -695,9 +696,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
               // Add to output
               output.created.push({
-                id: response.id,
                 name: response.name,
-                hubspotID: response.hubspotID
+                documentId: response.documentId,
+                hubspotID: response.hubspotID,
+                clockifyID: response.clockifyID
               })
           }
 
