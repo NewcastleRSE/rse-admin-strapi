@@ -2,11 +2,11 @@ const request = require('supertest')
 const nock = require('nock')
 const { DateTime, Interval } = require('luxon')
 
-const clockifySummary = require('/test/mocks/data/clockifySummary.json')
-const clockifyDetailed = require('/test/mocks/data/clockifyDetailed.json')
-const clockifyDetailedUser = require('/test/mocks/data/clockifyDetailedUser.json')
-const leaveEntries = require('/test/mocks/data/leaveEntries.json')
-const bankHolidays = require('/test/mocks/data/bankHolidays.json')
+const clockifySummary = require('/test/mocks/data/clockify/reports/summary.json')
+const clockifyDetailed = require('/test/mocks/data/clockify/reports/detailed.json')
+const clockifyDetailedUser = require('/test/mocks/data/clockify/reports/detailedUser.json')
+const leaveEntries = require('/test/mocks/data/leave/entries.json')
+const bankHolidays = require('/test/mocks/data/leave/bankHolidays.json')
 
 let JWT
 

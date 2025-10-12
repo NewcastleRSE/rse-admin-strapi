@@ -534,6 +534,9 @@ export interface ApiContactContact extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
     firstname: Schema.Attribute.String & Schema.Attribute.Required;
+    hubspotID: Schema.Attribute.BigInteger &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
     jobTitle: Schema.Attribute.String;
     lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -711,7 +714,7 @@ export interface ApiProjectProject extends Struct.CollectionTypeSchema {
         'Science, Agriculture & Engineering',
         'Medical Sciences',
         'Humanities & Social Sciences',
-        'Central',
+        'Service Hubs',
       ]
     > &
       Schema.Attribute.Required;

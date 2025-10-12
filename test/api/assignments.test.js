@@ -5,7 +5,7 @@ let JWT, projects, rses
 
 beforeAll(async () => {
 
-    const clockifyProjects = require('/test/mocks/data/clockifyProjects.json')
+    const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
 
     await request(strapi.server.httpServer)
         .post('/api/auth/local')

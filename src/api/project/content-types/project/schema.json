@@ -34,15 +34,16 @@
     },
     "condition": {
       "type": "enumeration",
+      "default": "green",
       "enum": [
         "red",
         "amber",
         "green"
-      ],
-      "default": "green"
+      ]
     },
     "stage": {
       "type": "enumeration",
+      "required": true,
       "enum": [
         "Meeting Scheduled",
         "Bid Preparation",
@@ -53,30 +54,29 @@
         "Funded & Awaiting Allocated",
         "Allocated",
         "Completed"
-      ],
-      "required": true
+      ]
     },
     "costModel": {
       "type": "enumeration",
+      "required": true,
+      "default": "Facility",
       "enum": [
         "Facility",
         "Directly Incurred",
         "JobsOC",
         "Voluntary"
-      ],
-      "required": true,
-      "default": "Facility"
+      ]
     },
     "awardStage": {
       "type": "enumeration",
+      "required": true,
+      "default": "Pre-Award",
       "enum": [
         "Pre-Award",
         "Post-Award",
         "Underwrite",
         "Centrally Awarded"
-      ],
-      "default": "Pre-Award",
-      "required": true
+      ]
     },
     "startDate": {
       "type": "date"
@@ -92,13 +92,13 @@
     },
     "faculty": {
       "type": "enumeration",
+      "required": true,
       "enum": [
         "Science, Agriculture & Engineering",
         "Medical Sciences",
         "Humanities & Social Sciences",
-        "Central"
-      ],
-      "required": true
+        "Service Hubs"
+      ]
     },
     "amount": {
       "type": "decimal",

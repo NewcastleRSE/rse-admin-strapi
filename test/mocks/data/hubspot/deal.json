@@ -1,0 +1,66 @@
+{
+    "id": "36629623097",
+    "properties": {
+        "account_code": "OSR/0408/ENG/A102",
+        "amount": "15000",
+        "award_stage": "Pre-Award",
+        "cost_model": "Facility",
+        "createdate": "2025-04-15T10:12:05.000Z",
+        "dealname": "Robotics sensors evaluation",
+        "dealstage": "closedwon",
+        "end_date": "2026-03-31",
+        "faculty": "Science, Agriculture & Engineering",
+        "finance_contact": "john.smith@example.com",
+        "funding_body": "Innovate UK",
+        "hs_lastmodifieddate": "2025-05-01T09:20:11.100Z",
+        "hs_object_id": "36629623097",
+        "project_value": "15000",
+        "school": "Engineering",
+        "start_date": "2025-05-01"
+    },
+    "createdAt": "2025-04-15T10:12:05.000Z",
+    "updatedAt": "2025-05-01T09:20:11.100Z",
+    "archived": false,
+    "associations": {
+        "notes": {
+            "results": [
+                {
+                    "id": "65197509249",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "65199126190",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "69525126233",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "69761079119",
+                    "type": "deal_to_note"
+                },
+                {
+                    "id": "74700772680",
+                    "type": "deal_to_note"
+                }
+            ]
+        },
+        "line items": {
+            "results": [
+                {
+                    "id": "25440617024",
+                    "type": "deal_to_line_item"
+                }
+            ]
+        },
+        "contacts": {
+            "results": [
+                {
+                    "id": "92181619352",
+                    "type": "deal_to_contact"
+                }
+            ]
+        }
+    }
+}

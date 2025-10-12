@@ -44,6 +44,11 @@
       "relation": "manyToMany",
       "target": "api::project.project",
       "inversedBy": "contacts"
+    },
+    "hubspotID": {
+      "type": "biginteger",
+      "required": true,
+      "unique": true
     }
   }
 }

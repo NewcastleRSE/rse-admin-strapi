@@ -41,7 +41,8 @@ describe('Contacts API', () => {
           organisation: null,
           department: 'School X',
           lastname: 'Doe',
-          displayName: 'Jane Doe'
+          displayName: 'Jane Doe',
+          hubspotID: '987654321'
         }
       })
     

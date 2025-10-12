@@ -1,0 +1,20 @@
+{
+  "total": 1,
+  "results": [
+    {
+      "createdAt": "2024-11-22T15:47:42.003Z",
+      "archived": false,
+      "id": "25440617024",
+      "properties": {
+        "createdate": "2024-11-22T15:47:42.003Z",
+        "hs_lastmodifieddate": "2024-11-22T15:47:42.003Z",
+        "hs_object_id": "25440617024",
+        "name": "Standard Day Rate 23/24",
+        "price": "392.23",
+        "quantity": "223",
+        "recurringbillingfrequency": null
+      },
+      "updatedAt": "2024-11-22T15:47:42.003Z"
+    }
+  ]
+}

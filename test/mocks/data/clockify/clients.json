@@ -1,0 +1,69 @@
+[
+    {
+        "id": "67412b047f91b9790b3597ad",
+        "name": "Jane Doe",
+        "email": "jane.doe@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    },
+    {
+        "id": "67412b047f91b9790b3597ae",
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    },
+    {
+        "id": "67412b047f91b9790b3597af",
+        "name": "Alice Johnson",
+        "email": "alice.johnson@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    },
+    {
+        "id": "67412b047f91b9790b3597b0",
+        "name": "Bob Lee",
+        "email": "bob.lee@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    },
+    {
+        "id": "67412b047f91b9790b3597b1",
+        "name": "Maria Garcia",
+        "email": "maria.garcia@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    },
+    {
+        "id": "67412b047f91b9790b3597b2",
+        "name": "Chen Wang",
+        "email": "chen.wang@example.com",
+        "workspaceId": "61f3ac40ac897025894b32ca",
+        "archived": false,
+        "address": null,
+        "note": "",
+        "currencyId": "649bf07884ff0d0de210272b",
+        "currencyCode": "GBP"
+    }
+
+]
