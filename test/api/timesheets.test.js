@@ -2,9 +2,9 @@ const request = require('supertest')
 const nock = require('nock')
 const { DateTime, Interval } = require('luxon')
 
-const clockifySummary = require('/test/mocks/data/clockify/reportSummary.json')
-const clockifyDetailed = require('/test/mocks/data/clockify/reportDetailed.json')
-const clockifyDetailedUser = require('/test/mocks/data/clockify/reportDetailedUser.json')
+const clockifySummary = require('/test/mocks/data/clockify/reports/summary.json')
+const clockifyDetailed = require('/test/mocks/data/clockify/reports/detailed.json')
+const clockifyDetailedUser = require('/test/mocks/data/clockify/reports/detailedUser.json')
 const leaveEntries = require('/test/mocks/data/leave/entries.json')
 const bankHolidays = require('/test/mocks/data/leave/bankHolidays.json')
 

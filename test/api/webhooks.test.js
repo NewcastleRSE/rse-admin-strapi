@@ -5,13 +5,12 @@ const { DateTime } = require('luxon')
 
 const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json'),
       hubspotDeal = require('/test/mocks/data/hubspot/deal.json'),
-      hubspotDealContacts = require('/test/mocks/data/hubspot/dealContacts.json'),
-      hubspotLineItems = require('/test/mocks/data/hubspot/dealLineItems.json'),
-      hubspotNotes = require('/test/mocks/data/hubspot/dealNotes.json'),
+      hubspotLineItems = require('/test/mocks/data/hubspot/lineItems.json'),
+      hubspotNotes = require('/test/mocks/data/hubspot/notes.json'),
       clockifyClients = require('/test/mocks/data/clockify/clients.json'),
-      clockifyProject = require('/test/mocks/data/clockify/project.json')
+      clockifyProjects = require('/test/mocks/data/clockify/projects.json')
 
-let updatedProject = require('/test/mocks/data/clockify/updatedProject.json')
+let updatedProject = clockifyProjects[0]
 
 const propertyMap = {
         account_code: 'account',
@@ -40,7 +39,7 @@ const webhookPayload = {
         portalId: 5251042,
         occurredAt: 1759349822122,
         attemptNumber: 0,
-        objectId: 29467931466,
+        objectId: 36629623097,
         changeSource: 'CRM'
       }
 
@@ -79,7 +78,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .post('/contacts/search')
       .query(true)
-      .reply(200, hubspotDealContacts)
+      .reply(200, { total: 2, results: hubspotContacts.results.slice(0, 2) })
 
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .post('/line_items/search')
@@ -92,16 +91,20 @@ describe('Webhooks API', () => {
       .reply(200, hubspotNotes)
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
-      .get('/clients?name=Adam+Ingram&hydrated=true&page-size=5000')
+      .get('/clients?name=Jane+Doe&hydrated=true&page-size=5000')
       .reply(200, clockifyClients)
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
-      .get('/projects?name=X-ray+Measurements+of+Accreting+black+holes+with+Polarimetric-Spectral-timing+techniques+(X-MAPS)&hydrated=true&page-size=5000')
-      .reply(200, clockifyProject)
+      .get('/projects?name=Robotics+sensors+evaluation&hydrated=true&page-size=5000')
+      .reply(200, clockifyProjects[0])
 
     nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
       .post('/projects')
-      .reply(201, clockifyProject[0])
+      .reply(201, clockifyProjects[0])
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+      .patch('/projects/' + clockifyProjects[0].id + '/estimate')
+      .reply(201, clockifyProjects[0])
 
     const createProject = {
       subscriptionType: 'deal.creation',
@@ -119,7 +122,7 @@ describe('Webhooks API', () => {
     expect(res.body.data).toHaveProperty('documentId')
     expect(res.body.data).toHaveProperty('clockifyID')
     expect(res.body.data).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
-    expect(res.body.data).toHaveProperty('name', 'X-ray Measurements of Accreting black holes with Polarimetric-Spectral-timing techniques (X-MAPS)')
+    expect(res.body.data).toHaveProperty('name', 'Robotics sensors evaluation')
   })
 
   it.each([
@@ -180,8 +183,8 @@ describe('Webhooks API', () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'DEAL_TO_CONTACT',
-      fromObjectId: 29467931466,
-      toObjectId: 92181619352,
+      fromObjectId: 36629623097,
+      toObjectId: 92181619357,
       associationRemoved: false,
       isPrimaryAssociation: false
     }
@@ -189,7 +192,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/contacts/${contactChange.toObjectId}`)
       .query(true)
-      .reply(200, hubspotContacts[0])
+      .reply(200, hubspotContacts.results.find(c => c.id === contactChange.toObjectId.toString()))
 
     const project = await request(strapi.server.httpServer)
     .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
@@ -219,8 +222,8 @@ describe('Webhooks API', () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'CONTACT_TO_DEAL',
-      fromObjectId: 66343698548,
-      toObjectId: 29467931466,
+      fromObjectId: 92181619356,
+      toObjectId: 36629623097,
       associationRemoved: false,
       isPrimaryAssociation: false
     }
@@ -228,7 +231,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/contacts/${contactChange.fromObjectId}`)
       .query(true)
-      .reply(200, hubspotContacts[1])
+      .reply(200, hubspotContacts.results.find(c => c.id === contactChange.fromObjectId.toString()))
 
     const project = await request(strapi.server.httpServer)
     .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
@@ -258,8 +261,8 @@ describe('Webhooks API', () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'DEAL_TO_CONTACT',
-      fromObjectId: 29467931466,
-      toObjectId: 92181619352,
+      fromObjectId: 36629623097,
+      toObjectId: 92181619357,
       associationRemoved: true,
       isPrimaryAssociation: false
     }
@@ -267,7 +270,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/contacts/${contactChange.toObjectId}`)
       .query(true)
-      .reply(200, hubspotContacts[0])
+      .reply(200, hubspotContacts.results.find(c => c.id === contactChange.toObjectId.toString()))
 
     const project = await request(strapi.server.httpServer)
     .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
@@ -297,8 +300,8 @@ describe('Webhooks API', () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'CONTACT_TO_DEAL',
-      fromObjectId: 66343698548,
-      toObjectId: 29467931466,
+      fromObjectId: 92181619356,
+      toObjectId: 36629623097,
       associationRemoved: true,
       isPrimaryAssociation: false
     }
@@ -306,7 +309,7 @@ describe('Webhooks API', () => {
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/contacts/${contactChange.fromObjectId}`)
       .query(true)
-      .reply(200, hubspotContacts[1])
+      .reply(200, hubspotContacts.results.find(c => c.id === contactChange.fromObjectId.toString()))
 
     const project = await request(strapi.server.httpServer)
     .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
@@ -336,8 +339,8 @@ describe('Webhooks API', () => {
     const contactChange = {
       subscriptionType: 'deal.associationChange',
       associationType: 'DEAL_TO_LINE_ITEM',
-      fromObjectId: 29467931466,
-      toObjectId: 99,
+      fromObjectId: 36629623097,
+      toObjectId: 25440617024,
       associationRemoved: false,
       isPrimaryAssociation: false
     }

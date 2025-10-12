@@ -6,7 +6,7 @@ const hubspotAssociations = require('/test/mocks/data/hubspot/associations.json'
 const hubspotContacts = require('/test/mocks/data/hubspot/contacts.json')
 
 const clockifyClients = require('/test/mocks/data/clockify/clients.json')
-const clockifyProjects = require('/test/mocks/data/clockify/clockify-projects.json')
+const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
 
 let JWT
 

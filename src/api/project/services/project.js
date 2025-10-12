@@ -255,9 +255,9 @@ async function createClockifyProject(hsProject) {
 
         const newProject = await axios.post(`/projects`, project, clockifyConfig)
 
-        if (hsProject.lineItems.length !== 0) {
+        if (hsProject.properties.lineItems.length !== 0) {
           // Convert days to hours
-          const hours = Math.floor(hsProject.lineItems[0].quantity * 7.4)
+          const hours = Math.floor(hsProject.properties.lineItems[0].quantity * 7.4)
 
           const estimate = {
             timeEstimate: {
@@ -386,7 +386,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
       const project = {
         name: deal.properties.dealname,
         hubspotID: deal.id,
-        clockifyID: clockifyProject.id,
+        clockifyID: clockifyProject.data.id,
         condition: 'green',
         stage: deal.properties.dealstage,
         costModel: deal.properties.cost_model,

@@ -129,6 +129,7 @@ module.exports = {
           }
 
           if(Object.keys(clockifyUpdates).length && project.clockifyID) {
+            const allProjects = await strapi.documents('api::project.project').findMany()
             const response = await axios.put(`/projects/${project.clockifyID}`, clockifyUpdates, clockifyConfig)
             if(response.status !== 200) {
               throw new Error(`Error updating Clockify project: ${response.statusText}`)

@@ -1,7 +1,7 @@
 const request = require('supertest')
 const nock = require('nock')
 const clockifyProjects = require('/test/mocks/data/clockify/projects.json')
-const clockifySummary = require('/test/mocks/data/clockify/reportSummary.json')
+const clockifySummary = require('/test/mocks/data/clockify/reports/summary.json')
 const hubspotProducts = require('/test/mocks/data/hubspot/products.json')
 
 let JWT, projects

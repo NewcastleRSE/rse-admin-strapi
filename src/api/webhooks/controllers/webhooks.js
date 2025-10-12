@@ -53,6 +53,8 @@ module.exports = {
                     const lineItemId = associationType === 'DEAL_TO_LINE_ITEM' ? ctx.request.body.toObjectId : ctx.request.body.fromObjectId
 
                     const result = await strapi.service('api::webhooks.hubspot').updateLineItems(ctx.request.body.objectId, lineItemId, ctx.request.body.associationRemoved)
+
+                    ctx.send({ data: result }, 200)
                 }
                 else {
                     ctx.send({ message: `Ignoring association type ${ctx.request.body.associationType}` }, 400)
