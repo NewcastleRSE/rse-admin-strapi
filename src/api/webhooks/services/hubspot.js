@@ -89,7 +89,6 @@ module.exports = {
     }
   },
   updateProject: async(hubspotId, propertyName, propertyValue) => {
-    console.log(`Updating project ${hubspotId}: ${propertyName} = ${propertyValue}`)
     try {
       const project = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hubspotId } })
       if(project) {
@@ -145,7 +144,7 @@ module.exports = {
       }
       // If the project does not exist, create it
       else {
-        return this.createProject(hubspotId)
+        return createProject(hubspotId)
       }
     } catch (err) {
       throw err

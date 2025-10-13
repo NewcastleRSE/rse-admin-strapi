@@ -13,22 +13,19 @@ module.exports = (config, { strapi }) => {
         const hash = crypto.createHash('sha256').update(source).digest('hex')
 
         if (!signature || !secret || !ctx.request.body) {
-            ctx.status = 401
-            ctx.body = { error: 'Unauthorized' }
+            ctx.send({ error: 'Unauthorized' }, 401)
             return
         }
 
         // Compare the computed hash with the signature
         if (signature === hash) {
             if(ctx.request.body.attemptNumber && ctx.request.body.attemptNumber > 0) {
-                ctx.status = 102
-                ctx.body = { message: 'Processing retry attempt' }
+                ctx.send({ message: 'Processing retry attempt' }, 102)
                 return
             }
             await next()
         } else {
-            ctx.status = 401
-            ctx.body = { error: 'Unauthorized' }
+            ctx.send({ error: 'Unauthorized' }, 401)
         }
     }
 }
