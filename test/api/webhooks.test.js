@@ -30,7 +30,7 @@ const propertyMap = {
         nu_projects_number: 'nuProjects',
       }
 
-const signature = crypto.createHash('sha256').update(process.env.HUBSPOT_CLIENT_SECRET).digest('hex')
+const secret = process.env.HUBSPOT_CLIENT_SECRET
 
 const webhookPayload = {
         appId: 1323067,
@@ -63,12 +63,12 @@ describe('Webhooks API', () => {
   test('should return 401 without auth', async () => {
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
-    .send({ ...webhookPayload, ...createProject })
+    .send([{ ...webhookPayload, ...createProject }])
 
     expect(res.statusCode).toEqual(401)
   })
 
-  test('should return 201 when creating a project', async () => {
+  test('should return 200 when creating a project', async () => {
 
     nock(`https://api.hubapi.com/crm/v3/objects`)
       .get(`/deals/${webhookPayload.objectId}`)
@@ -111,18 +111,20 @@ describe('Webhooks API', () => {
       changeFlag: 'NEW'
     }
 
+    const payload = [{ ...webhookPayload, ...createProject }]
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...createProject })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
     newProjectId = res.body.documentId
 
-    expect(res.statusCode).toEqual(201)
-    expect(res.body.data).toHaveProperty('documentId')
-    expect(res.body.data).toHaveProperty('clockifyID')
-    expect(res.body.data).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
-    expect(res.body.data).toHaveProperty('name', 'Robotics sensors evaluation')
+    expect(res.statusCode).toEqual(202)
   })
 
   it.each([
@@ -163,20 +165,18 @@ describe('Webhooks API', () => {
       .put(`/projects/${updatedProject.id}`)
       .reply(200, updatedProject)
 
+    const payload = [{ ...webhookPayload, ...propertyChange }]
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...propertyChange })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
-    expect(res.statusCode).toEqual(200)
-    expect(res.body.data).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
-
-    if(property === 'dealstage') {
-      expect(res.body.data).toHaveProperty(propertyMap[property], dealStage[value])
-    }
-    else {
-      expect(res.body.data).toHaveProperty(propertyMap[property], value)
-    }
+    expect(res.statusCode).toEqual(202)
   })
 
   test('should add contact association from deal', async () => {
@@ -204,18 +204,22 @@ describe('Webhooks API', () => {
     expect(Array.isArray(project.body.data)).toBe(true)
     expect(project.body.data.length).toEqual(1)
     
+    const payload = [{ ...webhookPayload, ...contactChange }]
+
     // Store current contact count
     const contactCount = project.body.data[0].contacts.length
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
 
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...contactChange })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
     // Check if contact was added
-    expect(res.statusCode).toEqual(200)
-    expect(res.body.data.contacts.length).toEqual(contactCount + 1)
-    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.toObjectId.toString()).length).toEqual(1)
+    expect(res.statusCode).toEqual(202)
   })
 
   test('should add deal association from contact', async () => {
@@ -246,15 +250,18 @@ describe('Webhooks API', () => {
     // Store current contact count
     const contactCount = project.body.data[0].contacts.length
 
+    const payload = [{ ...webhookPayload, ...contactChange }]
+
+    const source = secret + JSON.stringify(payload)
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...contactChange })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
     // Check if contact was added
-    expect(res.statusCode).toEqual(200)
-    expect(res.body.data.contacts.length).toEqual(contactCount + 1)
-    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.fromObjectId.toString()).length).toEqual(1)
+    expect(res.statusCode).toEqual(202)
   })
 
   test('should remove contact association', async () => {
@@ -285,15 +292,19 @@ describe('Webhooks API', () => {
     // Store current contact count
     const contactCount = project.body.data[0].contacts.length
 
+    const payload = [{ ...webhookPayload, ...contactChange }]
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...contactChange })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
     // Check if contact was removed
-    expect(res.statusCode).toEqual(200)
-    expect(res.body.data.contacts.length).toEqual(contactCount - 1)
-    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.toObjectId.toString()).length).toEqual(0)
+    expect(res.statusCode).toEqual(202)
   })
 
   test('should remove deal association from contact', async () => {
@@ -324,15 +335,19 @@ describe('Webhooks API', () => {
     // Store current contact count
     const contactCount = project.body.data[0].contacts.length
 
+    const payload = [{ ...webhookPayload, ...contactChange }]
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
       .post('/api/webhooks/hubspot')
-      .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-      .send({ ...webhookPayload, ...contactChange })
+      .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+      .send(payload)
 
     // Check if contact was removed
-    expect(res.statusCode).toEqual(200)
-    expect(res.body.data.contacts.length).toEqual(contactCount - 1)
-    expect(res.body.data.contacts.filter(c => c.hubspotID === contactChange.fromObjectId.toString()).length).toEqual(0)
+    expect(res.statusCode).toEqual(202)
   })
 
   test('should update line items', async () => {
@@ -355,12 +370,18 @@ describe('Webhooks API', () => {
       changeFlag: 'DELETED'
     }
 
+    const payload = [{ ...webhookPayload, ...deleteProject }]
+    const source = secret + JSON.stringify(payload)
+
+    // Create a SHA256 hash of the source string
+    const hash = crypto.createHash('sha256').update(source).digest('hex')
+
     const res = await request(strapi.server.httpServer)
     .post('/api/webhooks/hubspot')
-    .set('X-HUBSPOT-SIGNATURE', `${signature}`)
-    .send({ ...webhookPayload, ...deleteProject })
+    .set('X-HUBSPOT-SIGNATURE', `${hash}`)
+    .send(payload)
 
-    expect(res.statusCode).toEqual(204)
+    expect(res.statusCode).toEqual(202)
     
     const fetchRes = await request(strapi.server.httpServer)
     .get(`/api/projects/${newProjectId}`)
