@@ -145,7 +145,7 @@ module.exports = {
       }
       // If the project does not exist, create it
       else {
-        return this.createProject(hubspotId)
+        return createProject(hubspotId)
       }
     } catch (err) {
       throw err
