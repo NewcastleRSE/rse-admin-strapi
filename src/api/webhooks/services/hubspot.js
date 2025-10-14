@@ -144,7 +144,7 @@ module.exports = {
       }
       // If the project does not exist, create it
       else {
-        return createProject(hubspotId)
+        return await strapi.service('api::webhooks.hubspot').createProject(hubspotId)
       }
     } catch (err) {
       throw err

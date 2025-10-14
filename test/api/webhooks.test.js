@@ -122,9 +122,25 @@ describe('Webhooks API', () => {
       .set('X-HUBSPOT-SIGNATURE', `${hash}`)
       .send(payload)
 
-    newProjectId = res.body.documentId
-
     expect(res.statusCode).toEqual(202)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?hydrated=true&page-size=5000')
+          .reply(200, clockifyProjects)
+
+    const project = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${webhookPayload.objectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(project.status).toBe(200)
+    expect(Array.isArray(project.body.data)).toBe(true)
+    expect(project.body.data.length).toEqual(1)
+    expect(project.body.data[0]).toHaveProperty('documentId')
+    expect(project.body.data[0]).toHaveProperty('clockifyID')
+    expect(project.body.data[0]).toHaveProperty('hubspotID', webhookPayload.objectId.toString())
+    expect(project.body.data[0]).toHaveProperty('name', hubspotDeal.properties.dealname)
+
   })
 
   it.each([
@@ -177,6 +193,22 @@ describe('Webhooks API', () => {
       .send(payload)
 
     expect(res.statusCode).toEqual(202)
+
+    const response = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${webhookPayload.objectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(response.status).toBe(200)
+    expect(Array.isArray(response.body.data)).toBe(true)
+    expect(response.body.data.length).toEqual(1)
+
+    if(property === 'dealstage') {
+      value = dealStage[value]
+    }
+
+    // Check if property was updated
+    expect(response.body.data[0]).toHaveProperty(propertyMap[property], value)
   })
 
   test('should add contact association from deal', async () => {
@@ -218,8 +250,26 @@ describe('Webhooks API', () => {
       .set('X-HUBSPOT-SIGNATURE', `${hash}`)
       .send(payload)
 
-    // Check if contact was added
     expect(res.statusCode).toEqual(202)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?hydrated=true&page-size=5000')
+          .reply(200, clockifyProjects)
+
+    const updatedProject = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(updatedProject.status).toBe(200)
+    expect(Array.isArray(updatedProject.body.data)).toBe(true)
+    expect(updatedProject.body.data.length).toEqual(1)
+
+    const contactIds = updatedProject.body.data[0].contacts.map(c => c.hubspotID)
+
+    // Check if contact was added
+    expect(updatedProject.body.data[0].contacts.length).toEqual(contactCount + 1)
+    expect(contactIds).toContain(contactChange.toObjectId.toString())
   })
 
   test('should add deal association from contact', async () => {
@@ -262,6 +312,25 @@ describe('Webhooks API', () => {
 
     // Check if contact was added
     expect(res.statusCode).toEqual(202)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?hydrated=true&page-size=5000')
+          .reply(200, clockifyProjects)
+
+    const updatedProject = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(updatedProject.status).toBe(200)
+    expect(Array.isArray(updatedProject.body.data)).toBe(true)
+    expect(updatedProject.body.data.length).toEqual(1)
+
+    const contactIds = updatedProject.body.data[0].contacts.map(c => c.hubspotID)
+
+    // Check if contact was added
+    expect(updatedProject.body.data[0].contacts.length).toEqual(contactCount + 1)
+    expect(contactIds).toContain(contactChange.fromObjectId.toString())
   })
 
   test('should remove contact association', async () => {
@@ -305,6 +374,25 @@ describe('Webhooks API', () => {
 
     // Check if contact was removed
     expect(res.statusCode).toEqual(202)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?hydrated=true&page-size=5000')
+          .reply(200, clockifyProjects)
+
+    const updatedProject = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.fromObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(updatedProject.status).toBe(200)
+    expect(Array.isArray(updatedProject.body.data)).toBe(true)
+    expect(updatedProject.body.data.length).toEqual(1)
+
+    const contactIds = updatedProject.body.data[0].contacts.map(c => c.hubspotID)
+
+    // Check if contact was added
+    expect(updatedProject.body.data[0].contacts.length).toEqual(contactCount - 1)
+    expect(contactIds).not.toContain(contactChange.toObjectId.toString())
   })
 
   test('should remove deal association from contact', async () => {
@@ -348,6 +436,25 @@ describe('Webhooks API', () => {
 
     // Check if contact was removed
     expect(res.statusCode).toEqual(202)
+
+    nock(`https://api.clockify.me/api/v1/workspaces/${process.env.CLOCKIFY_WORKSPACE}`)
+          .get('/projects?hydrated=true&page-size=5000')
+          .reply(200, clockifyProjects)
+
+    const updatedProject = await request(strapi.server.httpServer)
+    .get(`/api/projects?filters[hubspotID][$eq]=${contactChange.toObjectId}&populate=contacts`)
+    .set('accept', 'application/json')
+    .set('Authorization', `Bearer ${process.env.ACCESS_TOKEN}`)
+
+    expect(updatedProject.status).toBe(200)
+    expect(Array.isArray(updatedProject.body.data)).toBe(true)
+    expect(updatedProject.body.data.length).toEqual(1)
+
+    const contactIds = updatedProject.body.data[0].contacts.map(c => c.hubspotID)
+
+    // Check if contact was added
+    expect(updatedProject.body.data[0].contacts.length).toEqual(contactCount - 1)
+    expect(contactIds).not.toContain(contactChange.fromObjectId.toString())
   })
 
   test('should update line items', async () => {
