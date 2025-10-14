@@ -75,14 +75,6 @@ resource "azurerm_mysql_flexible_database" "database" {
   collation           = "utf8_unicode_ci"
 }
 
-resource "azurerm_mysql_flexible_database" "database-staging" {
-  name                = join("", [azurerm_resource_group.rg.name, "-staging"])
-  resource_group_name = azurerm_resource_group.rg.name
-  server_name         = azurerm_mysql_flexible_server.mysql.name
-  charset             = "utf8"
-  collation           = "utf8_unicode_ci"
-}
-
 resource "azurerm_service_plan" "asp" {
   name                = "rseadmin-plan"
   location            = azurerm_resource_group.rg.location
@@ -135,11 +127,14 @@ resource "azurerm_linux_web_app" "as" {
     DATABASE_USERNAME = var.database_username
     DATABASE_PASSWORD = var.database_password
     DATABASE_SSL = "true"
+    DATABASE_CERT = var.database_cert
     SENTRY_DSN = "https://61fabb3453014b8d8d4a3181de8314eb@o1080315.ingest.sentry.io/6118106"
     PUBLIC_URL = "https://${azurerm_resource_group.rg.name}.azurewebsites.net/"
     PUBLIC_ADMIN_URL = "https://${azurerm_resource_group.rg.name}.azurewebsites.net/dashboard"
     HUBSPOT_KEY = var.hubspot_key 
-    HUBSPOT_DEAL_PROPERTIES = "amount,dealname,dealstage,last_activity_date,account_code,award_stage,end_date,faculty,finance_contact,funding_body,project_lead,project_value,school,start_date,status,cost_model"
+    HUBSPOT_ACCESS_TOKEN=var.hubspot_access_token
+    HUBSPOT_CLIENT_SECRET=var.hubspot_client_secret
+    HUBSPOT_DEAL_PROPERTIES = "amount,dealname,dealstage,last_activity_date,account_code,award_stage,end_date,faculty,finance_contact,funding_body,project_lead,project_value,school,start_date,status,cost_model,nu_projects_number"
     HUBSPOT_DEAL_ASSOCIATIONS = "contacts,companies"
     HUBSPOT_DEAL_MEETING_SCHEDULED = "appointmentscheduled"
     HUBSPOT_DEAL_BID_PREPARATION = "presentationscheduled"
@@ -150,15 +145,18 @@ resource "azurerm_linux_web_app" "as" {
     HUBSPOT_DEAL_ALLOCATED = "0fd81f66-7cda-4db7-b2e8-b0114be90ef9"
     HUBSPOT_DEAL_COMPLETED = "09b510b5-6871-4771-ad09-1438ce8e6f11"
     HUBSPOT_CONTACT_PROPERTIES = "firstname,lastname,email,department,jobtitle"
+    HUBSPOT_LINE_ITEM_PROPERTIES = "name,price,quantity,recurringbillingfrequency"
     HUBSPOT_NOTE_PROPERTIES = "hs_note_body,hs_attachment_ids"
     CLOCKIFY_KEY = var.clockify_key
     CLOCKIFY_WORKSPACE = var.clockify_workspace
+    DEFAULT_CLOCKIFY_PROJECTS = "Carpentries,Management,Volunteering,Induction,'Non-Project Event','Returners Programme','HPC Service','HPC Service Development & Support','HPC User Support'"
+    LEAVE_API_TOKEN= var.leave_api_token
+    TRANSACTIONS_SHEET = var.transactions_sheet
+    TRANSACTIONS_HEADER = var.transactions_header
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
     DOCKER_REGISTRY_SERVER_USERNAME = azurerm_container_registry.acr.admin_username
     DOCKER_REGISTRY_SERVER_PASSWORD = azurerm_container_registry.acr.admin_password
     DOCKER_REGISTRY_SERVER_URL = azurerm_container_registry.acr.login_server
-    TRANSACTIONS_SHEET = var.transactions_sheet
-    TRANSACTIONS_HEADER = var.transactions_header
   }
 
   tags = {

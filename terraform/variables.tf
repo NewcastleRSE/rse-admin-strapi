@@ -52,7 +52,22 @@ variable "database_password" {
   sensitive   = true
 }
 
+variable "database_cert" {
+  type        = string
+  sensitive   = true
+}
+
 variable "hubspot_key" {
+  type        = string
+  sensitive   = true
+}
+
+variable "hubspot_access_token" {
+  type        = string
+  sensitive   = true
+}
+
+variable "hubspot_client_secret" {
   type        = string
   sensitive   = true
 }
@@ -63,6 +78,11 @@ variable "clockify_key" {
 }
 
 variable "clockify_workspace" {
+  type        = string
+  sensitive   = true
+}
+
+variable "leave_api_token" {
   type        = string
   sensitive   = true
 }
