@@ -348,16 +348,16 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
     // Get contact emails
     const contactEmails = deal.properties.contacts.map(contact => contact.properties.email)
 
-    // Get existing contact emails
-    const strapiContactEmails = (await strapi.documents('api::contact.contact').findMany({ filters: { email: contactEmails } })).map(contact => contact.email)
+    // Get existing contacts
+    const strapiContacts = (await strapi.documents('api::contact.contact').findMany({ filters: { email: contactEmails } }))
 
     // Get new contact emails
-    const newContacts = deal.properties.contacts.filter(contact => !strapiContactEmails.includes(contact.properties.email))
+    const newContacts = contactEmails.filter(email => !strapiContacts.map(contact => contact.email).includes(email))
 
     // Create Clockify project
     const clockifyProject = await createClockifyProject(deal)
 
-    const contactIDs = []
+    const contactIDs = strapiContacts.map(contact => contact.documentId)
 
     try {
       for (const contact of newContacts) {
@@ -386,7 +386,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
       const project = {
         name: deal.properties.dealname,
         hubspotID: deal.id,
-        clockifyID: clockifyProject.data.id,
+        clockifyID: clockifyProject.id,
         condition: 'green',
         stage: deal.properties.dealstage,
         costModel: deal.properties.cost_model,
@@ -416,10 +416,12 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         response = await strapi.services['api::project.project'].create({ data: project })
       }
       else {
+
         throw new Error('Missing required fields')
       }
     }
     catch (error) {
+      console.error(error)
       throw error
     }
 
