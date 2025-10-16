@@ -272,7 +272,7 @@ async function createClockifyProject(hsProject) {
           await axios.patch(`/projects/${newProject.data.id}/estimate`, estimate, clockifyConfig)
         }
 
-        resolve(newProject)
+        resolve(newProject.data)
       } else {
         resolve(response.data[0])
       }
@@ -352,7 +352,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
     const strapiContacts = (await strapi.documents('api::contact.contact').findMany({ filters: { email: contactEmails } }))
 
     // Get new contact emails
-    const newContacts = contactEmails.filter(email => !strapiContacts.map(contact => contact.email).includes(email))
+    const newContacts = strapiContacts ? deal.properties.contacts.filter(contact => !strapiContacts.map(contact => contact.email).includes(contact.properties.email)) : []
 
     // Create Clockify project
     const clockifyProject = await createClockifyProject(deal)
@@ -374,8 +374,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
         contactIDs.push((await strapi.services['api::contact.contact'].create({ data: newContact })).id)
       }
-    } catch (e) {
-      console.error(e.details.errors)
+    } catch (err) {
+      console.error(err)
     }
 
     // Empty response object
@@ -404,20 +404,23 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         contacts: contactIDs
       }
 
+      let missingFields = []
+
       // Check if all required fields are present
-      if (project.name &&
-        project.clockifyID &&
-        project.hubspotID &&
-        project.stage &&
-        project.costModel &&
-        project.awardStage &&
-        project.faculty &&
-        project.contacts.length) {
-        response = await strapi.services['api::project.project'].create({ data: project })
+      if (!project.name) missingFields.push('Name')
+      if (!project.clockifyID) missingFields.push('ClockifyID')
+      if (!project.hubspotID) missingFields.push('HubspotID')
+      if (!project.stage) missingFields.push('Stage')
+      if (!project.costModel) missingFields.push('Cost Model')
+      if (!project.awardStage) missingFields.push('Award Stage')
+      if (!project.faculty) missingFields.push('Faculty')
+      if (!project.contacts.length) missingFields.push('Contacts')
+
+      if (missingFields.length) {
+        throw new Error('Missing required fields: ' + missingFields.join(', '))
       }
       else {
-
-        throw new Error('Missing required fields')
+        response = await strapi.services['api::project.project'].create({ data: project })
       }
     }
     catch (error) {
@@ -547,8 +550,6 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
           console.log(`No HubSpot contact found for Clockify client ${client.name}`)
         }
       }
-
-     //console.log(contactMap)
 
       for (const hsProject of hubspotProjects) {
 
