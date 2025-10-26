@@ -64,7 +64,8 @@
         "Facility",
         "Directly Incurred",
         "JobsOC",
-        "Voluntary"
+        "Voluntary",
+        "Non Billable"
       ]
     },
     "awardStage": {

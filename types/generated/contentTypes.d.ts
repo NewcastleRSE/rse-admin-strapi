@@ -701,7 +701,7 @@ export interface ApiProjectProject extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'green'>;
     contacts: Schema.Attribute.Relation<'manyToMany', 'api::contact.contact'>;
     costModel: Schema.Attribute.Enumeration<
-      ['Facility', 'Directly Incurred', 'JobsOC', 'Voluntary']
+      ['Facility', 'Directly Incurred', 'JobsOC', 'Voluntary', 'Non Billable']
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'Facility'>;
