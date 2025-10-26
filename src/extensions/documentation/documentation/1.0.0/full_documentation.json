@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-10-16T20:59:35.070Z"
+    "x-generation-date": "2025-10-26T06:44:07.358Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6360,7 +6360,8 @@
                             "Facility",
                             "Directly Incurred",
                             "JobsOC",
-                            "Voluntary"
+                            "Voluntary",
+                            "Non Billable"
                           ]
                         },
                         "awardStage": {
@@ -7619,7 +7620,8 @@
                             "Facility",
                             "Directly Incurred",
                             "JobsOC",
-                            "Voluntary"
+                            "Voluntary",
+                            "Non Billable"
                           ]
                         },
                         "awardStage": {
@@ -8824,7 +8826,8 @@
                     "Facility",
                     "Directly Incurred",
                     "JobsOC",
-                    "Voluntary"
+                    "Voluntary",
+                    "Non Billable"
                   ]
                 },
                 "awardStage": {
@@ -10651,7 +10654,8 @@
                   "Facility",
                   "Directly Incurred",
                   "JobsOC",
-                  "Voluntary"
+                  "Voluntary",
+                  "Non Billable"
                 ]
               },
               "awardStage": {
@@ -11371,7 +11375,8 @@
                   "Facility",
                   "Directly Incurred",
                   "JobsOC",
-                  "Voluntary"
+                  "Voluntary",
+                  "Non Billable"
                 ]
               },
               "awardStage": {
@@ -11609,7 +11614,8 @@
                         "Facility",
                         "Directly Incurred",
                         "JobsOC",
-                        "Voluntary"
+                        "Voluntary",
+                        "Non Billable"
                       ]
                     },
                     "awardStage": {
@@ -12625,7 +12631,8 @@
               "Facility",
               "Directly Incurred",
               "JobsOC",
-              "Voluntary"
+              "Voluntary",
+              "Non Billable"
             ]
           },
           "awardStage": {
@@ -13746,7 +13753,8 @@
                         "Facility",
                         "Directly Incurred",
                         "JobsOC",
-                        "Voluntary"
+                        "Voluntary",
+                        "Non Billable"
                       ]
                     },
                     "awardStage": {
