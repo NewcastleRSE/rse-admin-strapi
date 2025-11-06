@@ -4,7 +4,12 @@ const crypto = require('crypto')
 
 module.exports = (config, { strapi }) => {
 
+    const logger = strapi.log.child({component: 'hubspot-webhook-middleware' })
+
     return async (ctx, next) => {
+
+        //logger.debug('Incoming request')
+
         const signature = ctx.request.headers['x-hubspot-signature']
         const secret = process.env.HUBSPOT_CLIENT_SECRET
         const source = secret + JSON.stringify(ctx.request.body)
@@ -15,6 +20,11 @@ module.exports = (config, { strapi }) => {
         if (!signature || !secret || !ctx.request.body) {
             ctx.send({ error: 'Unauthorized' }, 401)
             return
+        }
+        else {
+            !signature ? logger.warn('Missing signature header') : null
+            !secret ? logger.warn('Missing HUBSPOT_CLIENT_SECRET environment variable') : null
+            !ctx.request.body ? logger.warn('Missing request body') : null
         }
 
         // Compare the computed hash with the signature

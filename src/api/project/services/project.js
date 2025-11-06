@@ -289,6 +289,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
     const clockifyIDs = results.map(p => p.clockifyID)
 
+    strapi.log.debug(`Fetching Clockify data for ${clockifyIDs.length} projects`)
+
     // Calling Clockify
     const response = await axios.get('/projects?hydrated=true&page-size=5000', clockifyConfig)
 
