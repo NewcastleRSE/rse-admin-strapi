@@ -4,7 +4,8 @@
  * transaction service.
  */
 const { DateTime } = require('luxon')
-const { createCoreService } = require('@strapi/strapi').factories;
+const { createCoreService } = require('@strapi/strapi').factories
+const axios = require('axios')
 const ExcelJS = require('exceljs')
 const TransactionsWorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
 const HeaderRow = process.env.TRANSACTIONS_HEADER.replace(/_/g, ' ').split(',')
@@ -12,7 +13,7 @@ const HeaderRow = process.env.TRANSACTIONS_HEADER.replace(/_/g, ' ').split(',')
 module.exports = createCoreService('api::transaction.transaction', ({ strapi }) =>  ({
     async upload(file) {
         const workbook = new ExcelJS.Workbook()
-        await workbook.xlsx.readFile(file.path)
+        await workbook.xlsx.readFile(file.filepath)
         const transactionSheet = workbook.getWorksheet(TransactionsWorksheetName)
 
         let transactions = [], 
@@ -25,11 +26,10 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                 $notNull: true,
               },
             },
-        });
+        })
 
         transactionSheet.eachRow(async function(row, rowNumber) {
             if(rowNumber === 1) {
-
                 // Is the first row the same as we're expecting, if not bail out
                 if(JSON.stringify(row.values.slice(1)) !== JSON.stringify(HeaderRow.slice(1))) {
                     return { error: `Unexpected header row. Expected ${HeaderRow.slice(1)} but received ${row.values.slice(1)}`}
@@ -37,20 +37,29 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             }
             else {
 
+                // Calculate the current financial year (starts on 1st August)
+                const postedDate = DateTime.fromJSDate(new Date(row.values[13]))
+                let fiscalYear
+                if (postedDate.month >= 8) {
+                    fiscalYear = postedDate.year
+                } else {
+                    fiscalYear = postedDate.year - 1
+                }
+
                 let transaction = {
-                    costElement: Number(row.values[3]),
-                    costElementDescription: row.values[4],	
-                    documentNumber: Number(row.values[5]),
-                    documentHeader: row.values[6],
-                    name: row.values[7],
-                    fiscalYear: Number(row.values[9]),
-                    fiscalPeriod: Number(row.values[10]),
-                    documentDate: DateTime.fromJSDate(new Date(row.values[11])).toISODate(), 	
-                    postedDate: DateTime.fromJSDate(new Date(row.values[12])).toISODate(),
+                    costElement: Number(row.values[1]),
+                    costElementDescription: row.values[2],	
+                    documentNumber: Number(row.values[12]),
+                    documentHeader: row.values[10].toString(),
+                    name: row.values[8],
+                    fiscalYear: fiscalYear,
+                    fiscalPeriod: Number(row.values[5]),
+                    // documentDate: DateTime.fromJSDate(new Date(row.values[13])).toISODate(),
+                    postedDate: postedDate.toISODate(),
                     // SAP gets the debit and credit wrong way around, times -1 to fix
-                    value: (row.values[13].hasOwnProperty('result') ? parseFloat(row.values[13].result) : parseFloat(row.values[13])) * -1,
-                    bwCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14], 	
-                    ieCategory: row.values[15].hasOwnProperty('result') ? row.values[15].result : row.values[15],
+                    value: (row.values[14].hasOwnProperty('result') ? parseFloat(row.values[14].result) : parseFloat(row.values[14])) * -1,
+                    // bwCategory: row.values[14].hasOwnProperty('result') ? row.values[14].result : row.values[14], 	
+                    // ieCategory: row.values[15].hasOwnProperty('result') ? row.values[15].result : row.values[15],
                     internalCategory: null
                 }
 
@@ -68,24 +77,29 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
 
                 // Is the transaction an expense or income
                 if(transaction.value < 0) {
+                    try {
                     // Salary Costs
-                    if (transaction.ieCategory === 'Salary Expenditure') {
-                        transaction.internalCategory = transaction.ieCategory
-                    }
+                    // if (transaction.ieCategory === 'Salary Expenditure') {
+                    //     transaction.internalCategory = transaction.ieCategory
+                    // }
                     // Cloud costs
-                    else if(
-                        transaction.name.toLowerCase().includes('azure') ||
+                    if(
+                        transaction.name.toLowerCase().includes('C77') ||
                         transaction.name.toLowerCase().includes('google cloud') ||
                         transaction.name.toLowerCase().includes('amazonaws')
                     ) {
                         transaction.internalCategory = 'Cloud'
                     }
                     // Room Fees
-                    else if (transaction.documentHeader.toLowerCase() === 'catalyst internal tenant') {
+                    else if (transaction.documentHeader && transaction.documentHeader.toLowerCase() === 'catalyst internal tenant') {
                         transaction.internalCategory = 'Estates'
                     }
                     // Travel
-                    else if (transaction.name.toLowerCase().includes('travel agencies')) {
+                        else if (
+                            transaction.name.toLowerCase().includes('travel agencies')  ||
+                            transaction.name.toLowerCase().includes('train') ||
+                            transaction.name.toLowerCase().includes('hotel')
+                    ) {
                         transaction.internalCategory = 'Travel'
                     }
                     // Conference
@@ -122,22 +136,52 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     else { 
                         transaction.internalCategory = 'Other'
                     }
+
+                } catch (error) {
+                    console.error('Error categorizing transaction:')
+                    console.error(transaction)
+                    console.error(error)
+                    transaction.internalCategory = 'Other'
                 }
+            }
                 else {
-                    transaction.internalCategory = transaction.ieCategory
+                    transaction.internalCategory = 'Other'
                 }
 
                 transactions.push(transaction)
             }
         })
 
-        try {
-            await strapi.db.query('api::transaction.transaction').createMany({ data: transactions })
-            return { message: 'Successfully uploaded transaction data' }
+        if(transactions.length > 0) {
+            console.log(`Prepared ${transactions.length} transactions for upload with ${errorCount} errors.`)
+
+            try {
+                await strapi.db.query('api::transaction.transaction').createMany({ data: transactions })
+                return { message: 'Successfully uploaded transaction data' }
+            }
+            catch (error) {
+                console.error(`Failed to add ${transactions.length} transactions to the database. Encountered ${errorCount} errors.`)
+                console.error(error)
+            }
         }
-        catch (error) {
-            console.error(`Failed to add ${transactions.length} transactions to the database. Encountered ${errorCount} errors.`)
-            console.error(error)
+        else {
+            console.log('No transactions to upload.')
+            return { message: 'No transactions to upload' }
         }
-      },
+    },
+    async sync(ctx) {
+        console.log(ctx.request.body)
+
+        const azureConfig = { 
+            baseURL: 'https://graph.microsoft.com/v1.0/',
+            headers: { 
+                authorization: `Bearer: ${ctx.request.body.accessToken}`
+            }
+        }
+
+        const response = await axios.get('/me/drives', azureConfig)
+
+
+        return response.body
+    }
 }))
