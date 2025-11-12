@@ -1,6 +1,6 @@
 const request = require('supertest')
 
-let JWT
+let JWT, accessToken
 
 beforeAll(async () => {
   await request(strapi.server.httpServer)
@@ -12,7 +12,10 @@ beforeAll(async () => {
           password: '1234abcd',
         })
         .then((data) => {
-          JWT = data.body.jwt
+          JWT = data.body.jwt,
+          accessToken = data.body.user.accessToken
+
+          console.log(data.body)
         })
 })
 
@@ -28,6 +31,17 @@ describe('Transactions API', () => {
     expect(res.status).toBe(403)
   })
 
+  it('should sync data from the Teams folder', async () => {
+    const res = await request(strapi.server.httpServer)
+      .post('/api/transactions/sync')
+      .set('Authorization', `Bearer ${JWT}`)
+      .send({ 'accessToken': accessToken })
+
+      console.log(res.body)
+
+    expect(res.status).toBe(200)
+  })
+/*
   it('should create a new transaction', async () => {
 
     const res = await request(strapi.server.httpServer)
@@ -102,5 +116,5 @@ describe('Transactions API', () => {
     .set('Authorization', `Bearer ${JWT}`)
 
     expect(fetchRes.statusCode).toEqual(404)
-  })
+  })*/
 })

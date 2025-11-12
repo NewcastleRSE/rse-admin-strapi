@@ -7,8 +7,10 @@ const { DateTime } = require('luxon')
 const { createCoreService } = require('@strapi/strapi').factories
 const axios = require('axios')
 const ExcelJS = require('exceljs')
+const driveID = process.env.AZURE_DRIVE_ID
 const TransactionsWorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
 const HeaderRow = process.env.TRANSACTIONS_HEADER.replace(/_/g, ' ').split(',')
+const { Client }  = require('@microsoft/microsoft-graph-client')
 
 module.exports = createCoreService('api::transaction.transaction', ({ strapi }) =>  ({
     async upload(file) {
@@ -169,19 +171,62 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             return { message: 'No transactions to upload' }
         }
     },
-    async sync(ctx) {
-        console.log(ctx.request.body)
+    async sync(accessToken, financialYear) {
 
-        const azureConfig = { 
-            baseURL: 'https://graph.microsoft.com/v1.0/',
-            headers: { 
-                authorization: `Bearer: ${ctx.request.body.accessToken}`
+        const authProvider = (callback) => {
+
+            let error = null
+
+            if (!accessToken) {
+                error = new Error('Missing access token')
             }
+            callback(error, accessToken)
         }
 
-        const response = await axios.get('/me/drives', azureConfig)
+        try {
 
+            const client = Client.init({ authProvider })
 
-        return response.body
+            const hostname = process.env.TRANSACTIONS_HOSTNAME,
+                  folderPath = process.env.TRANSACTIONS_FOLDER_PATH
+
+            const financialYearsURL = `/sites/${hostname}/drive/root:/${folderPath}:/children`
+
+            // Get list of financial year folders
+            const response = await client.api(financialYearsURL).get()
+            const financialYearFolders = response.value ? response.value : []
+
+            // Find the folder matching the requested financial year
+            const matchingFinancialYear = financialYearFolders.find(folder => folder.name === `${financialYear}-${(financialYear + 1).toString().slice(-2)}`)
+
+            // Throw error if no matching folder found
+            if(!matchingFinancialYear) {
+                throw new Error(`No folder found for financial year ${financialYear}-${(financialYear + 1).toString().slice(-2)}`)
+            }
+
+            // Get list of monthly report files in the financial year folder
+            const monthlyReportsURL = `/sites/${hostname}/drive/items/${matchingFinancialYear.id}/children`
+            const reports = await client.api(monthlyReportsURL).get()
+
+            // Find the most recently modified report
+            const mostRecentMonth = reports.value.reduce(function(prev, current) {
+                return (prev && DateTime.fromISO(prev.lastModifiedDateTime) > DateTime.fromISO(current.lastModifiedDateTime)) ? prev : current
+            })
+
+            // Download the most recent report
+            const file = await axios.get(mostRecentMonth['@microsoft.graph.downloadUrl'], { responseType: 'stream'})
+
+            // Read the Excel file
+            const workbook = new ExcelJS.Workbook()
+            await workbook.xlsx.read(file.data)
+            const transactionSheet = workbook.getWorksheet(TransactionsWorksheetName)
+
+            console.log(transactionSheet.getRow(1).values)
+
+            return mostRecentMonth
+
+        } catch (error) {
+            throw error
+        }
     }
 }))
