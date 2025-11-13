@@ -14,6 +14,7 @@
     "@hubspot/api-client": "~13.0.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@pdf-lib/fontkit": "~1.1.1",
+    "@sensinum/strapi-table-field": "^1.0.1",
     "@strapi/plugin-documentation": "^5.27.0",
     "@strapi/plugin-sentry": "^5.27.0",
     "@strapi/plugin-users-permissions": "^5.27.0",

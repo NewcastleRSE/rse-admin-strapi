@@ -7,7 +7,6 @@ const { DateTime } = require('luxon')
 const { createCoreService } = require('@strapi/strapi').factories
 const axios = require('axios')
 const ExcelJS = require('exceljs')
-const driveID = process.env.AZURE_DRIVE_ID
 const TransactionsWorksheetName = process.env.TRANSACTIONS_SHEET.replace(/_/g, ' ')
 const HeaderRow = process.env.TRANSACTIONS_HEADER.replace(/_/g, ' ').split(',')
 const { Client }  = require('@microsoft/microsoft-graph-client')

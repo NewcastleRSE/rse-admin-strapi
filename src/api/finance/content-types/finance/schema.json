@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "finances",
+  "info": {
+    "singularName": "finance",
+    "pluralName": "finances",
+    "displayName": "Finance"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "year": {
+      "type": "integer",
+      "required": true,
+      "unique": true,
+      "min": 2020,
+      "max": 2050
+    },
+    "startDate": {
+      "type": "date",
+      "required": true,
+      "unique": true
+    },
+    "endDate": {
+      "type": "date",
+      "required": true,
+      "unique": true
+    },
+    "budget": {
+      "type": "customField",
+      "customField": "plugin::table-field.table"
+    },
+    "actual": {
+      "type": "customField",
+      "customField": "plugin::table-field.table"
+    }
+  }
+}
