@@ -218,11 +218,115 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
             // Read the Excel file
             const workbook = new ExcelJS.Workbook()
             await workbook.xlsx.read(file.data)
-            const transactionSheet = workbook.getWorksheet(TransactionsWorksheetName)
+            const overviewSheet = workbook.getWorksheet('Financial overview')
 
-            console.log(transactionSheet.getRow(1).values)
+            // retrieve the existing finance record for the year
+            let finance = await strapi.entityService.findMany('api::finance.finance', { filters: { year: financialYear }, limit: 1 }).then(res => res[0])
 
-            return mostRecentMonth
+            // prepare actuals and budget data structures
+            let actualsColumns = [{
+                label: 'name',
+                type: 'text',
+                required: false
+            }]
+
+            let budgetColumns = [{
+                label: 'name',
+                type: 'text',
+                required: false
+            }]
+
+            let actualsRows = []
+            let budgetRows = []
+
+            // define columns for category name and each period
+            for(let i = 0; i < 12; i++) {
+
+                const column = {
+                    label: `${financialYear.toString().slice(-2)}/${(financialYear + 1).toString().slice(-2)} P${i + 1}`,
+                    type: 'text',
+                    required: false
+                }
+
+                actualsColumns.push(column)
+                budgetColumns.push(column)
+            }
+
+            // define rows for each category section
+            const sections = {
+                incomeRows: overviewSheet.getRows(5, 5),
+                salaryRows: overviewSheet.getRows(14, 5),  
+                nonSalaryRows: overviewSheet.getRows(23, 27),
+                indirectRows: overviewSheet.getRows(55, 5)
+            }
+
+            // iterate through each section and extract actuals and budget data
+            for(const section in sections) {
+                console.log(`Processing section: ${section}`)
+
+                // loop through each row in the section
+                for(const row in sections[section]) {
+                    let actualsRowData, budgetRowData
+                    
+                    actualsRowData = [ sections[section][row].getCell(2).value ]
+                    budgetRowData = [ sections[section][row].getCell(2).value ]
+
+                    // extract actuals for periods 1-12 (columns 4-15)
+                    for(let a = 4; a <= 15; a++) {
+                        actualsRowData.push(sections[section][row].getCell(a).result || 0)
+                    }
+
+                    // extract budget for periods 1-12 (columns 16-27)
+                    for(let b = 16; b <= 27; b++) {
+                        budgetRowData.push(sections[section][row].getCell(b).result || 0)
+                    }
+
+                    actualsRows.push(actualsRowData)
+                    budgetRows.push(budgetRowData)
+                }
+            }
+
+            // if no record exists, create one
+            if(!finance) {
+
+                const payload = { 
+                    year: financialYear,
+                    startDate: DateTime.fromObject({ year: financialYear, month: 8, day: 1 }).toISODate(),
+                    endDate: DateTime.fromObject({ year: financialYear + 1, month: 7, day: 31 }).toISODate(),
+                    actual: {
+                        columns: actualsColumns,
+                        rows: actualsRows
+                    },
+                    budget: {
+                        columns: budgetColumns,
+                        rows: budgetRows
+                    }
+                }
+
+                finance = await strapi.service('api::finance.finance').create({ data: payload })
+            }
+            // otherwise update the existing record
+            else {
+
+                const payload = { 
+                    year: finance.year,
+                    startDate: finance.startDate,
+                    endDate: finance.endDate,
+                    actual: {
+                        columns: actualsColumns,
+                        rows: actualsRows
+                    },
+                    budget: {
+                        columns: budgetColumns,
+                        rows: budgetRows
+                    }
+                }
+
+                finance = await strapi.service('api::finance.finance').update(finance.documentId, { data: payload })
+            }
+
+            // return the finance record
+            return finance
 
         } catch (error) {
             throw error
