@@ -14,7 +14,7 @@ module.exports = createCoreController('api::finance.finance', ({ strapi }) =>  (
       if(!ctx.query.financialYear) {
         const currentDate = new Date()
 
-        // Is after december of the current financial year
+        // If current month is before August, we're still in the previous fiscal year (fiscal years start in August)
         if(currentDate.getMonth() < 7) {
             year = (currentDate.getFullYear()) - 1
         }
@@ -24,7 +24,7 @@ module.exports = createCoreController('api::finance.finance', ({ strapi }) =>  (
         }
       }
       else {
-        year = ctx.query.financialYear
+        year = parseInt(ctx.query.financialYear, 10)
       }
 
       const result = await strapi.service('api::finance.finance').sync(ctx.request.body.accessToken, year)

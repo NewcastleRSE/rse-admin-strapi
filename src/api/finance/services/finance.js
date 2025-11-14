@@ -107,20 +107,20 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             for(const section in sections) {
 
                 // loop through each row in the section
-                for(const row in sections[section]) {
+                for(const row of sections[section]) {
                     let actualsRowData, budgetRowData
                     
-                    actualsRowData = [ sections[section][row].getCell(2).value ]
-                    budgetRowData = [ sections[section][row].getCell(2).value ]
+                    actualsRowData = [ row.getCell(2).value ]
+                    budgetRowData = [ row.getCell(2).value ]
 
                     // extract actuals for periods 1-12 (columns 4-15)
                     for(let a = 4; a <= 15; a++) {
-                        actualsRowData.push(sections[section][row].getCell(a).result || 0)
+                        actualsRowData.push(row.getCell(a).result || 0)
                     }
 
                     // extract budget for periods 1-12 (columns 16-27)
                     for(let b = 16; b <= 27; b++) {
-                        budgetRowData.push(sections[section][row].getCell(b).result || 0)
+                        budgetRowData.push(row.getCell(b).result || 0)
                     }
 
                     actualsRows.push(actualsRowData)
@@ -132,9 +132,9 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
                 totalActualIncome: overviewSheet.getCell('C13').result || 0,
                 totalActualSalary: overviewSheet.getCell('C22').result || 0,
                 totalActualNonSalary: overviewSheet.getCell('C53').result || 0,
-                totalBudgetIncome: overviewSheet.getCell('P13').result || 0,
-                totalBudgetSalary: overviewSheet.getCell('P22').result || 0,
-                totalBudgetNonSalary: overviewSheet.getCell('P53').result || 0,
+                totalBudgetedIncome: overviewSheet.getCell('P13').result || 0,
+                totalBudgetedSalary: overviewSheet.getCell('P22').result || 0,
+                totalBudgetedNonSalary: overviewSheet.getCell('P53').result || 0,
                 actual: {
                     columns: actualsColumns,
                     rows: actualsRows
@@ -174,7 +174,7 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             return finance
 
         } catch (error) {
-            throw error
+            throw new Error('Failed to sync finance data: ' + error.message)
         }
     }
 }))
