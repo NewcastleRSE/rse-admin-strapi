@@ -464,6 +464,8 @@ export interface ApiAssignmentAssignment extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;
+    rate: Schema.Attribute.Enumeration<['standard', 'senior']> &
+      Schema.Attribute.DefaultTo<'standard'>;
     rse: Schema.Attribute.Relation<'manyToOne', 'api::rse.rse'>;
     start: Schema.Attribute.Date & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
