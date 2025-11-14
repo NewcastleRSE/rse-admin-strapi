@@ -27,8 +27,10 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
 
             const client = Client.init({ authProvider })
 
-            const hostname = process.env.TRANSACTIONS_HOSTNAME,
-                  folderPath = process.env.TRANSACTIONS_FOLDER_PATH
+            const hostname = process.env.FINANCE_SHAREPOINT_HOSTNAME,
+                  folderPath = process.env.FINANCE_SHAREPOINT_FOLDER_PATH,
+                  overviewSheetName = process.env.FINANCE_OVERVIEW_SHEET,
+                  transactionsSheetName = process.env.FINANCE_TRANSACTIONS_SHEET
 
             const financialYearsURL = `/sites/${hostname}/drive/root:/${folderPath}:/children`
 
@@ -59,7 +61,7 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             // Read the Excel file
             const workbook = new ExcelJS.Workbook()
             await workbook.xlsx.read(file.data)
-            const overviewSheet = workbook.getWorksheet('Financial overview')
+            const overviewSheet = workbook.getWorksheet(overviewSheetName)
 
             // retrieve the existing finance record for the year
             let finance = await strapi.entityService.findMany('api::finance.finance', { filters: { year: financialYear }, limit: 1 }).then(res => res[0])
