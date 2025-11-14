@@ -35,6 +35,24 @@
     "actual": {
       "type": "customField",
       "customField": "plugin::table-field.table"
+    },
+    "totalActualIncome": {
+      "type": "decimal"
+    },
+    "totalActualSalary": {
+      "type": "decimal"
+    },
+    "totalActualNonSalary": {
+      "type": "decimal"
+    },
+    "totalBudgetedIncome": {
+      "type": "decimal"
+    },
+    "totalBudgetedSalary": {
+      "type": "decimal"
+    },
+    "totalBudgetedNonSalary": {
+      "type": "decimal"
     }
   }
 }

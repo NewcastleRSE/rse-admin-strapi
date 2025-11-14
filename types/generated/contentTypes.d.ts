@@ -629,6 +629,12 @@ export interface ApiFinanceFinance extends Struct.CollectionTypeSchema {
     startDate: Schema.Attribute.Date &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    totalActualIncome: Schema.Attribute.Decimal;
+    totalActualNonSalary: Schema.Attribute.Decimal;
+    totalActualSalary: Schema.Attribute.Decimal;
+    totalBudgetedIncome: Schema.Attribute.Decimal;
+    totalBudgetedNonSalary: Schema.Attribute.Decimal;
+    totalBudgetedSalary: Schema.Attribute.Decimal;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

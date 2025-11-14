@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-11-13T23:09:36.908Z"
+    "x-generation-date": "2025-11-14T21:10:02.437Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -10532,6 +10532,30 @@
               },
               "budget": {},
               "actual": {},
+              "totalActualIncome": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalActualSalary": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalActualNonSalary": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalBudgetedIncome": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalBudgetedSalary": {
+                "type": "number",
+                "format": "float"
+              },
+              "totalBudgetedNonSalary": {
+                "type": "number",
+                "format": "float"
+              },
               "locale": {
                 "type": "string"
               },
@@ -10615,6 +10639,30 @@
           },
           "budget": {},
           "actual": {},
+          "totalActualIncome": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalActualSalary": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalActualNonSalary": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalBudgetedIncome": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalBudgetedSalary": {
+            "type": "number",
+            "format": "float"
+          },
+          "totalBudgetedNonSalary": {
+            "type": "number",
+            "format": "float"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -10928,6 +10976,30 @@
                 },
                 "budget": {},
                 "actual": {},
+                "totalActualIncome": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "totalActualSalary": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "totalActualNonSalary": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "totalBudgetedIncome": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "totalBudgetedSalary": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "totalBudgetedNonSalary": {
+                  "type": "number",
+                  "format": "float"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"

@@ -262,7 +262,6 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
 
             // iterate through each section and extract actuals and budget data
             for(const section in sections) {
-                console.log(`Processing section: ${section}`)
 
                 // loop through each row in the section
                 for(const row in sections[section]) {
@@ -286,6 +285,23 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                 }
             }
 
+            const latestData = {
+                totalActualIncome: overviewSheet.getCell('C13').result || 0,
+                totalActualSalary: overviewSheet.getCell('C22').result || 0,
+                totalActualNonSalary: overviewSheet.getCell('C53').result || 0,
+                totalBudgetIncome: overviewSheet.getCell('P13').result || 0,
+                totalBudgetSalary: overviewSheet.getCell('P22').result || 0,
+                totalBudgetNonSalary: overviewSheet.getCell('P53').result || 0,
+                actual: {
+                    columns: actualsColumns,
+                    rows: actualsRows
+                },
+                budget: {
+                    columns: budgetColumns,
+                    rows: budgetRows
+                }
+            }
+
             // if no record exists, create one
             if(!finance) {
 
@@ -293,14 +309,7 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     year: financialYear,
                     startDate: DateTime.fromObject({ year: financialYear, month: 8, day: 1 }).toISODate(),
                     endDate: DateTime.fromObject({ year: financialYear + 1, month: 7, day: 31 }).toISODate(),
-                    actual: {
-                        columns: actualsColumns,
-                        rows: actualsRows
-                    },
-                    budget: {
-                        columns: budgetColumns,
-                        rows: budgetRows
-                    }
+                    ...latestData
                 }
 
                 finance = await strapi.service('api::finance.finance').create({ data: payload })
@@ -312,14 +321,7 @@ module.exports = createCoreService('api::transaction.transaction', ({ strapi }) 
                     year: finance.year,
                     startDate: finance.startDate,
                     endDate: finance.endDate,
-                    actual: {
-                        columns: actualsColumns,
-                        rows: actualsRows
-                    },
-                    budget: {
-                        columns: budgetColumns,
-                        rows: budgetRows
-                    }
+                    ...latestData
                 }
 
                 finance = await strapi.service('api::finance.finance').update(finance.documentId, { data: payload })

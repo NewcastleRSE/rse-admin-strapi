@@ -46,8 +46,6 @@ module.exports = createCoreController('api::transaction.transaction', ({ strapi 
         year = ctx.query.financialYear
       }
 
-      console.log(`Syncing transactions for financial year: ${year}`)
-
       const result = await strapi.service('api::transaction.transaction').sync(ctx.request.body.accessToken, year)
     
       ctx.send(result, 200)
