@@ -41,15 +41,91 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const project = await strapi.service("api::project.project").findOne(params.data.project)
 
-        if(!project) { throw 'Project not found' }
+        if (!project) { throw 'Project not found' }
         //if(project.costModel === 'Facility' && !project.lineItems) { throw 'Project does not a day rate set' }
 
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
 
         const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
 
+        // divide time between standard and senior rates
+
         // Convert seconds to hours, then 7.24 hours per day
-        const days = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.24)
+        const totalDays = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.24)
+        let standardDays = 0
+        let seniorDays = 0
+
+        console.log('total days', totalDays)
+
+        const peopleDays = []
+
+        // try to build seperate standard and senior days from timesheet entries
+        try {
+
+
+            // check groupOne exists and is an array
+            if (Array.isArray(timesheets.data.groupOne)) {
+
+                timesheets.data.groupOne.forEach(entry => {
+                    const clocked = { "person": entry.name, "days": Math.round((entry.duration / 3600) / 7.24) }
+                    peopleDays.push(clocked)
+                })
+
+                // get assignments active for the current month from assignment and check if is a senior or standard rate, if no assigment is found assume standard
+                const assignments = await strapi.documents('api::assignment.assignment').findMany(
+                    {
+                        filters:
+                        {
+                            project:
+                            {
+                                documentId: project.documentId
+                            },
+                            $and: [
+                                {
+                            start: {
+                                $lte: DateTime.fromObject({year:period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1}).endOf('month').toISODate()
+                            },
+                        },
+                        {
+                            end: {
+                                $gte: DateTime.fromObject({year:period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1}).startOf('month').toISODate()
+                            }
+                        }
+                            ]
+                        },
+                        populate: {
+                            rse: true
+                        }
+                    },
+
+                )
+console.log(assignments, 'assignments')
+                // for each person who has clocked time, look at their allocation and rate
+                peopleDays.forEach(person => {
+                    const assignment = assignments.find(a => a.rse.displayName.toLowerCase() === person.person.toLowerCase())
+                    console.log(person)
+                    if (assignment && assignment.rate && assignment.rate === 'senior'    ) {
+                        seniorDays += person.days
+                    } else {
+                        standardDays += person.days
+                    }
+                })
+
+                console.log(seniorDays, 'senior days')
+                
+                console.log(standardDays, 'standard days')
+                
+
+            }
+            // todo combine entries into people if multiple entries can come from same person?
+        } catch (error) {
+            console.log('problem with calculating senior vs standard days so using standard only, error: ', error)
+            // if can't access groupOne in clockify timesheet response, just look at total time and use standard rate
+            standardDays = totalDays
+
+
+        }
+
 
         const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
             filters: {
@@ -99,7 +175,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         let invoice = null
 
-        if(invoices.length) {
+        if (invoices.length) {
             params.data.documentId = invoices[0].documentId
             await super.update(params.data.documentId, params)
         }
@@ -174,7 +250,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-        
+
         return invoice
     },
     async month(params) {
@@ -187,7 +263,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     $in: ['Awaiting Allocation', 'Funded & Awaiting Allocated', 'Allocated', 'Completed']
                 }
             }
-            
+
         })
 
         // todo create start and end date dynamically
@@ -228,7 +304,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
             axios.post(url, data, { headers: headers })
                 .then(response => {
-                   // console.log(response.data.totals) // Axios automatically parses JSON responses
+                    // console.log(response.data.totals) // Axios automatically parses JSON responses
                 })
                 .catch(error => {
                     //console.error(error)
@@ -246,3 +322,4 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         return true
     }
 }))
+
