@@ -620,7 +620,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
     documentNumber: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
-    email_for_signature: Schema.Attribute.Email;
     generated: Schema.Attribute.Date & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

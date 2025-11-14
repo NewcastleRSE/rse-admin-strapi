@@ -159,22 +159,29 @@ console.log(assignments, 'assignments')
             limit: 100,
             after: 0
         })
-
+console.log('products', products)
         let standardRate = products.results.find(product => product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`).price,
             seniorRate = products.results.find(product => product.properties.name === `Senior Day Rate ${facilityYear}/${facilityYear + 1}`).price
+console.log('standard rate', standardRate)
+    console.log('senior rate', seniorRate)
 
-        //TODO figure out how to select the right rate
-        // for now just use standard rate
-        const dayRate = Number(standardRate) || 0
+      
+        const standardDayRate = Number(standardRate) || 0
+        const seniorDayRate = Number(seniorRate) || 0
 
         params.data.project = [project.documentId]
         params.data.generated = DateTime.utc().toISODate()
         params.data.documentNumber = documentNumber
-        params.data.standard_price = dayRate
-        params.data.standard_units = days
+        params.data.standard_price = standardDayRate
+        params.data.standard_units = standardDays
+        params.data.senior_rate = seniorDayRate
+        params.data.senior_units = seniorDays
+        
+        console.log('save in db: ', params.data)
 
         let invoice = null
 
+        // either update existing invoice or create a new one
         if (invoices.length) {
             params.data.documentId = invoices[0].documentId
             await super.update(params.data.documentId, params)
@@ -190,6 +197,7 @@ console.log(assignments, 'assignments')
 
         invoice.project = await strapi.entityService.findOne('api::project.project', project.documentId)
 
+        // Invoice is created or update in database, now generate the PDF
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
             currency: 'GBP',
@@ -221,33 +229,66 @@ console.log(assignments, 'assignments')
 
         const enteredBy = form.getTextField('Entered By')
         enteredBy.updateAppearances(fontBold)
-        enteredBy.setText(`Mark Turner`)
+        enteredBy.setText(`RSE Team`)
         enteredBy.enableReadOnly()
 
-        const description = form.getTextField('Description')
-        description.updateAppearances(fontBold)
-        description.setText(`RSE services for ${project.dealname}.`)
-        description.enableReadOnly()
+        // senior line
+        if (seniorDays > 0) {
+                const descriptionTxt = project + ' - '  + ' RSE services (standard day rate)'
+                const description = form.getTextField('Description')
+                //description.updateAppearances(fontBold)
+                description.setText(`${descriptionTxt}`)
+                description.enableReadOnly()
+       
 
-        const quantity = form.getTextField('Quantity')
-        quantity.updateAppearances(fontBold)
-        quantity.setText(`${days}`)
-        quantity.enableReadOnly()
+                const quantity = form.getTextField('Quantity')
+                //quantity.updateAppearances(fontBold)
+                quantity.setText(`${seniorDays}`)
+                //quantity.enableReadOnly()
 
-        const price = form.getTextField('Price')
-        price.updateAppearances(fontBold)
-        price.setText(`${formatter.format(dayRate)}`)
-        price.enableReadOnly()
+                const price = form.getTextField('Price')
+                //price.updateAppearances(fontBold)
+                price.setText(`${seniorDayRate}`)
+                price.enableReadOnly()
 
-        const total = form.getTextField('Total')
-        total.updateAppearances(fontBold)
-        total.setText(`${formatter.format(dayRate * days)}`)
-        total.enableReadOnly()
+                const total = form.getTextField('Total')
+                //total.updateAppearances(fontBold)
+                total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
+                //total.enableReadOnly()
 
-        const account = form.getTextField('Account')
-        account.updateAppearances(fontBold)
-        account.setText(`${project.accountCode}`)
-        account.enableReadOnly()
+                const account = form.getTextField('Account')
+                //account.updateAppearances(fontBold)
+                account.setText(`${project.accountCode}`)
+                //account.enableReadOnly()
+        }
+
+        // standard line
+        const descriptionTxt = project + ' - '  + ' RSE services (standard day rate)'
+                const description = form.getTextField('Description')
+                //description.updateAppearances(fontBold)
+                description.setText(`${descriptionTxt}`)
+                description.enableReadOnly()
+       
+
+                const quantity = form.getTextField('Quantity')
+                //quantity.updateAppearances(fontBold)
+                quantity.setText(`${standardDays}`)
+                //quantity.enableReadOnly()
+
+                const price = form.getTextField('Price')
+                //price.updateAppearances(fontBold)
+                price.setText(`${standardDayRate}`)
+                price.enableReadOnly()
+
+                const total = form.getTextField('Total')
+                //total.updateAppearances(fontBold)
+                total.setText(`${formatter.format(standardDayRate * standardDays)}`)
+                //total.enableReadOnly()
+
+                const account = form.getTextField('Account')
+                //account.updateAppearances(fontBold)
+                account.setText(`${project.accountCode}`)
+                //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
 

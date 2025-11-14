@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-11-14T15:31:01.879Z"
+    "x-generation-date": "2025-11-14T15:51:42.597Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6275,10 +6275,6 @@
                                 "type": "string",
                                 "format": "date"
                               },
-                              "email_for_signature": {
-                                "type": "string",
-                                "format": "email"
-                              },
                               "notes": {
                                 "type": "string"
                               },
@@ -7549,10 +7545,6 @@
                                 "type": "string",
                                 "format": "date"
                               },
-                              "email_for_signature": {
-                                "type": "string",
-                                "format": "email"
-                              },
                               "notes": {
                                 "type": "string"
                               },
@@ -8761,10 +8753,6 @@
                       "sent_to_finance": {
                         "type": "string",
                         "format": "date"
-                      },
-                      "email_for_signature": {
-                        "type": "string",
-                        "format": "email"
                       },
                       "notes": {
                         "type": "string"
@@ -10052,10 +10040,6 @@
                 "type": "string",
                 "format": "date"
               },
-              "email_for_signature": {
-                "type": "string",
-                "format": "email"
-              },
               "notes": {
                 "type": "string"
               },
@@ -10596,10 +10580,6 @@
                     "sent_to_finance": {
                       "type": "string",
                       "format": "date"
-                    },
-                    "email_for_signature": {
-                      "type": "string",
-                      "format": "email"
                     },
                     "notes": {
                       "type": "string"
@@ -11271,10 +11251,6 @@
           "sent_to_finance": {
             "type": "string",
             "format": "date"
-          },
-          "email_for_signature": {
-            "type": "string",
-            "format": "email"
           },
           "notes": {
             "type": "string"
@@ -12588,10 +12564,6 @@
                   "type": "string",
                   "format": "date"
                 },
-                "email_for_signature": {
-                  "type": "string",
-                  "format": "email"
-                },
                 "notes": {
                   "type": "string"
                 },
@@ -13709,10 +13681,6 @@
                           "sent_to_finance": {
                             "type": "string",
                             "format": "date"
-                          },
-                          "email_for_signature": {
-                            "type": "string",
-                            "format": "email"
                           },
                           "notes": {
                             "type": "string"
