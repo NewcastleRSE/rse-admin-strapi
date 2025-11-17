@@ -46,7 +46,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
 
-        const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
+        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase()}-${params.data.year}`
 
         // divide time between standard and senior rates
 
@@ -55,7 +55,6 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         let standardDays = 0
         let seniorDays = 0
 
-        console.log('total days', totalDays)
 
         const peopleDays = []
 
@@ -82,15 +81,15 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                             },
                             $and: [
                                 {
-                            start: {
-                                $lte: DateTime.fromObject({year:period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1}).endOf('month').toISODate()
-                            },
-                        },
-                        {
-                            end: {
-                                $gte: DateTime.fromObject({year:period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1}).startOf('month').toISODate()
-                            }
-                        }
+                                    start: {
+                                        $lte: DateTime.fromObject({ year: period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1 }).endOf('month').toISODate()
+                                    },
+                                },
+                                {
+                                    end: {
+                                        $gte: DateTime.fromObject({ year: period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1 }).startOf('month').toISODate()
+                                    }
+                                }
                             ]
                         },
                         populate: {
@@ -99,22 +98,17 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     },
 
                 )
-console.log(assignments, 'assignments')
+                
                 // for each person who has clocked time, look at their allocation and rate
                 peopleDays.forEach(person => {
                     const assignment = assignments.find(a => a.rse.displayName.toLowerCase() === person.person.toLowerCase())
-                    console.log(person)
-                    if (assignment && assignment.rate && assignment.rate === 'senior'    ) {
+                    if (assignment && assignment.rate && assignment.rate === 'senior') {
                         seniorDays += person.days
                     } else {
                         standardDays += person.days
                     }
                 })
 
-                console.log(seniorDays, 'senior days')
-                
-                console.log(standardDays, 'standard days')
-                
 
             }
             // todo combine entries into people if multiple entries can come from same person?
@@ -122,8 +116,6 @@ console.log(assignments, 'assignments')
             console.log('problem with calculating senior vs standard days so using standard only, error: ', error)
             // if can't access groupOne in clockify timesheet response, just look at total time and use standard rate
             standardDays = totalDays
-
-
         }
 
 
@@ -159,13 +151,21 @@ console.log(assignments, 'assignments')
             limit: 100,
             after: 0
         })
-console.log('products', products)
-        let standardRate = products.results.find(product => product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`).price,
-            seniorRate = products.results.find(product => product.properties.name === `Senior Day Rate ${facilityYear}/${facilityYear + 1}`).price
-console.log('standard rate', standardRate)
-    console.log('senior rate', seniorRate)
 
+        // todo if this does not work, either default to the current day rate or 
+        // throw error? also need to consider external projects where 
+        // we charge VAT and a higher day rate??
       
+        let standardRate = 0, seniorRate = 0
+        products.results.forEach(product => {
+            if (product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`) {
+                standardRate = product.properties.price
+            } else if (product.properties.name === `Senior Day Rate ${facilityYear}/${facilityYear + 1}`) {
+                seniorRate = product.properties.price
+            }
+        }
+        )
+
         const standardDayRate = Number(standardRate) || 0
         const seniorDayRate = Number(seniorRate) || 0
 
@@ -174,17 +174,17 @@ console.log('standard rate', standardRate)
         params.data.documentNumber = documentNumber
         params.data.standard_price = standardDayRate
         params.data.standard_units = standardDays
-        params.data.senior_rate = seniorDayRate
+        params.data.senior_price = seniorDayRate
         params.data.senior_units = seniorDays
-        
-        console.log('save in db: ', params.data)
+
+        //console.log('save in db: ', params.data)
 
         let invoice = null
 
         // either update existing invoice or create a new one
         if (invoices.length) {
             params.data.documentId = invoices[0].documentId
-            await super.update(params.data.documentId, params)
+            invoice = await super.update(params.data.documentId, params)
         }
         else {
             try {
@@ -234,61 +234,61 @@ console.log('standard rate', standardRate)
 
         // senior line
         if (seniorDays > 0) {
-                const descriptionTxt = project + ' - '  + ' RSE services (standard day rate)'
-                const description = form.getTextField('Description')
-                //description.updateAppearances(fontBold)
-                description.setText(`${descriptionTxt}`)
-                description.enableReadOnly()
-       
+            const descriptionTxt = project + ' - ' + ' RSE services (standard day rate)'
+            const description = form.getTextField('Description')
+            //description.updateAppearances(fontBold)
+            description.setText(`${descriptionTxt}`)
+            description.enableReadOnly()
 
-                const quantity = form.getTextField('Quantity')
-                //quantity.updateAppearances(fontBold)
-                quantity.setText(`${seniorDays}`)
-                //quantity.enableReadOnly()
 
-                const price = form.getTextField('Price')
-                //price.updateAppearances(fontBold)
-                price.setText(`${seniorDayRate}`)
-                price.enableReadOnly()
+            const quantity = form.getTextField('Quantity')
+            //quantity.updateAppearances(fontBold)
+            quantity.setText(`${seniorDays}`)
+            //quantity.enableReadOnly()
 
-                const total = form.getTextField('Total')
-                //total.updateAppearances(fontBold)
-                total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
-                //total.enableReadOnly()
+            const price = form.getTextField('Price')
+            //price.updateAppearances(fontBold)
+            price.setText(`${seniorDayRate}`)
+            price.enableReadOnly()
 
-                const account = form.getTextField('Account')
-                //account.updateAppearances(fontBold)
-                account.setText(`${project.accountCode}`)
-                //account.enableReadOnly()
+            const total = form.getTextField('Total')
+            //total.updateAppearances(fontBold)
+            total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
+            //total.enableReadOnly()
+
+            const account = form.getTextField('Account')
+            //account.updateAppearances(fontBold)
+            account.setText(`${project.accountCode}`)
+            //account.enableReadOnly()
         }
 
         // standard line
-        const descriptionTxt = project + ' - '  + ' RSE services (standard day rate)'
-                const description = form.getTextField('Description')
-                //description.updateAppearances(fontBold)
-                description.setText(`${descriptionTxt}`)
-                description.enableReadOnly()
-       
+        const descriptionTxt = project + ' - ' + ' RSE services (standard day rate)'
+        const description = form.getTextField('Description')
+        //description.updateAppearances(fontBold)
+        description.setText(`${descriptionTxt}`)
+        description.enableReadOnly()
 
-                const quantity = form.getTextField('Quantity')
-                //quantity.updateAppearances(fontBold)
-                quantity.setText(`${standardDays}`)
-                //quantity.enableReadOnly()
 
-                const price = form.getTextField('Price')
-                //price.updateAppearances(fontBold)
-                price.setText(`${standardDayRate}`)
-                price.enableReadOnly()
+        const quantity = form.getTextField('Quantity')
+        //quantity.updateAppearances(fontBold)
+        quantity.setText(`${standardDays}`)
+        //quantity.enableReadOnly()
 
-                const total = form.getTextField('Total')
-                //total.updateAppearances(fontBold)
-                total.setText(`${formatter.format(standardDayRate * standardDays)}`)
-                //total.enableReadOnly()
+        const price = form.getTextField('Price')
+        //price.updateAppearances(fontBold)
+        price.setText(`${standardDayRate}`)
+        price.enableReadOnly()
 
-                const account = form.getTextField('Account')
-                //account.updateAppearances(fontBold)
-                account.setText(`${project.accountCode}`)
-                //account.enableReadOnly()
+        const total = form.getTextField('Total')
+        //total.updateAppearances(fontBold)
+        total.setText(`${formatter.format(standardDayRate * standardDays)}`)
+        //total.enableReadOnly()
+
+        const account = form.getTextField('Account')
+        //account.updateAppearances(fontBold)
+        account.setText(`${project.accountCode}`)
+        //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
 

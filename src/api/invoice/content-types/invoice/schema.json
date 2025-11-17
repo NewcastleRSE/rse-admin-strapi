@@ -77,9 +77,6 @@
     "other_charges": {
       "type": "decimal"
     },
-    "account": {
-      "type": "string"
-    },
     "sent_to_finance": {
       "type": "date"
     },

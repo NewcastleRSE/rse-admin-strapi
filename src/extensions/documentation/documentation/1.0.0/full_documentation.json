@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-11-14T15:51:42.597Z"
+    "x-generation-date": "2025-11-17T12:12:19.227Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6268,9 +6268,6 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "account": {
-                                "type": "string"
-                              },
                               "sent_to_finance": {
                                 "type": "string",
                                 "format": "date"
@@ -7538,9 +7535,6 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "account": {
-                                "type": "string"
-                              },
                               "sent_to_finance": {
                                 "type": "string",
                                 "format": "date"
@@ -8746,9 +8740,6 @@
                       "other_charges": {
                         "type": "number",
                         "format": "float"
-                      },
-                      "account": {
-                        "type": "string"
                       },
                       "sent_to_finance": {
                         "type": "string",
@@ -10033,9 +10024,6 @@
                 "type": "number",
                 "format": "float"
               },
-              "account": {
-                "type": "string"
-              },
               "sent_to_finance": {
                 "type": "string",
                 "format": "date"
@@ -10573,9 +10561,6 @@
                     "other_charges": {
                       "type": "number",
                       "format": "float"
-                    },
-                    "account": {
-                      "type": "string"
                     },
                     "sent_to_finance": {
                       "type": "string",
@@ -11244,9 +11229,6 @@
           "other_charges": {
             "type": "number",
             "format": "float"
-          },
-          "account": {
-            "type": "string"
           },
           "sent_to_finance": {
             "type": "string",
@@ -12557,9 +12539,6 @@
                   "type": "number",
                   "format": "float"
                 },
-                "account": {
-                  "type": "string"
-                },
                 "sent_to_finance": {
                   "type": "string",
                   "format": "date"
@@ -13674,9 +13653,6 @@
                           "other_charges": {
                             "type": "number",
                             "format": "float"
-                          },
-                          "account": {
-                            "type": "string"
                           },
                           "sent_to_finance": {
                             "type": "string",
