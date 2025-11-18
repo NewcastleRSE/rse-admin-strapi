@@ -85,6 +85,9 @@
     },
     "description": {
       "type": "string"
+    },
+    "paid": {
+      "type": "date"
     }
   }
 }

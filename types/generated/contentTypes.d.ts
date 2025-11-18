@@ -645,6 +645,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required;
     notes: Schema.Attribute.String;
     other_charges: Schema.Attribute.Decimal;
+    paid: Schema.Attribute.Date;
     processed: Schema.Attribute.Date;
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;

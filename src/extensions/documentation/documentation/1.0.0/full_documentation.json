@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-11-18T13:58:24.639Z"
+    "x-generation-date": "2025-11-18T14:56:10.201Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6278,6 +6278,10 @@
                               "description": {
                                 "type": "string"
                               },
+                              "paid": {
+                                "type": "string",
+                                "format": "date"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -7545,6 +7549,10 @@
                               "description": {
                                 "type": "string"
                               },
+                              "paid": {
+                                "type": "string",
+                                "format": "date"
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -8750,6 +8758,10 @@
                       },
                       "description": {
                         "type": "string"
+                      },
+                      "paid": {
+                        "type": "string",
+                        "format": "date"
                       },
                       "createdAt": {
                         "type": "string",
@@ -10034,6 +10046,10 @@
               "description": {
                 "type": "string"
               },
+              "paid": {
+                "type": "string",
+                "format": "date"
+              },
               "locale": {
                 "type": "string"
               },
@@ -10571,6 +10587,10 @@
                     },
                     "description": {
                       "type": "string"
+                    },
+                    "paid": {
+                      "type": "string",
+                      "format": "date"
                     },
                     "createdAt": {
                       "type": "string",
@@ -11239,6 +11259,10 @@
           },
           "description": {
             "type": "string"
+          },
+          "paid": {
+            "type": "string",
+            "format": "date"
           },
           "createdAt": {
             "type": "string",
@@ -12549,6 +12573,10 @@
                 "description": {
                   "type": "string"
                 },
+                "paid": {
+                  "type": "string",
+                  "format": "date"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -13663,6 +13691,10 @@
                           },
                           "description": {
                             "type": "string"
+                          },
+                          "paid": {
+                            "type": "string",
+                            "format": "date"
                           },
                           "createdAt": {
                             "type": "string",
