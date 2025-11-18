@@ -170,7 +170,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const standardDayRate = Number(standardRate) || 0
         const seniorDayRate = Number(seniorRate) || 0
 
-        params.data.project = [project.documentID]
+        params.data.project = [project.documentId]
         params.data.generated = DateTime.utc().toISODate()
         params.data.documentNumber = documentNumber
         params.data.standard_price = standardDayRate
