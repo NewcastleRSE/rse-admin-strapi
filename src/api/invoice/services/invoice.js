@@ -34,6 +34,7 @@ const clockifyConfig = {
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
+        console.log('Generating invoice for project ', params.data.project, ' for period ', params.data.month, params.data.year)
         const period = {
             year: params.data.year,
             month: params.data.month
@@ -169,7 +170,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const standardDayRate = Number(standardRate) || 0
         const seniorDayRate = Number(seniorRate) || 0
 
-        params.data.project = [project.documentId]
+        params.data.project = [project.documentID]
         params.data.generated = DateTime.utc().toISODate()
         params.data.documentNumber = documentNumber
         params.data.standard_price = standardDayRate
@@ -195,8 +196,10 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             }
         }
 
-        invoice.project = await strapi.entityService.findOne('api::project.project', project.documentId)
-
+        invoice.project = await strapi.documents('api::project.project').findOne({
+            documentId : project.documentId
+        })
+       
         // Invoice is created or update in database, now generate the PDF
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
@@ -219,7 +222,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const refNumber = form.getTextField('REF Number')
         refNumber.updateAppearances(fontBold)
-        refNumber.setText(`${project.hubspotId}`)
+        refNumber.setText(`${project.hubspotID}`)
         refNumber.enableReadOnly()
 
         const created = form.getTextField('Created')
@@ -234,7 +237,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         // senior line
         if (seniorDays > 0) {
-            const descriptionTxt = project + ' - ' + ' RSE services (standard day rate)'
+            const descriptionTxt = project.name + ' - ' + ' RSE services (standard day rate)'
             const description = form.getTextField('Description')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
@@ -258,7 +261,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
             const account = form.getTextField('Account')
             //account.updateAppearances(fontBold)
-            account.setText(`${project.accountCode}`)
+            account.setText(`${project.account}`)
             //account.enableReadOnly()
         }
 
@@ -291,7 +294,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-
+console.log('generated pdf for invoice ', invoice.documentNumber)
         return invoice
     },
     async month(params) {
