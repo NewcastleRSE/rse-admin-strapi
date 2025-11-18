@@ -241,7 +241,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             const description = form.getTextField('Description')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
-            description.enableReadOnly()
+            // description.enableReadOnly()
 
 
             const quantity = form.getTextField('Quantity')
@@ -266,11 +266,11 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         }
 
         // standard line
-        const descriptionTxt = project + ' - ' + ' RSE services (standard day rate)'
+        const descriptionTxt = project.name + ' - ' + ' RSE services (standard day rate)'
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
-        description.enableReadOnly()
+        // description.enableReadOnly()
 
 
         const quantity = form.getTextField('Quantity')
@@ -290,7 +290,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const account = form.getTextField('Account')
         //account.updateAppearances(fontBold)
-        account.setText(`${project.accountCode}`)
+        account.setText(`${project.account}`)
         //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
