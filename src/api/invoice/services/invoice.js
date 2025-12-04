@@ -237,7 +237,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         // senior line
         if (seniorDays > 0) {
-            const descriptionTxt = project.name + ' - ' + ' RSE services (standard day rate)'
+            const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
             const description = form.getTextField('Description')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
@@ -266,7 +266,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         }
 
         // standard line
-        const descriptionTxt = project.name + ' - ' + ' RSE services (standard day rate)'
+        const descriptionTxt = documentNumber +' - ' + project.name + ' - ' + ' RSE services (standard)'
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
