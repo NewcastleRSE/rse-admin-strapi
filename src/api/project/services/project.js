@@ -300,6 +300,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
         result.estimate = clockifyProject?.estimate?.estimate
         result.spent = clockifyProject?.duration
+        
+        // calculate expected burndown based on assignments
       }
       catch (error) {
         console.error(error)
