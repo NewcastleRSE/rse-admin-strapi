@@ -2,6 +2,7 @@
 
 const fs = require('fs')
 const DateTime = require('luxon').DateTime
+const Duration = require('luxon').Duration
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -300,8 +301,55 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
         result.estimate = clockifyProject?.estimate?.estimate
         result.spent = clockifyProject?.duration
+        result.anticipatedProgress = 'PT0S'
+
+        // calculate expected burndown based on assignments, if there is an estimate
+        if (result.estimate && result.estimate !== 'PT0S' && result.assignments.length != 0) {
+        console.log(result)
+
+        // number of days scheduled between today and end date
+        let fullDays = 0
+        let scheduled = 0 
+        result.assignments.forEach(assignment => {
+          // if todays date is between assignment.start and assignment.end (yyyy-mm-dd), count the days between today and assignment.end that are working days and multiple this by 
+          // the FTE of the assignment
+          // note this does not account for bank holidays or scheduled leave
+          const today = DateTime.now().startOf('day'),
+          assignmentStart = DateTime.fromISO(assignment.start).startOf('day'),
+          assignmentEnd = DateTime.fromISO(assignment.end).startOf('day')
+
+          if (today <= assignmentEnd && today >= assignmentStart) {
+            let currentDate = today
+            
+            while (currentDate <= assignmentEnd) {
+              // check if currentDate is a working day (Mon-Fri)
+              if (currentDate.weekday < 6) {
+                fullDays += 1
+              }
+              currentDate = currentDate.plus({ days: 1 })
+            }
+            
+            console.log(`Assignment has ${fullDays} working days remaining at FTE ${assignment.fte}`)
+            scheduled += (fullDays * (assignment.fte/100))
+          }
+        })
+
+console.log(`Project ${result.name} has ${scheduled} scheduled days remaining.`)
+
+        // convert from ISO 8601 duration format to hours
+        const estimateDuration = Duration.fromISO(result.estimate)
+        const estimateHours = estimateDuration.as('hours')
+
+        // convert scheduled days to hours, based on 7.4 hours per day
+        const scheduledHours = scheduled * 7.4
         
-        // calculate expected burndown based on assignments
+        // calculate anticipated progress
+  
+
+        // anticipated progress needed to complete project using the scheduled days
+        result.anticipatedProgress =  estimateDuration.minus(Duration.fromObject({ hours: scheduledHours })).toISO()
+        console.log(`Project ${result.name} has an anticipated progress of ${result.anticipatedProgress} based on ${scheduledHours} scheduled hours remaining out of ${estimateHours} estimated hours.`)
+      }
       }
       catch (error) {
         console.error(error)

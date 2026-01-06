@@ -153,8 +153,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             after: 0
         })
 
-        // todo if this does not work, either default to the current day rate or 
-        // throw error? also need to consider external projects where 
+        // todo also need to consider external projects where 
         // we charge VAT and a higher day rate??
       
         let standardRate = 0, seniorRate = 0
