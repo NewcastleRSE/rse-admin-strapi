@@ -303,7 +303,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         result.spent = clockifyProject?.duration
         result.anticipatedProgress = 'PT0S'
 
-        // calculate expected burndown based on assignments, if there is an estimate
+        // calculate expected progress based on assignments, if there is an estimate
         if (result.estimate && result.estimate !== 'PT0S' && result.assignments.length != 0) {
         console.log(result)
 
@@ -318,8 +318,11 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
           assignmentStart = DateTime.fromISO(assignment.start).startOf('day'),
           assignmentEnd = DateTime.fromISO(assignment.end).startOf('day')
 
-          if (today <= assignmentEnd && today >= assignmentStart) {
-            let currentDate = today
+          // include if the assignment is currently ongoing or yet to commence
+          if (today <= assignmentEnd) {
+            // if assignment has not started, count from the start date, else use today's date
+            let currentDate = today < assignmentStart ? assignmentStart : today
+          
             
             while (currentDate <= assignmentEnd) {
               // check if currentDate is a working day (Mon-Fri)
