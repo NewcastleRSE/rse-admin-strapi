@@ -34,6 +34,7 @@ const clockifyConfig = {
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
+        console.log('Generating invoice for project ', params.data.project, ' for period ', params.data.month, params.data.year)
         const period = {
             year: params.data.year,
             month: params.data.month
@@ -41,15 +42,83 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const project = await strapi.service("api::project.project").findOne(params.data.project)
 
-        if(!project) { throw 'Project not found' }
+        if (!project) { throw 'Project not found' }
         //if(project.costModel === 'Facility' && !project.lineItems) { throw 'Project does not a day rate set' }
 
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
 
-        const documentNumber = `${project.hubspotId}-${params.data.month.toUpperCase()}-${params.data.year}`
+        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase()}-${params.data.year}`
+
+        // divide time between standard and senior rates
 
         // Convert seconds to hours, then 7.24 hours per day
-        const days = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.24)
+        const totalDays = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.24)
+        let standardDays = 0
+        let seniorDays = 0
+
+
+        const peopleDays = []
+
+        // try to build seperate standard and senior days from timesheet entries
+        try {
+
+
+            // check groupOne exists and is an array
+            if (Array.isArray(timesheets.data.groupOne)) {
+
+                timesheets.data.groupOne.forEach(entry => {
+                    const clocked = { "person": entry.name, "days": Math.round((entry.duration / 3600) / 7.24) }
+                    peopleDays.push(clocked)
+                })
+
+                // get assignments active for the current month from assignment and check if is a senior or standard rate, if no assigment is found assume standard
+                const assignments = await strapi.documents('api::assignment.assignment').findMany(
+                    {
+                        filters:
+                        {
+                            project:
+                            {
+                                documentId: project.documentId
+                            },
+                            $and: [
+                                {
+                                    start: {
+                                        $lte: DateTime.fromObject({ year: period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1 }).endOf('month').toISODate()
+                                    },
+                                },
+                                {
+                                    end: {
+                                        $gte: DateTime.fromObject({ year: period.year, month: DateTime.fromFormat(period.month, 'LLLL').month, day: 1 }).startOf('month').toISODate()
+                                    }
+                                }
+                            ]
+                        },
+                        populate: {
+                            rse: true
+                        }
+                    },
+
+                )
+                
+                // for each person who has clocked time, look at their allocation and rate
+                peopleDays.forEach(person => {
+                    const assignment = assignments.find(a => a.rse.displayName.toLowerCase() === person.person.toLowerCase())
+                    if (assignment && assignment.rate && assignment.rate === 'senior') {
+                        seniorDays += person.days
+                    } else {
+                        standardDays += person.days
+                    }
+                })
+
+
+            }
+            // todo combine entries into people if multiple entries can come from same person?
+        } catch (error) {
+            console.log('problem with calculating senior vs standard days so using standard only, error: ', error)
+            // if can't access groupOne in clockify timesheet response, just look at total time and use standard rate
+            standardDays = totalDays
+        }
+
 
         const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
             filters: {
@@ -84,24 +153,38 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             after: 0
         })
 
-        let standardRate = products.results.find(product => product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`).price,
-            seniorRate = products.results.find(product => product.properties.name === `Senior Day Rate ${facilityYear}/${facilityYear + 1}`).price
+        // todo also need to consider external projects where 
+        // we charge VAT and a higher day rate??
+      
+        let standardRate = 0, seniorRate = 0
+        products.results.forEach(product => {
+            if (product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`) {
+                standardRate = product.properties.price
+            } else if (product.properties.name === `Senior Day Rate ${facilityYear}/${facilityYear + 1}`) {
+                seniorRate = product.properties.price
+            }
+        }
+        )
 
-        //TODO figure out how to select the right rate
-        // for now just use standard rate
-        const dayRate = Number(standardRate) || 0
+        const standardDayRate = Number(standardRate) || 0
+        const seniorDayRate = Number(seniorRate) || 0
 
         params.data.project = [project.documentId]
         params.data.generated = DateTime.utc().toISODate()
         params.data.documentNumber = documentNumber
-        params.data.standard_price = dayRate
-        params.data.standard_units = days
+        params.data.standard_price = standardDayRate
+        params.data.standard_units = standardDays
+        params.data.senior_price = seniorDayRate
+        params.data.senior_units = seniorDays
+
+        //console.log('save in db: ', params.data)
 
         let invoice = null
 
-        if(invoices.length) {
+        // either update existing invoice or create a new one
+        if (invoices.length) {
             params.data.documentId = invoices[0].documentId
-            await super.update(params.data.documentId, params)
+            invoice = await super.update(params.data.documentId, params)
         }
         else {
             try {
@@ -112,8 +195,11 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             }
         }
 
-        invoice.project = await strapi.entityService.findOne('api::project.project', project.documentId)
-
+        invoice.project = await strapi.documents('api::project.project').findOne({
+            documentId : project.documentId
+        })
+       
+        // Invoice is created or update in database, now generate the PDF
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
             currency: 'GBP',
@@ -135,7 +221,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const refNumber = form.getTextField('REF Number')
         refNumber.updateAppearances(fontBold)
-        refNumber.setText(`${project.hubspotId}`)
+        refNumber.setText(`${project.hubspotID}`)
         refNumber.enableReadOnly()
 
         const created = form.getTextField('Created')
@@ -145,36 +231,69 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         const enteredBy = form.getTextField('Entered By')
         enteredBy.updateAppearances(fontBold)
-        enteredBy.setText(`Mark Turner`)
+        enteredBy.setText(`RSE Team`)
         enteredBy.enableReadOnly()
 
+        // senior line
+        if (seniorDays > 0) {
+            const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
+            const description = form.getTextField('Description')
+            //description.updateAppearances(fontBold)
+            description.setText(`${descriptionTxt}`)
+            // description.enableReadOnly()
+
+
+            const quantity = form.getTextField('Quantity')
+            //quantity.updateAppearances(fontBold)
+            quantity.setText(`${seniorDays}`)
+            //quantity.enableReadOnly()
+
+            const price = form.getTextField('Price')
+            //price.updateAppearances(fontBold)
+            price.setText(`${seniorDayRate}`)
+            price.enableReadOnly()
+
+            const total = form.getTextField('Total')
+            //total.updateAppearances(fontBold)
+            total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
+            //total.enableReadOnly()
+
+            const account = form.getTextField('Account')
+            //account.updateAppearances(fontBold)
+            account.setText(`${project.account}`)
+            //account.enableReadOnly()
+        }
+
+        // standard line
+        const descriptionTxt = documentNumber +' - ' + project.name + ' - ' + ' RSE services (standard)'
         const description = form.getTextField('Description')
-        description.updateAppearances(fontBold)
-        description.setText(`RSE services for ${project.dealname}.`)
-        description.enableReadOnly()
+        //description.updateAppearances(fontBold)
+        description.setText(`${descriptionTxt}`)
+        // description.enableReadOnly()
+
 
         const quantity = form.getTextField('Quantity')
-        quantity.updateAppearances(fontBold)
-        quantity.setText(`${days}`)
-        quantity.enableReadOnly()
+        //quantity.updateAppearances(fontBold)
+        quantity.setText(`${standardDays}`)
+        //quantity.enableReadOnly()
 
         const price = form.getTextField('Price')
-        price.updateAppearances(fontBold)
-        price.setText(`${formatter.format(dayRate)}`)
+        //price.updateAppearances(fontBold)
+        price.setText(`${standardDayRate}`)
         price.enableReadOnly()
 
         const total = form.getTextField('Total')
-        total.updateAppearances(fontBold)
-        total.setText(`${formatter.format(dayRate * days)}`)
-        total.enableReadOnly()
+        //total.updateAppearances(fontBold)
+        total.setText(`${formatter.format(standardDayRate * standardDays)}`)
+        //total.enableReadOnly()
 
         const account = form.getTextField('Account')
-        account.updateAppearances(fontBold)
-        account.setText(`${project.accountCode}`)
-        account.enableReadOnly()
+        //account.updateAppearances(fontBold)
+        account.setText(`${project.account}`)
+        //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-        
+console.log('generated pdf for invoice ', invoice.documentNumber)
         return invoice
     },
     async month(params) {
@@ -187,7 +306,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     $in: ['Awaiting Allocation', 'Funded & Awaiting Allocated', 'Allocated', 'Completed']
                 }
             }
-            
+
         })
 
         // todo create start and end date dynamically
@@ -228,7 +347,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
             axios.post(url, data, { headers: headers })
                 .then(response => {
-                   // console.log(response.data.totals) // Axios automatically parses JSON responses
+                    // console.log(response.data.totals) // Axios automatically parses JSON responses
                 })
                 .catch(error => {
                     //console.error(error)
@@ -246,3 +365,4 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         return true
     }
 }))
+
