@@ -113,7 +113,7 @@
         "clientName": "John Smith",
         "note": "",
         "costRate": null,
-        "timeEstimate": {
+        "time": {
             "estimate": "PT0S",
             "type": "AUTO",
             "resetOption": null,

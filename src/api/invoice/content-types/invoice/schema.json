@@ -36,6 +36,7 @@
     },
     "month": {
       "type": "enumeration",
+      "required": true,
       "enum": [
         "january",
         "february",
@@ -49,8 +50,7 @@
         "october",
         "november",
         "december"
-      ],
-      "required": true
+      ]
     },
     "processed": {
       "type": "date"
@@ -77,20 +77,17 @@
     "other_charges": {
       "type": "decimal"
     },
-    "account": {
-      "type": "string"
-    },
     "sent_to_finance": {
       "type": "date"
-    },
-    "email_for_signature": {
-      "type": "email"
     },
     "notes": {
       "type": "string"
     },
     "description": {
       "type": "string"
+    },
+    "paid": {
+      "type": "date"
     }
   }
 }

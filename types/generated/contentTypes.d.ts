@@ -464,6 +464,8 @@ export interface ApiAssignmentAssignment extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;
+    rate: Schema.Attribute.Enumeration<['standard', 'senior']> &
+      Schema.Attribute.DefaultTo<'standard'>;
     rse: Schema.Attribute.Relation<'manyToOne', 'api::rse.rse'>;
     start: Schema.Attribute.Date & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -663,7 +665,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    account: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -671,7 +672,6 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
     documentNumber: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
-    email_for_signature: Schema.Attribute.Email;
     generated: Schema.Attribute.Date & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -698,6 +698,7 @@ export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required;
     notes: Schema.Attribute.String;
     other_charges: Schema.Attribute.Decimal;
+    paid: Schema.Attribute.Date;
     processed: Schema.Attribute.Date;
     project: Schema.Attribute.Relation<'manyToOne', 'api::project.project'>;
     publishedAt: Schema.Attribute.DateTime;

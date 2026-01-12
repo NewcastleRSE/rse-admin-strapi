@@ -38,6 +38,14 @@
       "relation": "manyToOne",
       "target": "api::project.project",
       "inversedBy": "assignments"
+    },
+    "rate": {
+      "type": "enumeration",
+      "default": "standard",
+      "enum": [
+        "standard",
+        "senior"
+      ]
     }
   }
 }

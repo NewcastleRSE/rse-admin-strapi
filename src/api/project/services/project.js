@@ -2,6 +2,7 @@
 
 const fs = require('fs')
 const DateTime = require('luxon').DateTime
+const Duration = require('luxon').Duration
 const Hubspot = require('@hubspot/api-client')
 const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCESS_TOKEN })
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
@@ -300,6 +301,58 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
         result.estimate = clockifyProject?.estimate?.estimate
         result.spent = clockifyProject?.duration
+        result.anticipatedProgress = 'PT0S'
+
+        // calculate expected progress based on assignments, if there is an estimate
+        if (result.estimate && result.estimate !== 'PT0S' && result.assignments.length != 0) {
+          console.log(result)
+
+          // number of days scheduled between today and end date
+          let fullDays = 0
+          let scheduled = 0
+          result.assignments.forEach(assignment => {
+            // if todays date is between assignment.start and assignment.end (yyyy-mm-dd), count the days between today and assignment.end that are working days and multiple this by 
+            // the FTE of the assignment
+            // note this does not account for bank holidays or scheduled leave
+            const today = DateTime.now().startOf('day'),
+              assignmentStart = DateTime.fromISO(assignment.start).startOf('day'),
+              assignmentEnd = DateTime.fromISO(assignment.end).startOf('day')
+
+            // include if the assignment is currently ongoing or yet to commence
+            if (today <= assignmentEnd) {
+              // if assignment has not started, count from the start date, else use today's date
+              let currentDate = today < assignmentStart ? assignmentStart : today
+
+
+              while (currentDate <= assignmentEnd) {
+                // check if currentDate is a working day (Mon-Fri)
+                if (currentDate.weekday < 6) {
+                  fullDays += 1
+                }
+                currentDate = currentDate.plus({ days: 1 })
+              }
+
+              // console.log(`Assignment has ${fullDays} working days remaining at FTE ${assignment.fte}`)
+              scheduled += (fullDays * (assignment.fte / 100))
+            }
+          })
+
+          // console.log(`Project ${result.name} has ${scheduled} scheduled days remaining.`)
+
+          // convert from ISO 8601 duration format to hours
+          const estimateDuration = Duration.fromISO(result.estimate)
+          const estimateHours = estimateDuration.as('hours')
+
+          // convert scheduled days to hours, based on 7.4 hours per day
+          const scheduledHours = scheduled * 7.4
+
+          // calculate anticipated progress
+
+
+          // anticipated progress needed to complete project using the scheduled days
+          result.anticipatedProgress = estimateDuration.minus(Duration.fromObject({ hours: scheduledHours })).toISO()
+          //   console.log(`Project ${result.name} has an anticipated progress of ${result.anticipatedProgress} based on ${scheduledHours} scheduled hours remaining out of ${estimateHours} estimated hours.`)
+        }
       }
       catch (error) {
         console.error(error)
@@ -446,8 +499,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
       // Get all Clockify projects and clients
       const clockifyAllProjects = (await axios.get('/projects?page-size=5000', clockifyConfig)).data,
-            clockifyAllClients = (await axios.get('/clients?page-size=5000', clockifyConfig)).data,
-            clockifyProjectClientIDs = [...new Set(clockifyAllProjects.map(p => p.clientId))]
+        clockifyAllClients = (await axios.get('/clients?page-size=5000', clockifyConfig)).data,
+        clockifyProjectClientIDs = [...new Set(clockifyAllProjects.map(p => p.clientId))]
 
       // Get all projects from Strapi
       const strapiProjects = await strapi.documents('api::project.project').findMany({ filters: { hubspotID: { $in: projectIDs } }, fields: ['hubspotID'], populate: { contacts: true } })
@@ -477,16 +530,16 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
       }
 
       const contactMap = [],
-            ProjectMap = []
+        ProjectMap = []
 
-            let unconnectedClockifyProjects = 0,
-            archivedProjects = 0,
-            removedProjects = 0
+      let unconnectedClockifyProjects = 0,
+        archivedProjects = 0,
+        removedProjects = 0
 
-            const defaultClockifyProjects = process.env.DEFAULT_CLOCKIFY_PROJECTS ? process.env.DEFAULT_CLOCKIFY_PROJECTS.split(',') : []
+      const defaultClockifyProjects = process.env.DEFAULT_CLOCKIFY_PROJECTS ? process.env.DEFAULT_CLOCKIFY_PROJECTS.split(',') : []
 
       for (const project of clockifyAllProjects) {
-        if(defaultClockifyProjects.includes(project.name)) {
+        if (defaultClockifyProjects.includes(project.name)) {
           // Always keep default projects
           continue
         }
@@ -502,10 +555,10 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
           unconnectedClockifyProjects++
 
           // Has no time logged and no estimate, so can be removed
-          if(project.duration === 'PT0S' && (!project.estimate || project.estimate?.estimate === 'PT0S')) {
+          if (project.duration === 'PT0S' && (!project.estimate || project.estimate?.estimate === 'PT0S')) {
             removedProjects++
 
-            if(!project.archived) {
+            if (!project.archived) {
               archivedProjects++
               // Archive project before deletion
               await axios.put(`/projects/${project.id}`, { archived: true }, clockifyConfig)
@@ -517,7 +570,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
             console.log(`Clockify project ${project.name} has time logged or an estimate, so cannot be removed.`)
           }
 
-          if(unconnectedClockifyProjects % 20 === 0) {
+          if (unconnectedClockifyProjects % 20 === 0) {
             console.log(`${unconnectedClockifyProjects} Clockify projects checked so far...Sleeping for 2 seconds to avoid rate limits.`)
             await new Promise(r => setTimeout(r, 2000)) // Sleep to avoid rate limits
           }
@@ -534,7 +587,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         }
         else if (hsContact) {
           // Update client with email address
-          await axios.put(`/clients/${client.id}`, { 
+          await axios.put(`/clients/${client.id}`, {
             name: client.name,
             email: hsContact.properties.email
           }, clockifyConfig)
@@ -608,7 +661,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
             if (!contactMapEntry) {
 
               // Create Clockify client
-              const clockifyClient = await axios.post('/clients', { 
+              const clockifyClient = await axios.post('/clients', {
                 name: hsProject.properties.contacts[0]?.properties.firstname + ' ' + hsProject.properties.contacts[0]?.properties.lastname,
                 email: hsProject.properties.contacts[0]?.properties.email
               }, clockifyConfig)
@@ -627,7 +680,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
             // Create Clockify project
 
-            const payload = { 
+            const payload = {
               name: hsProject.properties.dealname,
               clientId: contactMapEntry.clockifyID,
               isPublic: true,
@@ -679,31 +732,31 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
           if (existingProjects.includes(hsProject.id)) {
 
-              // Retrieve existing project
-              const existingProject = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hsProject.id } })
+            // Retrieve existing project
+            const existingProject = await strapi.documents('api::project.project').findFirst({ filters: { hubspotID: hsProject.id } })
 
-              // Update existing project
-              const response = await strapi.documents('api::project.project').update({ documentId: existingProject.documentId, data: project })
+            // Update existing project
+            const response = await strapi.documents('api::project.project').update({ documentId: existingProject.documentId, data: project })
 
-              // Add to output
-              output.updated.push({
-                name: response.name,
-                documentId: response.documentId,
-                hubspotID: response.hubspotID,
-                clockifyID: response.clockifyID
-              })
+            // Add to output
+            output.updated.push({
+              name: response.name,
+              documentId: response.documentId,
+              hubspotID: response.hubspotID,
+              clockifyID: response.clockifyID
+            })
 
           } else {
-              // Create new project
-              const response = await strapi.documents('api::project.project').create({ data: project })
+            // Create new project
+            const response = await strapi.documents('api::project.project').create({ data: project })
 
-              // Add to output
-              output.created.push({
-                name: response.name,
-                documentId: response.documentId,
-                hubspotID: response.hubspotID,
-                clockifyID: response.clockifyID
-              })
+            // Add to output
+            output.created.push({
+              name: response.name,
+              documentId: response.documentId,
+              hubspotID: response.hubspotID,
+              clockifyID: response.clockifyID
+            })
           }
 
         } catch (error) {

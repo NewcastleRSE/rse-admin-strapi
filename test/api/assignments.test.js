@@ -57,6 +57,33 @@ describe('Assignments API', () => {
             start: '2023-10-01',
             end: '2025-12-31',
             project: projects[0].documentId,
+            rse: rses[0].documentId,
+            rate: 'senior'
+        }
+
+        const res = await request(strapi.server.httpServer)
+            .post('/api/assignments')
+            .set('Authorization', `Bearer ${JWT}`)
+            .send({ data: assignmentPayload })
+            .expect(201)
+
+        expect(res.body.data).toHaveProperty('documentId')
+        expect(res.body.data.fte).toBe(assignmentPayload.fte)
+        expect(res.body.data.start).toBe(assignmentPayload.start)
+        expect(res.body.data.end).toBe(assignmentPayload.end)
+        expect(res.body.data.rate).toBe(assignmentPayload.rate)
+
+        assignmentId = res.body.data.documentId
+    })
+
+    it('should create a new assignment with standard rate selected if nothing supplied', async () => {
+
+        // Example assignment payload
+        assignmentPayload = {
+            fte: 50,
+            start: '2023-10-01',
+            end: '2025-12-31',
+            project: projects[0].documentId,
             rse: rses[0].documentId
         }
 
@@ -70,6 +97,7 @@ describe('Assignments API', () => {
         expect(res.body.data.fte).toBe(assignmentPayload.fte)
         expect(res.body.data.start).toBe(assignmentPayload.start)
         expect(res.body.data.end).toBe(assignmentPayload.end)
+        expect(res.body.data.rate).toBe('standard')
 
         assignmentId = res.body.data.documentId
     })

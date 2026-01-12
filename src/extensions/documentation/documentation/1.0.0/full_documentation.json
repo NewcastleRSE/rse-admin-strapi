@@ -6767,22 +6767,19 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "account": {
-                                "type": "string"
-                              },
                               "sent_to_finance": {
                                 "type": "string",
                                 "format": "date"
-                              },
-                              "email_for_signature": {
-                                "type": "string",
-                                "format": "email"
                               },
                               "notes": {
                                 "type": "string"
                               },
                               "description": {
                                 "type": "string"
+                              },
+                              "paid": {
+                                "type": "string",
+                                "format": "date"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -7092,6 +7089,13 @@
                         }
                       }
                     },
+                    "rate": {
+                      "type": "string",
+                      "enum": [
+                        "standard",
+                        "senior"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -7322,6 +7326,13 @@
                 "type": "string"
               }
             }
+          },
+          "rate": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "senior"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -8230,6 +8241,10 @@
                                 "type": "string",
                                 "pattern": "^\\d*$",
                                 "example": "123456789"
+                              },
+                              "paid": {
+                                "type": "string",
+                                "format": "date"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -9730,6 +9745,10 @@
                           }
                         }
                       },
+                      "paid": {
+                        "type": "string",
+                        "format": "date"
+                      },
                       "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -11078,22 +11097,19 @@
                 "type": "number",
                 "format": "float"
               },
-              "account": {
-                "type": "string"
-              },
               "sent_to_finance": {
                 "type": "string",
                 "format": "date"
-              },
-              "email_for_signature": {
-                "type": "string",
-                "format": "email"
               },
               "notes": {
                 "type": "string"
               },
               "description": {
                 "type": "string"
+              },
+              "paid": {
+                "type": "string",
+                "format": "date"
               },
               "locale": {
                 "type": "string"
@@ -11623,22 +11639,19 @@
                       "type": "number",
                       "format": "float"
                     },
-                    "account": {
-                      "type": "string"
-                    },
                     "sent_to_finance": {
                       "type": "string",
                       "format": "date"
-                    },
-                    "email_for_signature": {
-                      "type": "string",
-                      "format": "email"
                     },
                     "notes": {
                       "type": "string"
                     },
                     "description": {
                       "type": "string"
+                    },
+                    "paid": {
+                      "type": "string",
+                      "format": "date"
                     },
                     "createdAt": {
                       "type": "string",
@@ -12120,6 +12133,13 @@
                         }
                       }
                     },
+                    "rate": {
+                      "type": "string",
+                      "enum": [
+                        "standard",
+                        "senior"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -12291,22 +12311,19 @@
             "type": "number",
             "format": "float"
           },
-          "account": {
-            "type": "string"
-          },
           "sent_to_finance": {
             "type": "string",
             "format": "date"
-          },
-          "email_for_signature": {
-            "type": "string",
-            "format": "email"
           },
           "notes": {
             "type": "string"
           },
           "description": {
             "type": "string"
+          },
+          "paid": {
+            "type": "string",
+            "format": "date"
           },
           "createdAt": {
             "type": "string",
@@ -13332,6 +13349,13 @@
                               }
                             }
                           },
+                          "rate": {
+                            "type": "string",
+                            "enum": [
+                              "standard",
+                              "senior"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -13600,22 +13624,19 @@
                   "type": "number",
                   "format": "float"
                 },
-                "account": {
-                  "type": "string"
-                },
                 "sent_to_finance": {
                   "type": "string",
                   "format": "date"
-                },
-                "email_for_signature": {
-                  "type": "string",
-                  "format": "email"
                 },
                 "notes": {
                   "type": "string"
                 },
                 "description": {
                   "type": "string"
+                },
+                "paid": {
+                  "type": "string",
+                  "format": "date"
                 },
                 "createdAt": {
                   "type": "string",
@@ -14722,22 +14743,19 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "account": {
-                            "type": "string"
-                          },
                           "sent_to_finance": {
                             "type": "string",
                             "format": "date"
-                          },
-                          "email_for_signature": {
-                            "type": "string",
-                            "format": "email"
                           },
                           "notes": {
                             "type": "string"
                           },
                           "description": {
                             "type": "string"
+                          },
+                          "paid": {
+                            "type": "string",
+                            "format": "date"
                           },
                           "createdAt": {
                             "type": "string",
@@ -15046,6 +15064,13 @@
                       }
                     }
                   }
+                },
+                "rate": {
+                  "type": "string",
+                  "enum": [
+                    "standard",
+                    "senior"
+                  ]
                 },
                 "createdAt": {
                   "type": "string",
