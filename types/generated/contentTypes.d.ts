@@ -600,6 +600,59 @@ export interface ApiFacilityFacility extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFinanceFinance extends Struct.CollectionTypeSchema {
+  collectionName: 'finances';
+  info: {
+    displayName: 'Finance';
+    pluralName: 'finances';
+    singularName: 'finance';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actual: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<'plugin::table-field.table'>;
+    budget: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<'plugin::table-field.table'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    endDate: Schema.Attribute.Date &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::finance.finance'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    startDate: Schema.Attribute.Date &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    totalActualIncome: Schema.Attribute.Decimal;
+    totalActualNonSalary: Schema.Attribute.Decimal;
+    totalActualSalary: Schema.Attribute.Decimal;
+    totalBudgetedIncome: Schema.Attribute.Decimal;
+    totalBudgetedNonSalary: Schema.Attribute.Decimal;
+    totalBudgetedSalary: Schema.Attribute.Decimal;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    year: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 2050;
+          min: 2020;
+        },
+        number
+      >;
+  };
+}
+
 export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
   collectionName: 'invoices';
   info: {
@@ -1373,6 +1426,7 @@ declare module '@strapi/strapi' {
       'api::capacity.capacity': ApiCapacityCapacity;
       'api::contact.contact': ApiContactContact;
       'api::facility.facility': ApiFacilityFacility;
+      'api::finance.finance': ApiFinanceFinance;
       'api::invoice.invoice': ApiInvoiceInvoice;
       'api::project.project': ApiProjectProject;
       'api::rse.rse': ApiRseRse;

@@ -19,7 +19,7 @@ jobs:
           touch .env
           echo "${{ secrets.TEST_ENVS }}" >> .env
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Run tests
         run: npm run test
   build:
