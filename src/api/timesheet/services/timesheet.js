@@ -87,6 +87,8 @@ async function fetchBankHolidays(year) {
   return [...closures, ...bankHolidays]
 }
 
+
+
 async function fetchSummaryReport(startDate, endDate, userIDs, projectIDs) {
 
     let payload = {
@@ -240,6 +242,7 @@ function createCalendar(rse, holidays, leave, assignments, capacities, timesheet
   return dates
 }
 
+
 // Creates and returns a report for all users in the workspace.
 module.exports = ({ strapi }) =>  ({
   /**
@@ -249,6 +252,8 @@ module.exports = ({ strapi }) =>  ({
    */
   find: async(...args) => {
     try {
+
+  
 
       const query = args[0]
 
@@ -329,7 +334,7 @@ module.exports = ({ strapi }) =>  ({
     if(query.filters.username) {
       username = query.filters.username.$eq
     }
-
+// console.log(getLeaveCountForRSE('nrn57', DateTime.fromISO('2026-01-01'), DateTime.fromISO('2026-02-01')))
     leaveConfig.cache.override = query.clearCache && query.clearCache === 'true'
 
     const currentDate = DateTime.utc()
@@ -367,6 +372,8 @@ module.exports = ({ strapi }) =>  ({
       return { data: [] }
     }
   },
+
+
 
   calendar: async(rseId, ...args) => {
 

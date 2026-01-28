@@ -8,6 +8,10 @@ const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCE
 const dealProperties = process.env.HUBSPOT_DEAL_PROPERTIES.split(','),
   contactProperties = process.env.HUBSPOT_CONTACT_PROPERTIES.split(','),
   lineItemProperties = process.env.HUBSPOT_LINE_ITEM_PROPERTIES.split(',')
+
+const getLeaveCountForRSE = require('../../../utils/holidays').getLeaveCountForRSE;
+const countTotalClosures = require('../../../utils/holidays').countTotalClosures;
+
 /**
  * project service.
  */
@@ -41,6 +45,7 @@ const stages = {
 // Invert stages to key by HubSpot stage names
 const invert = (obj) => Object.fromEntries(Object.entries(obj).map((a) => a.reverse()))
 const hsStages = invert(stages)
+
 
 function formatDealStage(stage) {
   if (stage && hsStages[stage]) {
@@ -296,69 +301,73 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
     // Filtering the clockify projects that are in the project list
     const clockifyProjects = response.data.filter(p => clockifyIDs.includes(p.id))
 
-    results.forEach(result => {
+    // Get estimate, spent and anticipated progress for each project
+    await Promise.all(results.map(async (result) => {
       try {
         const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
         result.estimate = clockifyProject?.estimate?.estimate
         result.spent = clockifyProject?.duration
         result.anticipatedProgress = 'PT0S'
 
-        // calculate expected progress based on assignments, if there is an estimate
+
         if (result.estimate && result.estimate !== 'PT0S' && result.assignments.length != 0) {
-          console.log(result)
 
-          // number of days scheduled between today and end date
-          let fullDays = 0
+          // number of days scheduled between today and end date of assignments
           let scheduled = 0
-          result.assignments.forEach(assignment => {
-            // if todays date is between assignment.start and assignment.end (yyyy-mm-dd), count the days between today and assignment.end that are working days and multiple this by 
-            // the FTE of the assignment
-            // note this does not account for bank holidays or scheduled leave
-            const today = DateTime.now().startOf('day'),
-              assignmentStart = DateTime.fromISO(assignment.start).startOf('day'),
-              assignmentEnd = DateTime.fromISO(assignment.end).startOf('day')
 
-            // include if the assignment is currently ongoing or yet to commence
+          for (const assignment of result.assignments) {
+            const assignmentDB = await strapi.service('api::assignment.assignment').findOne(assignment.documentId, {
+              populate: { rse: true }
+            });
+
+            const username = assignmentDB.rse.username;
+            const today = DateTime.now().startOf('day');
+            const assignmentStart = DateTime.fromISO(assignment.start).startOf('day');
+            const assignmentEnd = DateTime.fromISO(assignment.end).startOf('day');
+
+            // while the assignment is ongoing
             if (today <= assignmentEnd) {
-              // if assignment has not started, count from the start date, else use today's date
-              let currentDate = today < assignmentStart ? assignmentStart : today
+              let startDate = today < assignmentStart ? assignmentStart : today;
 
+              // Get leave and university closures
+              const [leaveTotal, uniClosureTotal] = await Promise.all([
+                getLeaveCountForRSE(username, startDate, assignmentEnd),
+                countTotalClosures(startDate, assignmentEnd)
+              ]);
 
-              while (currentDate <= assignmentEnd) {
-                // check if currentDate is a working day (Mon-Fri)
-                if (currentDate.weekday < 6) {
-                  fullDays += 1
+              // Total week days in time period
+              const totalDays = assignmentEnd.diff(startDate, 'days').days + 1;
+              const fullWeeks = Math.floor(totalDays / 7);
+              let workingDays = fullWeeks * 5;
+
+              // Handle the remainder days
+              const remainder = totalDays % 7;
+              for (let i = 0; i < remainder; i++) {
+                const dayToCheck = startDate.plus({ days: (fullWeeks * 7) + i });
+                if (dayToCheck.weekday < 6) {
+                  workingDays++;
                 }
-                currentDate = currentDate.plus({ days: 1 })
               }
 
-              // console.log(`Assignment has ${fullDays} working days remaining at FTE ${assignment.fte}`)
-              scheduled += (fullDays * (assignment.fte / 100))
+              // Subtract leave/closures from working days and apply FTE
+              const netDays = workingDays - (leaveTotal + uniClosureTotal);
+              scheduled += (netDays * (assignment.fte / 100));
+              //console.log(`RSE ${username}: ${workingDays} workdays - ${leaveTotal} leave - ${uniClosureTotal} closures = ${scheduled} days.`);
             }
-          })
+          }
 
-          // console.log(`Project ${result.name} has ${scheduled} scheduled days remaining.`)
-
-          // convert from ISO 8601 duration format to hours
+          // Do some conversion to get all measures in hours, before converting back to send
           const estimateDuration = Duration.fromISO(result.estimate)
           const estimateHours = estimateDuration.as('hours')
-
-          // convert scheduled days to hours, based on 7.4 hours per day
           const scheduledHours = scheduled * 7.4
-
-          // calculate anticipated progress
-
-
-          // anticipated progress needed to complete project using the scheduled days
-          result.anticipatedProgress = estimateDuration.minus(Duration.fromObject({ hours: scheduledHours })).toISO()
-          //   console.log(`Project ${result.name} has an anticipated progress of ${result.anticipatedProgress} based on ${scheduledHours} scheduled hours remaining out of ${estimateHours} estimated hours.`)
+          result.anticipatedProgress = estimateHours - scheduledHours > 0 ? `PT${Math.round(estimateHours - scheduledHours)}H` : 'PT0S'
         }
       }
       catch (error) {
         console.error(error)
         console.error(result)
       }
-    })
+    }))
 
     return { results, pagination }
   },
