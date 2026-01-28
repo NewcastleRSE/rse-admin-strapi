@@ -116,7 +116,7 @@ module.exports = {
 
               // If the stage is anything other than in progress, archive the project in Clockify
               if(stage === 'Awaiting Allocation' || stage === 'Allocated') {
-                clockifyUpdates = { archived: true }
+                clockifyUpdates = { archived: false }
               }
               else {
                 clockifyUpdates = { archived: true }
