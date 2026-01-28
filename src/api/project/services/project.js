@@ -288,6 +288,42 @@ async function createClockifyProject(hsProject) {
   })
 }
 
+
+async function getProjectInvoiceStats(projectDocumentId) {
+  try {
+    const invoices = await strapi.documents('api::invoice.invoice').findMany({
+      filters: {
+        project: {
+          documentId: { $eq: projectDocumentId }
+        }
+      }
+    });
+    console.log(invoices)
+
+    const stats = invoices.reduce((acc, invoice) => {
+      // Extract values with defaults in case of null values
+      const stdPrice = invoice.standard_price || 0;
+      const stdUnits = invoice.standard_units || 0;
+      const snrPrice = invoice.senior_price || 0;
+      const snrUnits = invoice.senior_units || 0;
+console.log(invoice)
+      // Calculate money for this specific invoice
+      const invoiceBilledAmount = (stdPrice * stdUnits) + (snrPrice * snrUnits);
+
+      // Add to running totals
+      acc.moneyBilled += invoiceBilledAmount;
+      acc.daysBilled += (stdUnits + snrUnits);
+
+      return acc;
+    }, { moneyBilled: 0, daysBilled: 0 }); // Initial state
+
+    return stats; //Promise<{moneyBilled: number, daysBilled: number}>
+  } catch (error) {
+    strapi.log.error(`Stats calculation failed for project ${projectDocumentId}:`, error);
+    return { moneyBilled: 0, daysBilled: 0 };
+  }
+}
+
 module.exports = createCoreService('api::project.project', ({ strapi }) => ({
   async find(...args) {
     // Calling the default core service
@@ -301,7 +337,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
     // Filtering the clockify projects that are in the project list
     const clockifyProjects = response.data.filter(p => clockifyIDs.includes(p.id))
 
-    // Get estimate, spent and anticipated progress for each project
+    // Get estimate, spent, invoiced quantities and anticipated progress for each project
     await Promise.all(results.map(async (result) => {
       try {
         const clockifyProject = clockifyProjects.find(p => p.id === result.clockifyID)
@@ -362,11 +398,23 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
           const scheduledHours = scheduled * 7.4
           result.anticipatedProgress = estimateHours - scheduledHours > 0 ? `PT${Math.round(estimateHours - scheduledHours)}H` : 'PT0S'
         }
+        // invoiced days and £
+
+        // Get the object containing both totals
+        const stats = await getProjectInvoiceStats(result.documentId);
+        console.log(stats)
+        result.moneyBilled = stats.moneyBilled;
+        result.daysBilled = stats.daysBilled;
       }
       catch (error) {
         console.error(error)
         console.error(result)
       }
+
+
+
+
+
     }))
 
     return { results, pagination }
