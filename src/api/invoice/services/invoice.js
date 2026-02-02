@@ -7,6 +7,7 @@ const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCE
 const fontKit = require('@pdf-lib/fontkit')
 const fs = require('fs/promises')
 const path = require('path')
+const fss = require('fs');
 
 /**
  * invoice service
@@ -237,28 +238,28 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         // senior line
         if (seniorDays > 0) {
             const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
-            const description = form.getTextField('Description')
+            const description = form.getTextField('Description2')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
             // description.enableReadOnly()
 
 
-            const quantity = form.getTextField('Quantity')
+            const quantity = form.getTextField('Quantity2')
             //quantity.updateAppearances(fontBold)
             quantity.setText(`${seniorDays}`)
             //quantity.enableReadOnly()
 
-            const price = form.getTextField('Price')
+            const price = form.getTextField('Price2')
             //price.updateAppearances(fontBold)
             price.setText(`${seniorDayRate}`)
             price.enableReadOnly()
 
-            const total = form.getTextField('Total')
+            const total = form.getTextField('Total2')
             //total.updateAppearances(fontBold)
             total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
             //total.enableReadOnly()
 
-            const account = form.getTextField('Account')
+            const account = form.getTextField('Account2')
             //account.updateAppearances(fontBold)
             account.setText(`${project.account}`)
             //account.enableReadOnly()
@@ -363,6 +364,55 @@ console.log('generated pdf for invoice ', invoice.documentNumber)
 
 
         return true
+    },
+    async add(file, body) {
+      const { year, month, projectId } = body;
+    try {
+      const projects = await strapi.documents("api::project.project").findMany({
+        filters: {
+                clockifyID:projectId}     
+      })
+        const project = projects[0];
+
+      if (!project) { throw 'Project not found' }
+
+      const pdfBuffer = fss.readFileSync(file.filepath);
+      const pdfDoc = await PDFDocument.load(pdfBuffer);
+      const form = pdfDoc.getForm();
+
+      const extractedData = {
+        project: project.documentId,
+        year: parseInt(year),
+        month: month,
+        documentNumber: form.getTextField('SAP Document').getText(),
+        generated: new Date(form.getTextField('Created').getText()).toISOString().split('T')[0],
+        standard_price: parseFloat(form.getTextField('Price').getText()),
+        standard_units: parseInt(form.getTextField('Quantity').getText()),
+        senior_price: parseFloat(form.getTextField('Price2').getText()) || 0,
+        senior_units: parseInt(form.getTextField('Quantity2').getText()) || 0
+      };
+      
+        const entry = await strapi.documents('api::invoice.invoice').create( {
+        data: {
+            project: extractedData.project,
+            year: extractedData.year,
+            month: extractedData.month,
+            documentNumber: extractedData.documentNumber,
+            generated: extractedData.generated,
+            standard_price: extractedData.standard_price,
+            standard_units: extractedData.standard_units,
+            senior_price: extractedData.senior_price,
+            senior_units: extractedData.senior_units,
+            
+        }
+        });
+      
+
+      return { message: 'PDF processed and entry created', entry };
+    } catch (err) {
+        console.log(err)
+      throw new Error(500, `Error parsing PDF: ${err.message}`);
+    }
     }
 }))
 

@@ -298,7 +298,7 @@ async function getProjectInvoiceStats(projectDocumentId) {
         }
       }
     });
-    console.log(invoices)
+   
 
     const stats = invoices.reduce((acc, invoice) => {
       // Extract values with defaults in case of null values
@@ -306,7 +306,7 @@ async function getProjectInvoiceStats(projectDocumentId) {
       const stdUnits = invoice.standard_units || 0;
       const snrPrice = invoice.senior_price || 0;
       const snrUnits = invoice.senior_units || 0;
-console.log(invoice)
+
       // Calculate money for this specific invoice
       const invoiceBilledAmount = (stdPrice * stdUnits) + (snrPrice * snrUnits);
 
@@ -402,7 +402,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
         // Get the object containing both totals
         const stats = await getProjectInvoiceStats(result.documentId);
-        console.log(stats)
+       
         result.moneyBilled = stats.moneyBilled;
         result.daysBilled = stats.daysBilled;
       }
