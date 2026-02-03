@@ -35,7 +35,7 @@ const clockifyConfig = {
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
-        console.log('Generating invoice for project ', params.data.project, ' for period ', params.data.month, params.data.year)
+        
         const period = {
             year: params.data.year,
             month: params.data.month
@@ -294,7 +294,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-        console.log('generated pdf for invoice ', invoice.documentNumber)
+       
         return invoice
     },
     async month(params) {
@@ -403,7 +403,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                 },
             });
             if (existingInvoices.length > 0) {
-                console.log('Invoice with document number ', extractedData.documentNumber, ' already exists, updating existing entry.');
+                
                 //extractedData.documentId = existingInvoices[0].documentId;
                  entry = await strapi.documents('api::invoice.invoice').update({
                     documentId: existingInvoices[0].documentId,
@@ -421,7 +421,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     }, 
 
                 })
-                console.log(entry)
+               
             } else {
 
             entry = await strapi.documents('api::invoice.invoice').create({
@@ -448,7 +448,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                 transaction: true
             }
         });
-console.log('Returning full entry: ', fullEntry);
+
         return fullEntry;
             
         } catch (err) {
