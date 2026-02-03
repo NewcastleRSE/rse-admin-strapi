@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-11-14T21:50:06.466Z"
+    "x-generation-date": "2026-02-03T09:55:12.560Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6172,6 +6172,13 @@
                 ],
                 "example": "string or id"
               },
+              "rate": {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "senior"
+                ]
+              },
               "locale": {
                 "type": "string"
               },
@@ -8038,22 +8045,19 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "account": {
-                                "type": "string"
-                              },
                               "sent_to_finance": {
                                 "type": "string",
                                 "format": "date"
-                              },
-                              "email_for_signature": {
-                                "type": "string",
-                                "format": "email"
                               },
                               "notes": {
                                 "type": "string"
                               },
                               "description": {
                                 "type": "string"
+                              },
+                              "paid": {
+                                "type": "string",
+                                "format": "date"
                               },
                               "createdAt": {
                                 "type": "string",
@@ -8242,10 +8246,6 @@
                                 "pattern": "^\\d*$",
                                 "example": "123456789"
                               },
-                              "paid": {
-                                "type": "string",
-                                "format": "date"
-                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -8366,6 +8366,13 @@
                           }
                         }
                       }
+                    },
+                    "rate": {
+                      "type": "string",
+                      "enum": [
+                        "standard",
+                        "senior"
+                      ]
                     },
                     "createdAt": {
                       "type": "string",
@@ -9248,22 +9255,19 @@
                         "type": "number",
                         "format": "float"
                       },
-                      "account": {
-                        "type": "string"
-                      },
                       "sent_to_finance": {
                         "type": "string",
                         "format": "date"
-                      },
-                      "email_for_signature": {
-                        "type": "string",
-                        "format": "email"
                       },
                       "notes": {
                         "type": "string"
                       },
                       "description": {
                         "type": "string"
+                      },
+                      "paid": {
+                        "type": "string",
+                        "format": "date"
                       },
                       "createdAt": {
                         "type": "string",
@@ -9745,9 +9749,12 @@
                           }
                         }
                       },
-                      "paid": {
+                      "rate": {
                         "type": "string",
-                        "format": "date"
+                        "enum": [
+                          "standard",
+                          "senior"
+                        ]
                       },
                       "createdAt": {
                         "type": "string",

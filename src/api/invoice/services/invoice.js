@@ -7,6 +7,7 @@ const hubspotClient = new Hubspot.Client({ accessToken: process.env.HUBSPOT_ACCE
 const fontKit = require('@pdf-lib/fontkit')
 const fs = require('fs/promises')
 const path = require('path')
+const fss = require('fs');
 
 /**
  * invoice service
@@ -34,7 +35,7 @@ const clockifyConfig = {
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
     async create(params) {
-        console.log('Generating invoice for project ', params.data.project, ' for period ', params.data.month, params.data.year)
+        
         const period = {
             year: params.data.year,
             month: params.data.month
@@ -99,7 +100,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     },
 
                 )
-                
+
                 // for each person who has clocked time, look at their allocation and rate
                 peopleDays.forEach(person => {
                     const assignment = assignments.find(a => a.rse.displayName.toLowerCase() === person.person.toLowerCase())
@@ -155,7 +156,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         // todo also need to consider external projects where 
         // we charge VAT and a higher day rate??
-      
+
         let standardRate = 0, seniorRate = 0
         products.results.forEach(product => {
             if (product.properties.name === `Standard Day Rate ${facilityYear}/${facilityYear + 1}`) {
@@ -196,9 +197,9 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         }
 
         invoice.project = await strapi.documents('api::project.project').findOne({
-            documentId : project.documentId
+            documentId: project.documentId
         })
-       
+
         // Invoice is created or update in database, now generate the PDF
         const formatter = new Intl.NumberFormat('en-GB', {
             style: 'currency',
@@ -237,35 +238,35 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         // senior line
         if (seniorDays > 0) {
             const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
-            const description = form.getTextField('Description')
+            const description = form.getTextField('Description2')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
             // description.enableReadOnly()
 
 
-            const quantity = form.getTextField('Quantity')
+            const quantity = form.getTextField('Quantity2')
             //quantity.updateAppearances(fontBold)
             quantity.setText(`${seniorDays}`)
             //quantity.enableReadOnly()
 
-            const price = form.getTextField('Price')
+            const price = form.getTextField('Price2')
             //price.updateAppearances(fontBold)
             price.setText(`${seniorDayRate}`)
             price.enableReadOnly()
 
-            const total = form.getTextField('Total')
+            const total = form.getTextField('Total2')
             //total.updateAppearances(fontBold)
             total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
             //total.enableReadOnly()
 
-            const account = form.getTextField('Account')
+            const account = form.getTextField('Account2')
             //account.updateAppearances(fontBold)
             account.setText(`${project.account}`)
             //account.enableReadOnly()
         }
 
         // standard line
-        const descriptionTxt = documentNumber +' - ' + project.name + ' - ' + ' RSE services (standard)'
+        const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (standard)'
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
@@ -293,7 +294,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-console.log('generated pdf for invoice ', invoice.documentNumber)
+       
         return invoice
     },
     async month(params) {
@@ -363,6 +364,97 @@ console.log('generated pdf for invoice ', invoice.documentNumber)
 
 
         return true
+    },
+    async add(file, body) {
+        let { year, month, clockifyID } = body;
+        month = month?.toLowerCase()
+
+        try {
+            const projects = await strapi.documents("api::project.project").findMany({
+                filters: {
+                    clockifyID: clockifyID
+                }
+            })
+            const project = projects[0];
+
+            if (!project) { throw 'Project not found' }
+
+            const pdfBuffer = fss.readFileSync(file.filepath);
+            const pdfDoc = await PDFDocument.load(pdfBuffer);
+            const form = pdfDoc.getForm();
+
+            const extractedData = {
+                project: project.documentId,
+                year: parseInt(year),
+                month: month,
+                documentNumber: form.getTextField('SAP Document').getText(),
+                generated: new Date(form.getTextField('Created').getText()).toISOString().split('T')[0],
+                standard_price: parseFloat(form.getTextField('Price').getText()) || 0,
+                standard_units: parseInt(form.getTextField('Quantity').getText()) || 0,
+                senior_price: parseFloat(form.getTextField('Price2').getText()) || 0,
+                senior_units: parseInt(form.getTextField('Quantity2').getText()) || 0
+            };
+
+            let entry = null;
+            // if document number already exists, update instead of creating new
+            const existingInvoices = await strapi.documents('api::invoice.invoice').findMany( {
+                filters: {
+                    documentNumber: extractedData.documentNumber
+                },
+            });
+            if (existingInvoices.length > 0) {
+                
+                //extractedData.documentId = existingInvoices[0].documentId;
+                 entry = await strapi.documents('api::invoice.invoice').update({
+                    documentId: existingInvoices[0].documentId,
+                    data: {
+                        project: extractedData.project,
+                        year: extractedData.year,
+                        month: extractedData.month,
+                        documentNumber: extractedData.documentNumber,
+                        generated: extractedData.generated,
+                        standard_price: extractedData.standard_price,
+                        standard_units: extractedData.standard_units,
+                        senior_price: extractedData.senior_price,
+                        senior_units: extractedData.senior_units,
+
+                    }, 
+
+                })
+               
+            } else {
+
+            entry = await strapi.documents('api::invoice.invoice').create({
+                data: {
+                    project: extractedData.project,
+                    year: extractedData.year,
+                    month: extractedData.month,
+                    documentNumber: extractedData.documentNumber,
+                    generated: extractedData.generated,
+                    standard_price: extractedData.standard_price,
+                    standard_units: extractedData.standard_units,
+                    senior_price: extractedData.senior_price,
+                    senior_units: extractedData.senior_units,
+
+                }
+            });
+        }
+        
+        // get full invoice including project and transaction to return
+       const fullEntry = await strapi.documents('api::invoice.invoice').findOne({
+            documentId: entry.documentId,
+            populate: {
+                project: true,
+                transaction: true
+            }
+        });
+
+        return fullEntry;
+            
+        } catch (err) {
+            console.log(err)
+            throw new Error(500, `Error parsing PDF: ${err.message}`);
+        }
     }
 }))
 
