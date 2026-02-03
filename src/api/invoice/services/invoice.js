@@ -366,7 +366,9 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         return true
     },
     async add(file, body) {
-        const { year, month, clockifyID } = body;
+        let { year, month, clockifyID } = body;
+        month = month?.toLowerCase()
+
         try {
             const projects = await strapi.documents("api::project.project").findMany({
                 filters: {
@@ -387,13 +389,13 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                 month: month,
                 documentNumber: form.getTextField('SAP Document').getText(),
                 generated: new Date(form.getTextField('Created').getText()).toISOString().split('T')[0],
-                standard_price: parseFloat(form.getTextField('Price').getText()),
-                standard_units: parseInt(form.getTextField('Quantity').getText()),
+                standard_price: parseFloat(form.getTextField('Price').getText()) || 0,
+                standard_units: parseInt(form.getTextField('Quantity').getText()) || 0,
                 senior_price: parseFloat(form.getTextField('Price2').getText()) || 0,
                 senior_units: parseInt(form.getTextField('Quantity2').getText()) || 0
             };
 
-            let entry = null
+            let entry = null;
             // if document number already exists, update instead of creating new
             const existingInvoices = await strapi.documents('api::invoice.invoice').findMany( {
                 filters: {
@@ -402,9 +404,9 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             });
             if (existingInvoices.length > 0) {
                 console.log('Invoice with document number ', extractedData.documentNumber, ' already exists, updating existing entry.');
-                extractedData.documentId = existingInvoices[0].documentId;
-                entry = await strapi.documents('api::invoice.invoice').update({
-                    documentId: extractedData.documentId,
+                //extractedData.documentId = existingInvoices[0].documentId;
+                 entry = await strapi.documents('api::invoice.invoice').update({
+                    documentId: existingInvoices[0].documentId,
                     data: {
                         project: extractedData.project,
                         year: extractedData.year,
@@ -419,6 +421,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                     }, 
 
                 })
+                console.log(entry)
             } else {
 
             entry = await strapi.documents('api::invoice.invoice').create({
@@ -436,7 +439,18 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                 }
             });
         }
-            return { entry };
+        
+        // get full invoice including project and transaction to return
+       const fullEntry = await strapi.documents('api::invoice.invoice').findOne({
+            documentId: entry.documentId,
+            populate: {
+                project: true,
+                transaction: true
+            }
+        });
+console.log('Returning full entry: ', fullEntry);
+        return fullEntry;
+            
         } catch (err) {
             console.log(err)
             throw new Error(500, `Error parsing PDF: ${err.message}`);
