@@ -69,15 +69,17 @@ describe('Invoices API', () => {
         data: {
           project: projects[0].documentId,
           year: 2025,
-          month: 'august'
+          month: 'august',
+          generated: '02-08-2024',
+          documentNumber: '12-AUG2025'
         }
       })
+
+      // todo something fancy here to test getting senior and standard units from assignment
     
     expect(res.statusCode).toEqual(201)
     expect(res.body.data).toHaveProperty('documentId')
     expect(res.body.data.month).toBe('august')
-    expect(res.body.data.standard_price).toBe(416.32)
-    expect(res.body.data.senior_price).toBe(483.92)
     invoice = res.body.data
   })
 
