@@ -14,6 +14,20 @@ beforeAll(async () => {
         .then((data) => {
           JWT = data.body.jwt
         })
+
+         projects = await request(strapi.server.httpServer)
+                  .get('/api/projects')
+                  .set('Authorization', `Bearer ${JWT}`)
+                  .then((data) => {
+                    return data.body.data
+                  })
+
+        invoices = await request(strapi.server.httpServer)
+                  .get('/api/invoices')
+                  .set('Authorization', `Bearer ${JWT}`)
+                  .then((data) => {
+                    return data.body.data
+                  })
 })
 
 describe('Transactions API', () => {
@@ -55,6 +69,41 @@ describe('Transactions API', () => {
     expect(res.body.data).toHaveProperty('documentId')
     expect(res.body.data.documentNumber).toBe('105742452')
     transaction = res.body.data
+  })
+
+  it('should create connection with invoice if appropriate when creating a new transaction', async () => {
+    const invDocumentNumber = invoices[0].documentNumber
+
+    const res = await request(strapi.server.httpServer)
+      .post('/api/transactions')
+      .set('Authorization', `Bearer ${JWT}`)
+      .send({
+        data: {
+          costElement: '150091',
+          costElementDescription: 'Recharges (Exp) - Other Dept',
+          name: `${invDocumentNumber} - RSE support provided on Project Alpha, July`,
+          documentDate: '2025-08-13',
+          value: 4553.52,
+          bwCategory: 'Internal Sales',
+          documentNumber: '105742452',
+          documentHeader: 'Yearly CC cleardown',
+          postedDate: '2024-08-14',
+          ieCategory: 'Income',
+          fiscalYear: 2024,
+          fiscalPeriod: 1,
+          internalCategory: 'Income'
+        }
+      })
+
+      // get the invoice again to check for connection
+      const updatedInvoiceRes = await request(strapi.server.httpServer)
+      .get(`/api/invoices/${invoices[0].documentId}?populate=transaction`)
+      .set('Authorization', `Bearer ${JWT}`)
+
+  
+    expect(updatedInvoiceRes.statusCode).toEqual(200)
+    expect(updatedInvoiceRes.body.data.transaction).toBeDefined()
+   
   })
 
   it('should fetch all transactions', async () => {
