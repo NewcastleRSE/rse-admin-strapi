@@ -127,14 +127,15 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             },
         })
 
-        // Calculate the current facility year (starts on 1st Feb)
-        const now = DateTime.now()
+        // Calculate the current facility year (starts on 1st Feb) for the invoice date
+        
         let facilityYear
-        if (now.month >= 2) {
-            facilityYear = now.year - 2000
+        if (DateTime.fromFormat(period.month, 'LLLL').month >= 2) {
+            facilityYear = period.year - 2000
         } else {
-            facilityYear = now.year - 2001
+            facilityYear = period.year - 2001
         }
+        
 
         const products = await hubspotClient.crm.products.searchApi.doSearch({
             filterGroups: [
