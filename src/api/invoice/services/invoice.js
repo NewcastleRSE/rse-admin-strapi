@@ -242,13 +242,13 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             const description = form.getTextField('Description2')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
-            // description.enableReadOnly()
+            description.enableReadOnly()
 
 
             const quantity = form.getTextField('Quantity2')
             //quantity.updateAppearances(fontBold)
             quantity.setText(`${seniorDays}`)
-            //quantity.enableReadOnly()
+            quantity.enableReadOnly()
 
             const price = form.getTextField('Price2')
             //price.updateAppearances(fontBold)
@@ -258,12 +258,12 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             const total = form.getTextField('Total2')
             //total.updateAppearances(fontBold)
             total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
-            //total.enableReadOnly()
+            total.enableReadOnly()
 
             const account = form.getTextField('Account2')
             //account.updateAppearances(fontBold)
             account.setText(`${project.account}`)
-            //account.enableReadOnly()
+            account.enableReadOnly()
         }
 
         // standard line
@@ -271,13 +271,13 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
-        // description.enableReadOnly()
+        description.enableReadOnly()
 
 
         const quantity = form.getTextField('Quantity')
         //quantity.updateAppearances(fontBold)
         quantity.setText(`${standardDays}`)
-        //quantity.enableReadOnly()
+        quantity.enableReadOnly()
 
         const price = form.getTextField('Price')
         //price.updateAppearances(fontBold)
@@ -287,12 +287,12 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const total = form.getTextField('Total')
         //total.updateAppearances(fontBold)
         total.setText(`${formatter.format(standardDayRate * standardDays)}`)
-        //total.enableReadOnly()
+        total.enableReadOnly()
 
         const account = form.getTextField('Account')
         //account.updateAppearances(fontBold)
         account.setText(`${project.account}`)
-        //account.enableReadOnly()
+        account.enableReadOnly()
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
        
