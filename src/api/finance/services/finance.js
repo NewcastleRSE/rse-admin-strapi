@@ -12,6 +12,7 @@ const { Client }  = require('@microsoft/microsoft-graph-client')
 
 module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
     async sync(accessToken, financialYear) {
+        
 
         const authProvider = (callback) => {
 

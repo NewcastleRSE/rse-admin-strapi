@@ -131,3 +131,21 @@ export const countTotalClosures = async (startDate, endDate) => {
   // Return the sum of filtered bank holidays and calculated closures
   return bankHolidaysInRange.length + closureCount;
 }
+export const isLastWorkday = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  
+  // Get the last day of the current month
+  let lastDay = new Date(year, month + 1, 0);
+
+  // If last day is Saturday (6) or Sunday (0), move back to Friday
+  if (lastDay.getDay() === 0) { // Sunday
+    lastDay.setDate(lastDay.getDate() - 2);
+  } else if (lastDay.getDay() === 6) { // Saturday
+    lastDay.setDate(lastDay.getDate() - 1);
+  }
+
+  // Check if today matches that calculated last workday
+  return today.getDate() === lastDay.getDate();
+}
