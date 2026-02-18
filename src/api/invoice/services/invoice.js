@@ -34,6 +34,7 @@ const clockifyConfig = {
 }
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
+
     async create(params) {
         
         const period = {
@@ -182,6 +183,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //console.log('save in db: ', params.data)
 
         let invoice = null
+
 
         // either update existing invoice or create a new one
         if (invoices.length) {
