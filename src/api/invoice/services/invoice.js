@@ -48,8 +48,8 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //if(project.costModel === 'Facility' && !project.lineItems) { throw 'Project does not a day rate set' }
 
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
-
-        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase()}-${params.data.year}`
+        // document number format is hubspot ID, 3 letter month, and 2 number year, seperated by commas
+        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase().substring(0,3)}-${params.data.year.toString().substring(2)}`
 
         // divide time between standard and senior rates
 
@@ -240,11 +240,11 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         // senior line
         if (seniorDays > 0) {
-            const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
+            const descriptionTxt = documentNumber + ' - ' + 'senior' + ' - ' + project.name
             const description = form.getTextField('Description2')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
-            description.enableReadOnly()
+            //description.enableReadOnly()
 
 
             const quantity = form.getTextField('Quantity2')
@@ -269,11 +269,11 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         }
 
         // standard line
-        const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (standard)'
+        const descriptionTxt = documentNumber + ' - ' + 'standard' + ' - ' + project.name
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
-        description.enableReadOnly()
+        //description.enableReadOnly()
 
 
         const quantity = form.getTextField('Quantity')

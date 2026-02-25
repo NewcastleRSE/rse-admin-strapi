@@ -63,6 +63,8 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             const workbook = new ExcelJS.Workbook()
             await workbook.xlsx.read(file.data)
             const overviewSheet = workbook.getWorksheet(overviewSheetName)
+            const transactionsSheet = workbook.getWorksheet(transactionsSheetName)
+            this.readTransactions(transactionsSheet, financialYear, )
 
             // retrieve the existing finance record for the year
             let finance = await strapi.entityService.findMany('api::finance.finance', { filters: { year: financialYear }, limit: 1 }).then(res => res[0])
@@ -177,5 +179,61 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
         } catch (error) {
             throw new Error('Failed to sync finance data: ' + error.message)
         }
+    },
+    // read the transactions sheet and enter each row into database
+    async readTransactions(transactionsSheet, fiscalYear) {
+     
+        transactionsSheet.eachRow(async (row, rowNumber) => {
+            
+            try {
+                if (rowNumber < 2) return; // skip header row
+
+                const postageDate = row.getCell(13).value ? DateTime.fromJSDate(row.getCell(13).value).toISODate() : null
+                
+                // non standad quarters so need to shift by 7 months as August is the first month of the first quarter
+                const fiscalPeriod = row.getCell(13).value ?  Math.floor((new Date(row.getCell(13).value).getMonth() - 7 + 12) / 3) +1 : null
+
+                const data =   {
+                        costElement: row.getCell(1).value,
+                        costElementDescription: row.getCell(2).value,
+                        documentNumber: row.getCell(12).value,
+                        documentHeader: row.getCell(10).value || '',
+                        name: row.getCell(8).value || '',
+                        postedDate: row.getCell(13).value ? DateTime.fromJSDate(row.getCell(13).value).toISODate() : null,
+                        documentDate: null,
+                        value: row.getCell(14).value || 0,
+                        bwCategory: row.getCell(15).value || '',
+                        ieCategory: row.getCell(16).value || '',
+                        fiscalYear: fiscalYear,
+                        fiscalPeriod: fiscalPeriod,
+                        internalCategory: ''
+                    }
+                    if (rowNumber === 2) {
+                        console.log(data)
+                        await strapi.service('api::transaction.transaction').create({
+                    data: {
+                        costElement: row.getCell(1).value,
+                        costElementDescription: row.getCell(2).value,
+                        documentNumber: row.getCell(12).value,
+                        documentHeader: row.getCell(10).value || '',
+                        name: row.getCell(8).value || '',
+                        postedDate: row.getCell(13).value ? DateTime.fromJSDate(row.getCell(13).value).toISODate() : null,
+                        documentDate: new Date(),
+                        value: row.getCell(14).value || 0,
+                        bwCategory: row.getCell(15).value || '',
+                        ieCategory: row.getCell(16).value || '',
+                        fiscalYear: fiscalYear,
+                        fiscalPeriod: fiscalPeriod,
+                        internalCategory: ''
+                    }
+                })
+                    }
+                    
+                
+
+            } catch (error) {
+                console.log('Failed to read and save transaction row ' + rowNumber + ': ' + error.message)
+            }
+        })
     }
 }))
