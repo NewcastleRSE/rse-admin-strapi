@@ -34,12 +34,16 @@ const clockifyConfig = {
 }
 
 module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
+
     async create(params) {
-        
+
         const period = {
             year: params.data.year,
             month: params.data.month
         }
+
+        const editable = params.data.editable || false
+        
 
         const project = await strapi.service("api::project.project").findOne(params.data.project)
 
@@ -47,8 +51,8 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         //if(project.costModel === 'Facility' && !project.lineItems) { throw 'Project does not a day rate set' }
 
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
-
-        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase()}-${params.data.year}`
+        // document number format is hubspot ID, 3 letter month, and 2 number year, seperated by commas
+        const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase().substring(0, 3)}-${params.data.year.toString().substring(2)}`
 
         // divide time between standard and senior rates
 
@@ -128,14 +132,14 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         })
 
         // Calculate the current facility year (starts on 1st Feb) for the invoice date
-        
+
         let facilityYear
         if (DateTime.fromFormat(period.month, 'LLLL').month >= 2) {
             facilityYear = period.year - 2000
         } else {
             facilityYear = period.year - 2001
         }
-        
+
 
         const products = await hubspotClient.crm.products.searchApi.doSearch({
             filterGroups: [
@@ -183,6 +187,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         let invoice = null
 
+
         // either update existing invoice or create a new one
         if (invoices.length) {
             params.data.documentId = invoices[0].documentId
@@ -219,83 +224,99 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const sapDocument = form.getTextField('SAP Document')
         sapDocument.updateAppearances(fontBold)
         sapDocument.setText(documentNumber)
-        sapDocument.enableReadOnly()
+
 
         const refNumber = form.getTextField('REF Number')
         refNumber.updateAppearances(fontBold)
         refNumber.setText(`${project.hubspotID}`)
-        refNumber.enableReadOnly()
 
         const created = form.getTextField('Created')
         created.updateAppearances(fontBold)
         created.setText(`${params.data.generated}`)
-        created.enableReadOnly()
+
 
         const enteredBy = form.getTextField('Entered By')
         enteredBy.updateAppearances(fontBold)
         enteredBy.setText(`RSE Team`)
-        enteredBy.enableReadOnly()
+        if (!editable) {
+            enteredBy.enableReadOnly()
+            created.enableReadOnly()
+            refNumber.enableReadOnly()
+            sapDocument.enableReadOnly()
+        }
 
         // senior line
         if (seniorDays > 0) {
-            const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (senior)'
+            const descriptionTxt = documentNumber + ' - ' + 'senior' + ' - ' + project.name
             const description = form.getTextField('Description2')
             //description.updateAppearances(fontBold)
             description.setText(`${descriptionTxt}`)
-            // description.enableReadOnly()
+            // do not make description read only so that finance can copy and paste into transactions spreadsheet
+            //description.enableReadOnly()
 
 
             const quantity = form.getTextField('Quantity2')
             //quantity.updateAppearances(fontBold)
             quantity.setText(`${seniorDays}`)
-            //quantity.enableReadOnly()
+
 
             const price = form.getTextField('Price2')
             //price.updateAppearances(fontBold)
             price.setText(`${seniorDayRate}`)
-            price.enableReadOnly()
+
+
 
             const total = form.getTextField('Total2')
             //total.updateAppearances(fontBold)
             total.setText(`${formatter.format(seniorDayRate * seniorDays)}`)
-            //total.enableReadOnly()
+
 
             const account = form.getTextField('Account2')
             //account.updateAppearances(fontBold)
             account.setText(`${project.account}`)
-            //account.enableReadOnly()
+
+            if (!editable) {
+                account.enableReadOnly()
+                total.enableReadOnly()
+                price.enableReadOnly()
+                quantity.enableReadOnly()
+            }
         }
 
         // standard line
-        const descriptionTxt = documentNumber + ' - ' + project.name + ' - ' + ' RSE services (standard)'
+        const descriptionTxt = documentNumber + ' - ' + 'standard' + ' - ' + project.name
         const description = form.getTextField('Description')
         //description.updateAppearances(fontBold)
         description.setText(`${descriptionTxt}`)
-        // description.enableReadOnly()
+        //description.enableReadOnly()
 
 
         const quantity = form.getTextField('Quantity')
         //quantity.updateAppearances(fontBold)
         quantity.setText(`${standardDays}`)
-        //quantity.enableReadOnly()
+
 
         const price = form.getTextField('Price')
         //price.updateAppearances(fontBold)
         price.setText(`${standardDayRate}`)
-        price.enableReadOnly()
 
         const total = form.getTextField('Total')
         //total.updateAppearances(fontBold)
         total.setText(`${formatter.format(standardDayRate * standardDays)}`)
-        //total.enableReadOnly()
+
 
         const account = form.getTextField('Account')
         //account.updateAppearances(fontBold)
         account.setText(`${project.account}`)
-        //account.enableReadOnly()
+        if (!editable) {
+            account.enableReadOnly()
+            total.enableReadOnly()
+            price.enableReadOnly()
+            quantity.enableReadOnly()
+        }
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
-       
+
         return invoice
     },
     async month(params) {
@@ -398,15 +419,15 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
             let entry = null;
             // if document number already exists, update instead of creating new
-            const existingInvoices = await strapi.documents('api::invoice.invoice').findMany( {
+            const existingInvoices = await strapi.documents('api::invoice.invoice').findMany({
                 filters: {
                     documentNumber: extractedData.documentNumber
                 },
             });
             if (existingInvoices.length > 0) {
-                
+
                 //extractedData.documentId = existingInvoices[0].documentId;
-                 entry = await strapi.documents('api::invoice.invoice').update({
+                entry = await strapi.documents('api::invoice.invoice').update({
                     documentId: existingInvoices[0].documentId,
                     data: {
                         project: extractedData.project,
@@ -419,39 +440,39 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
                         senior_price: extractedData.senior_price,
                         senior_units: extractedData.senior_units,
 
-                    }, 
+                    },
 
                 })
-               
+
             } else {
 
-            entry = await strapi.documents('api::invoice.invoice').create({
-                data: {
-                    project: extractedData.project,
-                    year: extractedData.year,
-                    month: extractedData.month,
-                    documentNumber: extractedData.documentNumber,
-                    generated: extractedData.generated,
-                    standard_price: extractedData.standard_price,
-                    standard_units: extractedData.standard_units,
-                    senior_price: extractedData.senior_price,
-                    senior_units: extractedData.senior_units,
+                entry = await strapi.documents('api::invoice.invoice').create({
+                    data: {
+                        project: extractedData.project,
+                        year: extractedData.year,
+                        month: extractedData.month,
+                        documentNumber: extractedData.documentNumber,
+                        generated: extractedData.generated,
+                        standard_price: extractedData.standard_price,
+                        standard_units: extractedData.standard_units,
+                        senior_price: extractedData.senior_price,
+                        senior_units: extractedData.senior_units,
 
+                    }
+                });
+            }
+
+            // get full invoice including project and transaction to return
+            const fullEntry = await strapi.documents('api::invoice.invoice').findOne({
+                documentId: entry.documentId,
+                populate: {
+                    project: true,
+                    transaction: true
                 }
             });
-        }
-        
-        // get full invoice including project and transaction to return
-       const fullEntry = await strapi.documents('api::invoice.invoice').findOne({
-            documentId: entry.documentId,
-            populate: {
-                project: true,
-                transaction: true
-            }
-        });
 
-        return fullEntry;
-            
+            return fullEntry;
+
         } catch (err) {
             console.log(err)
             throw new Error(500, `Error parsing PDF: ${err.message}`);

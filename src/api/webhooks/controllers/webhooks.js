@@ -22,16 +22,25 @@ module.exports = {
             const { subscriptionType, associationType } = payload
 
             // Validate the incoming webhook
+
+            // Check if the subscription type is one we want to process and if required fields are present
             if (!subscriptionType || !acceptedSubscriptionTypes.includes(subscriptionType)) {
                 console.error(`Ignoring webhook of type ${subscriptionType}`)
                 return
             }
+            // For associationChange events, associationType is required. 
             else if ((subscriptionType === 'deal.associationChange') && !associationType) {
                 console.error(`Missing required field associationType for subscriptionType ${subscriptionType}`)
                 return
             }
-            else if (!payload.objectId) {
+            // For all other subscription types except associationChange, objectId is required
+            else if (subscriptionType !== 'deal.associationChange' && !payload.objectId) {
                 console.error(`Missing required field objectId`)
+                return
+            }
+            // For propertyChange events, toObjectId and fromObjectId are required
+            else if (subscriptionType === 'deal.propertyChange' && (!payload.toObjectId || !payload.fromObjectId)) {
+                console.error(`Missing required fields toObjectId and fromObjectId for subscriptionType ${subscriptionType}`)
                 return
             }
             else {
