@@ -51,7 +51,7 @@ describe('Transactions API', () => {
         data: {
           costElement: '150090',
           costElementDescription: 'Recharges Inc - Other Dept',
-          name: 'RSE support provided on Project Alpha, July',
+          name: '105742452JUL26 - standard - Project Alpha',
           documentDate: '2024-08-13',
           value: 4553.52,
           bwCategory: 'Internal Sales',

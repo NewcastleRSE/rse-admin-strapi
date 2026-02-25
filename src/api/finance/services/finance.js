@@ -8,11 +8,11 @@ const { createCoreService } = require('@strapi/strapi').factories
 const { DateTime } = require('luxon')
 const axios = require('axios')
 const ExcelJS = require('exceljs')
-const { Client }  = require('@microsoft/microsoft-graph-client')
+const { Client } = require('@microsoft/microsoft-graph-client')
 
-module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
+module.exports = createCoreService('api::finance.finance', ({ strapi }) => ({
     async sync(accessToken, financialYear) {
-        
+
 
         const authProvider = (callback) => {
 
@@ -29,9 +29,9 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             const client = Client.init({ authProvider })
 
             const hostname = process.env.FINANCE_SHAREPOINT_HOSTNAME,
-                  folderPath = process.env.FINANCE_SHAREPOINT_FOLDER_PATH,
-                  overviewSheetName = process.env.FINANCE_OVERVIEW_SHEET,
-                  transactionsSheetName = process.env.FINANCE_TRANSACTIONS_SHEET
+                folderPath = process.env.FINANCE_SHAREPOINT_FOLDER_PATH,
+                overviewSheetName = process.env.FINANCE_OVERVIEW_SHEET,
+                transactionsSheetName = process.env.FINANCE_TRANSACTIONS_SHEET
 
             const financialYearsURL = `/sites/${hostname}/drive/root:/${folderPath}:/children`
 
@@ -43,7 +43,7 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             const matchingFinancialYear = financialYearFolders.find(folder => folder.name === `${financialYear}-${(financialYear + 1).toString().slice(-2)}`)
 
             // Throw error if no matching folder found
-            if(!matchingFinancialYear) {
+            if (!matchingFinancialYear) {
                 throw new Error(`No folder found for financial year ${financialYear}-${(financialYear + 1).toString().slice(-2)}`)
             }
 
@@ -52,17 +52,19 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             const reports = await client.api(monthlyReportsURL).get()
 
             // Find the most recently modified report
-            const mostRecentMonth = reports.value.reduce(function(prev, current) {
+            const mostRecentMonth = reports.value.reduce(function (prev, current) {
                 return (prev && DateTime.fromISO(prev.lastModifiedDateTime) > DateTime.fromISO(current.lastModifiedDateTime)) ? prev : current
             })
 
             // Download the most recent report
-            const file = await axios.get(mostRecentMonth['@microsoft.graph.downloadUrl'], { responseType: 'stream'})
+            const file = await axios.get(mostRecentMonth['@microsoft.graph.downloadUrl'], { responseType: 'stream' })
 
             // Read the Excel file
             const workbook = new ExcelJS.Workbook()
             await workbook.xlsx.read(file.data)
             const overviewSheet = workbook.getWorksheet(overviewSheetName)
+            const transactionsSheet = workbook.getWorksheet(transactionsSheetName)
+            this.readTransactions(transactionsSheet, financialYear,)
 
             // retrieve the existing finance record for the year
             let finance = await strapi.entityService.findMany('api::finance.finance', { filters: { year: financialYear }, limit: 1 }).then(res => res[0])
@@ -84,7 +86,7 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             let budgetRows = []
 
             // define columns for category name and each period
-            for(let i = 0; i < 12; i++) {
+            for (let i = 0; i < 12; i++) {
 
                 const column = {
                     label: `${financialYear.toString().slice(-2)}/${(financialYear + 1).toString().slice(-2)} P${i + 1}`,
@@ -99,28 +101,28 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             // define rows for each category section
             const sections = {
                 incomeRows: overviewSheet.getRows(5, 5),
-                salaryRows: overviewSheet.getRows(14, 5),  
+                salaryRows: overviewSheet.getRows(14, 5),
                 nonSalaryRows: overviewSheet.getRows(23, 27),
                 indirectRows: overviewSheet.getRows(55, 5)
             }
 
             // iterate through each section and extract actuals and budget data
-            for(const section in sections) {
+            for (const section in sections) {
 
                 // loop through each row in the section
-                for(const row of sections[section]) {
+                for (const row of sections[section]) {
                     let actualsRowData, budgetRowData
-                    
-                    actualsRowData = [ row.getCell(2).value ]
-                    budgetRowData = [ row.getCell(2).value ]
+
+                    actualsRowData = [row.getCell(2).value]
+                    budgetRowData = [row.getCell(2).value]
 
                     // extract actuals for periods 1-12 (columns 4-15)
-                    for(let a = 4; a <= 15; a++) {
+                    for (let a = 4; a <= 15; a++) {
                         actualsRowData.push(row.getCell(a).result || 0)
                     }
 
                     // extract budget for periods 1-12 (columns 16-27)
-                    for(let b = 16; b <= 27; b++) {
+                    for (let b = 16; b <= 27; b++) {
                         budgetRowData.push(row.getCell(b).result || 0)
                     }
 
@@ -147,9 +149,9 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             }
 
             // if no record exists, create one
-            if(!finance) {
+            if (!finance) {
 
-                const payload = { 
+                const payload = {
                     year: financialYear,
                     startDate: DateTime.fromObject({ year: financialYear, month: 8, day: 1 }).toISODate(),
                     endDate: DateTime.fromObject({ year: financialYear + 1, month: 7, day: 31 }).toISODate(),
@@ -161,7 +163,7 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
             // otherwise update the existing record
             else {
 
-                const payload = { 
+                const payload = {
                     year: finance.year,
                     startDate: finance.startDate,
                     endDate: finance.endDate,
@@ -177,5 +179,39 @@ module.exports = createCoreService('api::finance.finance', ({ strapi }) =>  ({
         } catch (error) {
             throw new Error('Failed to sync finance data: ' + error.message)
         }
+    },
+    // read the transactions sheet and enter each row into database
+    async readTransactions(transactionsSheet, fiscalYear) {
+
+        transactionsSheet.eachRow(async (row, rowNumber) => {
+
+            try {
+                if (rowNumber < 2) return; // skip header row
+
+                // non standad quarters so need to shift by 7 months as August is the first month of the first quarter
+                const fiscalPeriod = row.getCell(13).value ? Math.floor((new Date(row.getCell(13).value).getMonth() - 7 + 12) / 3) + 1 : null
+                // to do check that transaction does not already exist in database before creating new record - can check on document number and value as a simple heuristic, but may need to add more checks if there are duplicates
+                    await strapi.service('api::transaction.transaction').create({
+                        data: {
+                            costElement: row.getCell(1).value,
+                            costElementDescription: row.getCell(2).value,
+                            documentNumber: row.getCell(12).value,
+                            documentHeader: row.getCell(10).value || '',
+                            name: row.getCell(8).value || '',
+                            postedDate: row.getCell(13).value ? DateTime.fromJSDate(row.getCell(13).value).toISODate() : null,
+                            documentDate: new Date(),
+                            value: row.getCell(14).value || 0,
+                            bwCategory: row.getCell(15).value || '',
+                            ieCategory: row.getCell(16).value || '',
+                            fiscalYear: fiscalYear,
+                            fiscalPeriod: fiscalPeriod,
+                            internalCategory: ''
+                        }
+                    })
+                
+            } catch (error) {
+                console.log('Failed to read and save transaction row ' + rowNumber + ': ' + error.message)
+            }
+        })
     }
 }))
