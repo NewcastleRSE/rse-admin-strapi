@@ -42,7 +42,8 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
             month: params.data.month
         }
 
-        const editable = params.editable || false
+        const editable = params.data.editable || false
+        
 
         const project = await strapi.service("api::project.project").findOne(params.data.project)
 
