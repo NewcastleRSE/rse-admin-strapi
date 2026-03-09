@@ -49,7 +49,7 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
 
         if (!project) { throw 'Project not found' }
         //if(project.costModel === 'Facility' && !project.lineItems) { throw 'Project does not a day rate set' }
-
+try {
         const timesheets = await strapi.service("api::timesheet.timesheet").findOne(project.clockifyID, period)
         // document number format is hubspot ID, 3 letter month, and 2 number year, seperated by commas
         const documentNumber = `${project.hubspotID}-${params.data.month.toUpperCase().substring(0, 3)}-${params.data.year.toString().substring(2)}`
@@ -65,8 +65,8 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         const peopleDays = []
 
         // try to build seperate standard and senior days from timesheet entries
-        try {
-
+       
+ try {
 
             // check groupOne exists and is an array
             if (Array.isArray(timesheets.data.groupOne)) {
@@ -318,7 +318,11 @@ module.exports = createCoreService('api::invoice.invoice', ({ strapi }) => ({
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
 
         return invoice
-    },
+    } catch (error) {
+        console.error('Error creating invoice: ', error)
+        throw error     
+    }
+},
     async month(params) {
 
         // get facility rate projects where the cost model is facility and the stage is 'Awaiting allocation', "Allocated', or 'Completed'
