@@ -56,8 +56,8 @@ try {
 
         // divide time between standard and senior rates
 
-        // Convert seconds to hours, then 7.24 hours per day
-        const totalDays = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.24)
+        // Convert seconds to hours, then 7.4 hours per day
+        const totalDays = Math.round((timesheets.data.totals[0].totalTime / 3600) / 7.4)
         let standardDays = 0
         let seniorDays = 0
 
@@ -72,7 +72,7 @@ try {
             if (Array.isArray(timesheets.data.groupOne)) {
 
                 timesheets.data.groupOne.forEach(entry => {
-                    const clocked = { "person": entry.name, "days": Math.round((entry.duration / 3600) / 7.24) }
+                    const clocked = { "person": entry.name, "days": Math.round((entry.duration / 3600) / 7.4) }
                     peopleDays.push(clocked)
                 })
 
