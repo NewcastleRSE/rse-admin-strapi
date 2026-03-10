@@ -328,6 +328,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
   async find(...args) {
     // Calling the default core service
     const { results, pagination } = await super.find(...args)
+    console.log(results)
 
     const clockifyIDs = results.map(p => p.clockifyID)
 
@@ -336,6 +337,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
     // Filtering the clockify projects that are in the project list
     const clockifyProjects = response.data.filter(p => clockifyIDs.includes(p.id))
+
 
     // Get estimate, spent, invoiced quantities and anticipated progress for each project
     await Promise.all(results.map(async (result) => {
@@ -346,7 +348,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
         result.anticipatedProgress = 'PT0S'
 
 
-        if (result.estimate && result.estimate !== 'PT0S' && result.assignments.length != 0) {
+        if (result.estimate && result.estimate !== 'PT0S' && result.assignments && result.assignments.length != 0) {
 
           // number of days scheduled between today and end date of assignments
           let scheduled = 0
@@ -416,6 +418,8 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
 
 
     }))
+
+ 
 
     return { results, pagination }
   },
