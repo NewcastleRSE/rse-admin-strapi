@@ -243,6 +243,10 @@ try {
             created.enableReadOnly()
             refNumber.enableReadOnly()
             sapDocument.enableReadOnly()
+            quantity.enableReadOnly()
+            price.enableReadOnly()
+            total.enableReadOnly()
+            account.enableReadOnly()
         }
 
         // senior line
@@ -276,10 +280,14 @@ try {
             account.setText(`${project.account}`)
 
             if (!editable) {
-                account.enableReadOnly()
-                total.enableReadOnly()
-                price.enableReadOnly()
-                quantity.enableReadOnly()
+                    enteredBy.enableReadOnly()
+            created.enableReadOnly()
+            refNumber.enableReadOnly()
+            sapDocument.enableReadOnly()
+            quantity.enableReadOnly()
+            price.enableReadOnly()
+            total.enableReadOnly()
+            account.enableReadOnly()
             }
         }
 
@@ -309,10 +317,14 @@ try {
         //account.updateAppearances(fontBold)
         account.setText(`${project.account}`)
         if (!editable) {
-            account.enableReadOnly()
-            total.enableReadOnly()
-            price.enableReadOnly()
+              enteredBy.enableReadOnly()
+            created.enableReadOnly()
+            refNumber.enableReadOnly()
+            sapDocument.enableReadOnly()
             quantity.enableReadOnly()
+            price.enableReadOnly()
+            total.enableReadOnly()
+            account.enableReadOnly()
         }
 
         invoice.pdf = Buffer.from(await pdfDoc.save()).toString('base64')
