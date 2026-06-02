@@ -61,7 +61,7 @@ try {
         let standardDays = 0
         let seniorDays = 0
 
-
+console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', totalDays)
         const peopleDays = []
 
         // try to build seperate standard and senior days from timesheet entries
@@ -73,6 +73,7 @@ try {
 
                 timesheets.data.groupOne.forEach(entry => {
                     const clocked = { "person": entry.name, "days": Math.round((entry.duration / 3600) / 7.4) }
+                    console.log('entry: ', entry.name, entry.duration, clocked.days)
                     peopleDays.push(clocked)
                 })
 
@@ -123,6 +124,8 @@ try {
             // if can't access groupOne in clockify timesheet response, just look at total time and use standard rate
             standardDays = totalDays
         }
+
+        console.log('standard days: ', standardDays, 'senior days: ', seniorDays)
 
 
         const invoices = await strapi.entityService.findMany('api::invoice.invoice', {
@@ -238,16 +241,7 @@ try {
         const enteredBy = form.getTextField('Entered By')
         enteredBy.updateAppearances(fontBold)
         enteredBy.setText(`RSE Team`)
-        if (!editable) {
-            enteredBy.enableReadOnly()
-            created.enableReadOnly()
-            refNumber.enableReadOnly()
-            sapDocument.enableReadOnly()
-            quantity.enableReadOnly()
-            price.enableReadOnly()
-            total.enableReadOnly()
-            account.enableReadOnly()
-        }
+       
 
         // senior line
         if (seniorDays > 0) {
