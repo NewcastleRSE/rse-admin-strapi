@@ -61,7 +61,7 @@ try {
         let standardDays = 0
         let seniorDays = 0
 
-e!console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', totalDays)
+console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', totalDays)
         const peopleDays = []
 
         // try to build seperate standard and senior days from timesheet entries
