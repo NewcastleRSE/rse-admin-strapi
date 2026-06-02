@@ -61,7 +61,7 @@ try {
         let standardDays = 0
         let seniorDays = 0
 
-console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', totalDays)
+e!console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', totalDays)
         const peopleDays = []
 
         // try to build seperate standard and senior days from timesheet entries
@@ -241,16 +241,7 @@ console.log('timesheets',timesheets.data.totals[0].totalTime, 'total days', tota
         const enteredBy = form.getTextField('Entered By')
         enteredBy.updateAppearances(fontBold)
         enteredBy.setText(`RSE Team`)
-        if (!editable) {
-            enteredBy.enableReadOnly()
-            created.enableReadOnly()
-            refNumber.enableReadOnly()
-            sapDocument.enableReadOnly()
-            quantity.enableReadOnly()
-            price.enableReadOnly()
-            total.enableReadOnly()
-            account.enableReadOnly()
-        }
+       
 
         // senior line
         if (seniorDays > 0) {
