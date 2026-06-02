@@ -328,7 +328,7 @@ module.exports = createCoreService('api::project.project', ({ strapi }) => ({
   async find(...args) {
     // Calling the default core service
     const { results, pagination } = await super.find(...args)
-    console.log(results)
+
 
     const clockifyIDs = results.map(p => p.clockifyID)
 
