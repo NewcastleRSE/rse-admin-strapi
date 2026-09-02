@@ -1,4 +1,4 @@
-module.exports = () => ({
+module.exports = ({env}) => ({
     'users-permissions': {
       config: {
         jwtManagement: 'refresh',
@@ -9,4 +9,11 @@ module.exports = () => ({
         }
       },
     },
+    sentry: {
+    enabled: true,
+    config: {
+      dsn: env('NODE_ENV') === 'development' ? null : env('SENTRY_DSN'),
+      sendMetadata: true,
+    },
+  },
   });

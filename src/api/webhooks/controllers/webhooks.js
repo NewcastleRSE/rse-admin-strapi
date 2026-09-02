@@ -3,6 +3,7 @@
 /**
  * Custom controller for handling webhooks and calling the HubSpot method in the webhooks service.
  */
+const Sentry = require('@sentry/node');
 
 module.exports = {
     async hubspot(ctx) {
@@ -25,23 +26,30 @@ module.exports = {
 
             // Check if the subscription type is one we want to process and if required fields are present
             if (!subscriptionType || !acceptedSubscriptionTypes.includes(subscriptionType)) {
-                console.error(`Ignoring webhook of type ${subscriptionType}`)
-                return
+                const msg = `Ignoring webhook of type ${subscriptionType}`;
+                console.error(msg);
+                return;
             }
             // For associationChange events, associationType is required. 
             else if ((subscriptionType === 'deal.associationChange') && !associationType) {
-                console.error(`Missing required field associationType for subscriptionType ${subscriptionType}`)
-                return
+                const msg = `Missing required field associationType for subscriptionType ${subscriptionType}`;
+                console.error(msg);
+                Sentry.captureMessage(msg, 'warning');
+                return;
             }
             // For all other subscription types except associationChange, objectId is required
             else if (subscriptionType !== 'deal.associationChange' && !payload.objectId) {
-                console.error(`Missing required field objectId`)
-                return
+                const msg = `Missing required field objectId for subscriptionType ${subscriptionType}`;
+                console.error(msg);
+                Sentry.captureMessage(msg, 'warning');
+                return;
             }
             // For propertyChange events, toObjectId and fromObjectId are required
             else if (subscriptionType === 'deal.propertyChange' && (!payload.toObjectId || !payload.fromObjectId)) {
-                console.error(`Missing required fields toObjectId and fromObjectId for subscriptionType ${subscriptionType}`)
-                return
+                const msg = `Missing required fields toObjectId and fromObjectId for subscriptionType ${subscriptionType}`;
+                console.error(msg);
+                Sentry.captureMessage(msg, 'warning');
+                return;
             }
             else {
 
@@ -58,6 +66,10 @@ module.exports = {
                             else {
                                 console.error(`Error creating project: ${err.message}`)
                             }
+                            Sentry.withScope(scope => {
+                                scope.setExtra('payload', payload);
+                                Sentry.captureException(err);
+                            });
                         }
                         break
                     case 'deal.propertyChange':
@@ -71,23 +83,37 @@ module.exports = {
                             else {
                                 console.error(`Error updating project: ${err.message}`)
                             }
+                            Sentry.withScope(scope => {
+                                scope.setExtra('payload', payload);
+                                Sentry.captureException(err);
+                            });
                         }
                         break
                     case 'deal.associationChange':
-                        if (associationType === 'DEAL_TO_CONTACT' || associationType === 'CONTACT_TO_DEAL') {
+                        try {
+                            if (associationType === 'DEAL_TO_CONTACT' || associationType === 'CONTACT_TO_DEAL') {
 
-                            const contactId = associationType === 'DEAL_TO_CONTACT' ? payload.toObjectId : payload.fromObjectId
+                                const contactId = associationType === 'DEAL_TO_CONTACT' ? payload.toObjectId : payload.fromObjectId
 
-                            await strapi.service('api::webhooks.hubspot').updateContact(payload.objectId, contactId, payload.associationRemoved)
+                                await strapi.service('api::webhooks.hubspot').updateContact(payload.objectId, contactId, payload.associationRemoved)
+                            }
+                            else if (associationType === 'DEAL_TO_LINE_ITEM' || associationType === 'LINE_ITEM_TO_DEAL') {
+
+                                const lineItemId = associationType === 'DEAL_TO_LINE_ITEM' ? payload.toObjectId : payload.fromObjectId
+
+                                await strapi.service('api::webhooks.hubspot').updateLineItems(payload.objectId, lineItemId, payload.associationRemoved)
+                            }
+                            else {
+                                const msg = `Ignoring association type ${payload.associationType}`;
+                                console.error(msg);
+                            }
                         }
-                        else if (associationType === 'DEAL_TO_LINE_ITEM' || associationType === 'LINE_ITEM_TO_DEAL') {
-
-                            const lineItemId = associationType === 'DEAL_TO_LINE_ITEM' ? payload.toObjectId : payload.fromObjectId
-
-                            await strapi.service('api::webhooks.hubspot').updateLineItems(payload.objectId, lineItemId, payload.associationRemoved)
-                        }
-                        else {
-                            console.error(`Ignoring association type ${payload.associationType}`)
+                        catch (err) {
+                            console.error(`Error processing association change: ${err.message}`);
+                            Sentry.withScope(scope => {
+                                scope.setExtra('payload', payload);
+                                Sentry.captureException(err);
+                            });
                         }
                         break
                     case 'deal.deletion':
@@ -96,6 +122,10 @@ module.exports = {
                         }
                         catch (err) {
                             console.error(`Error deleting project: ${err.message}`)
+                            Sentry.withScope(scope => {
+                                scope.setExtra('payload', payload);
+                                Sentry.captureException(err);
+                            });
                         }
                         break
                     default:
