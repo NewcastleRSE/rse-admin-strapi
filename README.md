@@ -100,6 +100,12 @@ Deployment to production is handled by [GitHub Workflows](https://docs.github.co
 
 Any push to the `dev` branch will trigger a rebuild of the `latest` tag for the Docker image stored in the `rseadmin.azurecr.io` registry. Properly tagged images are generated via releases on the `main` branch and match the version number from the release. For example, a code release of version `1.2.3` will create a Docker image in the registry with name and tag of `rseadmin.azurecr.io/api:1.2.3`.
 
+## Documentation
+
+Project documentation is available in the top-level `documentation` folder:
+
+- [Documentation Index](./documentation/README.md)
+
 ## Contributing
 
 ### Main Branch
